@@ -54,7 +54,7 @@ class MBChat {
 	}
 
 	function mayCreateRooms() {
-		return ($this->_user->getRole() == 'A' or $this_user->getRole() == 'L') ;
+		return ($this->_user->getRole() == 'A' or $this->_user->getRole() == 'L') ;
 	}
 
 	function createRoomURL() {

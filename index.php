@@ -66,21 +66,18 @@ $chat = new MBChat($user);
 			left:70px;
 			width:600px;
 			text-align:center;
-			background-color: #1d1d20;
+			background-color: #4A7DB5;
 		}
 		#entranceHall h3 {
 			font-size:1.5em;
-			font-family: tahoma, sans-serif;
-			font-weight: normal;
-			color:#737373;
+			font-weight: bold;
+			color:white;
 			margin-left:auto;
 		}
 
 		.functions {
 			position: relative;
-			border-top: 1px solid #27272a;
-			border-bottom: 3px double #27272a;
-			margin-bottom: 10px;
+			margin-bottom: 20px;
 			padding: 10px 0;
 			display: block;
 			height: 100px;
@@ -97,9 +94,9 @@ $chat = new MBChat($user);
 			overflow: hidden;
 			height: 80px;
 			width: 105px;
-			padding: 10px;
+			padding: 5px;
 			background: #fff;
-			border-right: 5px solid #1d1d20;
+			border-right: 5px solid #4A7DB5;
 			text-decoration:none;
 			text-align:left;
 		}
@@ -150,6 +147,13 @@ $chat = new MBChat($user);
 
 		#create-room {
 			background:white url(/static/images/create-room.gif) no-repeat;
+		}
+
+		#user-settings-input {
+			margin-left:115px;
+			font-size:.75em;
+			width:100px;
+			color:red;
 		}
 
 		
@@ -204,7 +208,10 @@ soundManager.onload = function () {
 		volume : 10
 	});
 	soundManager.play('entrance');
-}
+};
+
+userSetting = function(element,value) {
+};
 	// -->
 </script>
 
@@ -229,8 +236,8 @@ soundManager.onload = function () {
 
 <div id="content">
 <div id="entranceHall">
-	<h3>Main Rooms</h3>
 	<div  class="functions">
+	<h3>Main Rooms</h3>
 		<ul>
 			<li><a id="members-lounge" class="function" href=<?php
 				echo $chat->generateRoomURL(MBCHAT_MEMBERS_LOUNGE); ?>><span>Members Lounge</span></a></li>
@@ -243,12 +250,15 @@ soundManager.onload = function () {
 				echo $chat->generateRoomURL(MBCHAT_AUDITORIUM);?>><span>Auditorium</span></a></li>
 		</ul>
 	</div>
-	<h3>Member Rooms</h3>
 	<?php 
+$rooms = Array();
+$rooms = $chat->getRoomNames();
+if(count($rooms) > 0 ) {		
 		$i = 0;
-		foreach ($chat->getRoomNames() as $roomId => $roomName ) {
+		foreach ($rooms as $roomId => $roomName ) {
 			if( ($i % 4) == 0 ) {
 		?><div class="functions"> 
+	<h3>Member Rooms</h3>
 		<ul>
 		<?php	};
 			$i++; ?>
@@ -266,18 +276,24 @@ soundManager.onload = function () {
 			?>
 </ul>
 	</div>
-<?php	};  ?>
-	<h3>Other Functions</h3>
+<?php	}; 
+};
+?>
 	<div class="functions">
+	<h3>Other Functions</h3>
 		<ul>
 			<li><a id="forum" class="function" href="/forum"><span>Return to Forum</span></a></li>
 			<li><a id="user-settings" class="function" href="#" onclick="return false">
-				<input type="checked" name="sounds" id="sounds-field" checked=<?php echo $chat->userSoundSetting(); ?>
-					onclick="userSetting('sounds', this.checked);"/>
-				<label for="sounds-field">Enable Sounds</label><br/>
-				<input type="text" name="gap" size="1" id="gap-delay"
-					onchange="userSetting('gap',this.value);" value=<?php echo $chat->userSoundDelay(); ?> />
-				<label for="gap-delay">Gap in Minutes for new message warning</label></a></li>
+				<div id="user-settings-input">
+					<input type="checkbox" name="sounds" id="sounds-field" checked=<?php 
+						echo $chat->userSoundSetting(); 
+						?> onclick="userSetting('sounds', this.checked);"/>
+					<label for="sounds-field">Enable Sounds</label><br/>
+					<input type="text" name="gap" size="1" id="gap-delay"
+						onchange="userSetting('gap',this.value);" value=<?php 
+						echo $chat->userSoundDelay(); ?> />
+					<label for="gap-delay">Gap in Minutes for new message warning</label>
+				</div></a></li>
 <?php	if ($chat->mayCreateRooms()) {
 ?>			<li><a id="create-room" class="function" href=<?php echo $chat->createRoomURL(); ?>>
 				<span>Create Room</span></a></li>
