@@ -72,15 +72,13 @@ $chat = new MBChat($user);
 			font-size:1.5em;
 			font-weight: bold;
 			color:white;
-			margin-left:auto;
+			margin:0px;
 		}
 
 		.functions {
 			position: relative;
-			margin-bottom: 20px;
 			padding: 10px 0;
 			display: block;
-			height: 100px;
 		}
 
 		.functions li {
@@ -90,18 +88,17 @@ $chat = new MBChat($user);
 
 		.function {
 			display: block;
+			position:relative;
 			cursor: pointer;
-			overflow: hidden;
-			height: 80px;
+			height: 85px;
 			width: 105px;
 			padding: 5px;
-			background: #fff;
 			border-right: 5px solid #4A7DB5;
 			text-decoration:none;
 			text-align:left;
 		}
 
-		.function span {
+		.function>span {
 			display: none;
 		}
 	
@@ -155,6 +152,32 @@ $chat = new MBChat($user);
 			width:100px;
 			color:red;
 		}
+		.whoonline {
+			display:none;
+			position:absolute;
+			padding:0px;
+			margin:0px;
+			top:-20px;
+			right:-110px;
+			overflow:hidden;
+			background-color:white;
+			width:0px;
+			opacity:0.9;
+			z-index:2;
+		} 
+		.whoonline h4 {
+			background-color:#555555;
+			color:white;
+			text-align:center;
+			margin:0px;
+			padding:2px;
+		}
+		.onlinelist {
+			padding:5px;
+			color:black;
+			overflow:auto;
+		}
+		
 
 		
 	</style>
@@ -170,12 +193,21 @@ window.addEvent('domready', function() {
 	var myTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
 	functiongroups.each( function (functiongroup,i) {
 		var functions = functiongroup.getElements('.function');
-		var fx = new Fx.Elements(functions, {wait: false, duration: 500, transition: myTransition.easeOut});
+		var fx = new Fx.Elements(functions, {wait: false, duration: 500, transition: myTransition.easeOut });
 		functions.each( function(functionitem, i){
+			var makeVisible = function(e) {
+				functionitem.setStyle('overflow' , 'visible');					
+			};
+			var online = functionitem.getElements('.whoonline');
+			if (online.length > 0 ) {
+				online = online[0];
+			} else {
+				online = false;
+			}
 			functionitem.addEvent('mouseenter', function(e){
 				var obj = {};
 				obj[i] = {
-					'width': [functionitem.getStyle('width').toInt(), 219]
+					'width': [functionitem.getStyle('width').toInt(), 219],
 				};
 				functions.each(function(other, j){
 					if (other != functionitem){
@@ -183,14 +215,23 @@ window.addEvent('domready', function() {
 						if (w != 67) obj[j] = {'width': [w, 67]};
 					}
 				});
+				fx.addEvent('onComplete',makeVisible );
 				fx.start(obj);
+				if (online) {
+					online.tween('width', 0,120);
+					online.setStyle('display','block');
+					MBChat.updateOnlineList(online);
+				}
 			});
 			functionitem.addEvent('mouseleave', function(e){
+				functionitem.setStyle('overflow' , 'hidden');
 				var obj = {};
 				functions.each(function(other, j){
 					obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
 				});
+				fx.removeEvent('onComplete',makeVisible);
 				fx.start(obj);
+				online.setStyle('display','none');
 			});
 		});
 	});	
@@ -209,9 +250,12 @@ soundManager.onload = function () {
 	});
 	soundManager.play('entrance');
 };
-
-userSetting = function(element,value) {
-};
+var MBChat = {
+	userSetting: function(element,value) {
+	},
+	updateOnlineList : function (list) {
+	}
+}
 	// -->
 </script>
 
@@ -240,15 +284,24 @@ userSetting = function(element,value) {
 	<h3>Main Rooms</h3>
 		<ul>
 			<li><a id="members-lounge" class="function" href=<?php
-				echo $chat->generateRoomURL(MBCHAT_MEMBERS_LOUNGE); ?>><span>Members Lounge</span></a></li>
+				echo $chat->generateRoomURL(MBCHAT_MEMBERS_LOUNGE); ?>>
+				<span>Members Lounge</span>
+				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
 			<li><a id="<?php echo $chat->getAdultOrBabyRoom(); ?>" class="function" href=<?php
 				echo $chat->generateRoomURL(($chat->getAdultOrBabyRoom() == 'green-room')? 
-				MBCHAT_GREEN_ROOM:MBCHAT_BLUE_ROOM); ?>><span>Blue or Green Room</span></a></li>
+				MBCHAT_GREEN_ROOM:MBCHAT_BLUE_ROOM); ?>>
+				<span>Blue or Green Room</span>
+				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
 			<li><a id="vamp-club" class="function" href=<?php
-				echo $chat->generateRoomURL(MBCHAT_VAMP_CLUB); ?>><span>Vamp Club</span></a></li>
+				echo $chat->generateRoomURL(MBCHAT_VAMP_CLUB); ?>>
+				<span>Vamp Club</span>
+				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
 			<li><a id="auditorium" class="function" href=<?php
-				echo $chat->generateRoomURL(MBCHAT_AUDITORIUM);?>><span>Auditorium</span></a></li>
+				echo $chat->generateRoomURL(MBCHAT_AUDITORIUM);?>>
+				<span>Auditorium</span>
+				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
 		</ul>
+		<div style="clear:both"></div>
 	</div>
 	<?php 
 $rooms = Array();
@@ -263,10 +316,12 @@ if(count($rooms) > 0 ) {
 		<?php	};
 			$i++; ?>
 	<li><a class="function member" href=<?php
-				echo $chat->generateRoomURL($roomId);?>><span><?php 
-					echo $roomName ; ?></span></a></li>
+				echo $chat->generateRoomURL($roomId);?>>
+			<span><?php echo $roomName ; ?></span>
+				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
 		<?php  if( ($i % 4) == 0 ) {
 				?></ul>
+		<div style="clear:both"></div>
 	</div>
 <?php 
 			};
@@ -275,6 +330,7 @@ if(count($rooms) > 0 ) {
  		if( ($i % 4) != 0 ) { 
 			?>
 </ul>
+		<div style="clear:both"></div>
 	</div>
 <?php	}; 
 };
@@ -287,10 +343,10 @@ if(count($rooms) > 0 ) {
 				<div id="user-settings-input">
 					<input type="checkbox" name="sounds" id="sounds-field" checked=<?php 
 						echo $chat->userSoundSetting(); 
-						?> onclick="userSetting('sounds', this.checked);"/>
+						?> onclick="MBChat.userSetting('sounds', this.checked);"/>
 					<label for="sounds-field">Enable Sounds</label><br/>
 					<input type="text" name="gap" size="1" id="gap-delay"
-						onchange="userSetting('gap',this.value);" value=<?php 
+						onchange="MB.Chat.userSetting('gap',this.value);" value=<?php 
 						echo $chat->userSoundDelay(); ?> />
 					<label for="gap-delay">Gap in Minutes for new message warning</label>
 				</div></a></li>
@@ -299,6 +355,8 @@ if(count($rooms) > 0 ) {
 				<span>Create Room</span></a></li>
 <?php }; 
 ?>		</ul>
+		<div style="clear:both"></div>
+
 	</div>
 </div>
 
