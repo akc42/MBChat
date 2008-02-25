@@ -1,0 +1,38 @@
+/*
+ * @package AJAX_Chat
+ * @author Sebastian Tschan
+ * @copyright (c) 2007 Sebastian Tschan
+ * @license http://creativecommons.org/licenses/by-sa/
+ * @link https://blueimp.net/ajax/
+ */
+
+
+/*
+ * Positioning adjustments for IE versions < 7
+ */
+
+#loginContent {
+	height:expression(document.body.clientHeight-140);
+}
+
+#chatList {
+	height:expression(document.body.clientHeight-315);
+	width:expression(document.body.clientWidth-250);
+}
+
+
+#onlineListContainer {
+	height:expression(document.body.clientHeight-315);
+}
+
+#helpContainer {
+	height:expression(document.body.clientHeight-315);
+}
+#messageContainer #messageTextContainer {
+	width:expression(document.body.clientWidth-235);
+}
+
+#helpContainer #helpList {
+	height:expression(document.body.clientHeight-340);
+	width:expression(document.body.clientWidth-235);
+}

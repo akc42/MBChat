@@ -31,231 +31,70 @@ define('MBCHAT_GREEN_ROOM',	3);
 define('MBCHAT_VAMP_CLUB',	4);
 define('MBCHAT_AUDITORIUM',	5);
 
+define('MBCHAT_PURGE_MESSAGE_INTERVAL',7); //No of days messages kept for
+define('MBCHAT_TIMEOUT_USER',	3); //No of minutes before online user goes offline through lack of activity
+
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-
+include_once('db.php');
 $groups =& $user_info['groups'];
-require('user.php');
-$user = new User($ID_MEMBER,           //userID
-		$user_info['name'],    //name
-		(in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
+$userName =& $user_info['name'];
+$role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
 			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 			(in_array(SMF_CHAT_MODERATOR, $groups))? 'M' :(
 			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
 			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :(
-			(in_array(SMF_CHAT_SPECIAL, $groups))?'S' : 'R'))))));
+			(in_array(SMF_CHAT_SPECIAL, $groups))?'S' : 'R'))))) ;
+
+//We have to mark user as online - but he may already be online else where
+dbQuery('START TRANSACTION ;');
+$sql= 'SELECT id FROM users WHERE id = '.dbMakeSafe($ID_MEMBER).';' ;
+$result = dbQuery($sql);
+if (mysql_num_rows($result) != 0) {
+	mysql_free_result($result);
+	$sql = 'UPDATE users SET name = '.dbMakeSafe($userName).' , role = '.dbMakeSafe($role);
+	$sql .= ',time = NOW() WHERE id = '.dbMakeSafe($ID_MEMBER).';';
+} else {
+	mysql_free_result($result);
+	$sql='INSERT INTO users (id,name,role) VALUES ('.
+				dbMakeSafe($ID_MEMBER).','.
+				dbMakeSafe($user_info['name']).','.
+				dbMakeSafe($role).') ; ' ;
+}
+dbQuery($sql);
+dbQuery('COMMIT ;');
 		
-//chat class
-require('mbchat.php');
-//Create Chat object that will provide us with all the info needed
-$chat = new MBChat($user);
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>Community Rooms</title>
-	<link rel="stylesheet" type="text/css" href="/static/css/chat.css" title="mbstyle"/>
+	<title>Melinda's Backups Chat</title>
+	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
 	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="/static/css/chat-ie.css"/>
+		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
 	<![endif]-->
-	<style type="text/css">
-		#entranceHall {
-			position:absolute;
-			top:50px;
-			left:70px;
-			width:600px;
-			text-align:center;
-			background-color: #4A7DB5;
-		}
-		#entranceHall h3 {
-			font-size:1.5em;
-			font-weight: bold;
-			color:white;
-			margin:0px;
-		}
-
-		.functions {
-			position: relative;
-			padding: 10px 0;
-			display: block;
-		}
-
-		.functions li {
-			display:block;
-			float: left;
-		}
-
-		.function {
-			display: block;
-			position:relative;
-			cursor: pointer;
-			height: 85px;
-			width: 105px;
-			padding: 5px;
-			border-right: 5px solid #4A7DB5;
-			text-decoration:none;
-			text-align:left;
-		}
-
-		.function>span {
-			display: none;
-		}
-	
-
-		.member span {
-			display:inline;	
-			color:white;
-			font-size:2em;
-			font-weight:bold;
-		}
-
-		#members-lounge {
-			background: #78ba91 url(/static/images/members-lounge.gif) no-repeat;
-		}
-
-		#blue-room {
-			background: #7389ae url(/static/images/blue-room.gif) no-repeat;
-		}
-
-		#green-room {
-			background: #c17878 url(/static/images/green-room.gif) no-repeat;
-		}
-
-		#vamp-club {
-			background: #c17878 url(/static/images/vamp-club.gif) no-repeat;
-		}
-
-		#auditorium {
-			background: #a87aad url(/static/images/auditorium.gif) no-repeat;
-		}
-
-		.member {
-			background: #c17878 url(/static/images/member-room.gif) no-repeat;
-		}
-
-		#forum {
-			background:white url(/static/images/forum.gif) no-repeat;
-		}
-
-		#user-settings {
-			background:white url(/static/images/user-settings.gif) no-repeat;
-		}
-
-		#create-room {
-			background:white url(/static/images/create-room.gif) no-repeat;
-		}
-
-		#user-settings-input {
-			margin-left:115px;
-			font-size:.75em;
-			width:100px;
-			color:red;
-		}
-		.whoonline {
-			display:none;
-			position:absolute;
-			padding:0px;
-			margin:0px;
-			top:-20px;
-			right:-110px;
-			overflow:hidden;
-			background-color:white;
-			width:0px;
-			opacity:0.9;
-			z-index:2;
-		} 
-		.whoonline h4 {
-			background-color:#555555;
-			color:white;
-			text-align:center;
-			margin:0px;
-			padding:2px;
-		}
-		.onlinelist {
-			padding:5px;
-			color:black;
-			overflow:auto;
-		}
-		
-
-		
-	</style>
 	<script src="/static/scripts/mootools.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="/static/scripts/soundmanager2.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="mbchat.js" type="text/javascript" charset="UTF-8"></script>
 </head>
 <body>
 <script type="text/javascript">
 	<!--
+var chat;
 
 window.addEvent('domready', function() {
-	var functiongroups = $$('.functions');
-	var myTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
-	functiongroups.each( function (functiongroup,i) {
-		var functions = functiongroup.getElements('.function');
-		var fx = new Fx.Elements(functions, {wait: false, duration: 500, transition: myTransition.easeOut });
-		functions.each( function(functionitem, i){
-			var makeVisible = function(e) {
-				functionitem.setStyle('overflow' , 'visible');					
-			};
-			var online = functionitem.getElements('.whoonline');
-			if (online.length > 0 ) {
-				online = online[0];
-			} else {
-				online = false;
-			}
-			functionitem.addEvent('mouseenter', function(e){
-				var obj = {};
-				obj[i] = {
-					'width': [functionitem.getStyle('width').toInt(), 219],
-				};
-				functions.each(function(other, j){
-					if (other != functionitem){
-						var w = other.getStyle('width').toInt();
-						if (w != 67) obj[j] = {'width': [w, 67]};
-					}
-				});
-				fx.addEvent('onComplete',makeVisible );
-				fx.start(obj);
-				if (online) {
-					online.tween('width', 0,120);
-					online.setStyle('display','block');
-					MBChat.updateOnlineList(online);
-				}
-			});
-			functionitem.addEvent('mouseleave', function(e){
-				functionitem.setStyle('overflow' , 'hidden');
-				var obj = {};
-				functions.each(function(other, j){
-					obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
-				});
-				fx.removeEvent('onComplete',makeVisible);
-				fx.start(obj);
-				online.setStyle('display','none');
-			});
-		});
-	});	
+	chat = new MBChat({id: <?php echo $ID_MEMBER ;?>, 
+				name: '<?php echo $userName ; ?>',
+				 role: '<?php echo $role; ?>',
+				password : '<?php echo sha1("Key".$ID_MEMBER.$userName); ?>' });
+});	
+window.addEvent('unload', function() {
+	chat.logout();
+	
 });
 
-soundManager.onload = function () {
-	soundManager.createSound({
-		id : 'entrance',
-		url : '/static/sounds/mfv.mp3',
-		autoLoad : true ,
-		autoPlay : true ,
-		onfinish : function () {
-			soundManager.play('entrance');
-		},
-		volume : 10
-	});
-	soundManager.play('entrance');
-};
-var MBChat = {
-	userSetting: function(element,value) {
-	},
-	updateOnlineList : function (list) {
-	}
-}
+
 	// -->
 </script>
 
@@ -279,51 +118,45 @@ var MBChat = {
 </table>
 
 <div id="content">
+
+<div id="exit"></div>
+
 <div id="entranceHall">
-	<div  class="functions">
+	<div  class="rooms">
 	<h3>Main Rooms</h3>
 		<ul>
-			<li><a id="members-lounge" class="function" href=<?php
-				echo $chat->generateRoomURL(MBCHAT_MEMBERS_LOUNGE); ?>>
-				<span>Members Lounge</span>
-				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
-			<li><a id="<?php echo $chat->getAdultOrBabyRoom(); ?>" class="function" href=<?php
-				echo $chat->generateRoomURL(($chat->getAdultOrBabyRoom() == 'green-room')? 
-				MBCHAT_GREEN_ROOM:MBCHAT_BLUE_ROOM); ?>>
-				<span>Blue or Green Room</span>
-				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
-			<li><a id="vamp-club" class="function" href=<?php
-				echo $chat->generateRoomURL(MBCHAT_VAMP_CLUB); ?>>
-				<span>Vamp Club</span>
-				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
-			<li><a id="auditorium" class="function" href=<?php
-				echo $chat->generateRoomURL(MBCHAT_AUDITORIUM);?>>
-				<span>Auditorium</span>
-				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
+			<li><a id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room" href="#"></a></li>
+<?php if($role != 'B') { ?>
+			<li><a id="R<?php echo MBCHAT_BLUE_ROOM; ?>" class="room" href="#"></a></li>
+<?php } else { ?>
+			<li><a id="R<?php echo MBCHAT_GREEN_ROOM; ?>" class="room" href="#"></a></li>
+<?php }; ?>
+			<li><a id="R<?php echo MBCHAT_VAMP_CLUB; ?>" class="room" href="#"></a></li>
+			<li><a id="R<?php echo MBCHAT_AUDITORIUM; ?>" class="room" href="#"></a></li>
 		</ul>
 		<div style="clear:both"></div>
 	</div>
 	<?php 
-$rooms = Array();
-$rooms = $chat->getRoomNames();
-if(count($rooms) > 0 ) {		
+	
+	$sql='SELECT * FROM rooms WHERE type = "C";' ;
+	$result=dbQuery($sql);
+	if (mysql_num_rows($result) != 0) {		
 		$i = 0;
-		foreach ($rooms as $roomId => $roomName ) {
-			if( ($i % 4) == 0 ) {
-		?><div class="functions"> 
-	<h3>Member Rooms</h3>
+		while ($row = mysql_fetch_assoc($result)) {
+			if(in_array($row['smf_group'],$groups)) {
+				if( ($i % 4) == 0 ) {
+		?><div class="rooms"> 
+	<h3>Committee Rooms</h3>
 		<ul>
-		<?php	};
-			$i++; ?>
-	<li><a class="function member" href=<?php
-				echo $chat->generateRoomURL($roomId);?>>
-			<span><?php echo $roomName ; ?></span>
-				<div class="whoonline"><h4>Users In Room</h4><div class="onlinelist"></div></div></a></li>
-		<?php  if( ($i % 4) == 0 ) {
+		<?php		};
+				$i++; ?>
+	<li><a id="R<?php echo $row['id'];?>" class="room committee" href="#"><?php echo $row['name']; ?></a></li>
+		<?php		if( ($i % 4) == 0 ) {
 				?></ul>
 		<div style="clear:both"></div>
 	</div>
 <?php 
+				};
 			};
 		};
 		 //If ended loop and hadn't just comleted div we will have to do it here
@@ -332,36 +165,55 @@ if(count($rooms) > 0 ) {
 </ul>
 		<div style="clear:both"></div>
 	</div>
-<?php	}; 
-};
+<?php		}; 
+	};
+	mysql_free_result($result);
 ?>
-	<div class="functions">
-	<h3>Other Functions</h3>
-		<ul>
-			<li><a id="forum" class="function" href="/forum"><span>Return to Forum</span></a></li>
-			<li><a id="user-settings" class="function" href="#" onclick="return false">
-				<div id="user-settings-input">
-					<input type="checkbox" name="sounds" id="sounds-field" checked=<?php 
-						echo $chat->userSoundSetting(); 
-						?> onclick="MBChat.userSetting('sounds', this.checked);"/>
-					<label for="sounds-field">Enable Sounds</label><br/>
-					<input type="text" name="gap" size="1" id="gap-delay"
-						onchange="MB.Chat.userSetting('gap',this.value);" value=<?php 
-						echo $chat->userSoundDelay(); ?> />
-					<label for="gap-delay">Gap in Minutes for new message warning</label>
-				</div></a></li>
-<?php	if ($chat->mayCreateRooms()) {
-?>			<li><a id="create-room" class="function" href=<?php echo $chat->createRoomURL(); ?>>
-				<span>Create Room</span></a></li>
-<?php }; 
-?>		</ul>
-		<div style="clear:both"></div>
-
-	</div>
+	<div id="whisperList"></div>
+</div>
+<div id="onlineListContainer">
+	<h4>Users Online</h4>
+	<div id="onlineList"></div>
+</div>
+<div id="chatRoom">
+	<div id="messageList"></div>
+	<div id="inputContainer"></div>
+	<div id="emoticonContainer"></div>
 </div>
 
+<div id="userOptions">
+	<input id="musicEnabled" type="checkbox" />
+	<input id="soundEnabled" type="checkbox" />
+	<input id="soundDelay" type="text" size="1" value="5" />
+</div>
 
+<div id="copyright">MBChat &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+
+<div id="whisperBox" class="whisperBox">
+	<div class="dragarea"></div>
+	<div class="close"></div>
+	<div class="whisperParticipants"></div>
+	<form action="whisper.php" method="get">
+	<input type="text" size="20" />
+	<input type="submit" value="Send" />
+	</form>
 </div>
 </body>
 
-</html>
+</html><?php 
+	//purge messages that are too old from database
+	dbQuery('DELETE FROM messages WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
+	//timeout any users that are too old
+	$result=dbQuery('SELECT id, name, role FROM users WHERE NOW() > DATE_ADD(time, INTERVAL '.MBCHAT_TIMEOUT_USER.' MINUTE);');
+	if(mysql_num_rows($result) != 0) {
+		while($row=mysql_fetch_assoc($result)) {
+			dbQuery('START TRANSACTION ;');
+			dbQuery('INSERT INTO messages (id_from, name_from, role_from, type) VALUES ('.
+				dbMakeSafe($row['id']).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).', "L" ,'.
+				dbMakeSave($row['rid']).');');
+			dbQuery('DELETE FROM users WHERE id = '.dbMakeSafe($row['id']).' ;');
+			dbQuery('COMMIT ;');
+		}
+	};
+	mysql_free_result($result);
+?>
