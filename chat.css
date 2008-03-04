@@ -146,6 +146,7 @@ body, td, th
 	color:white;
 	font-size:2em;
 	font-weight:bold;
+	overflow:hidden;
 }
 
 /* rooms in entrance hall */
@@ -166,6 +167,23 @@ body, td, th
 }
 .committee {
 	background: #c17878 url(member-room.gif) no-repeat;
+}
+
+#exit {
+	position:absolute;
+	top:5px;
+	left:15px;
+	height:44px;
+	width: 50px; 
+	overflow:hidden;
+}
+
+.exit-f {	
+	background: #a87aad url(forum.gif) no-repeat; 
+}
+
+.exit-r {	
+	background: #a87aad url(exit.gif) no-repeat; 
 }
 
 .loading {
@@ -210,71 +228,16 @@ span.C {
 span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	font-weight:bold;
 	padding:0 2px;
-} 
+}
 
 
-/* these to go to room */
 
-#loginFormContainer {
-	margin-left:100px;
+.rowEven {
+	background-color:#F6F6F6;
 }
-#loginFormContainer div {
-	margin-bottom:7px;
-}
-#loginFormContainer input {
-	background-color:#FFF;
-	color:#000;
-}
-#loginFormContainer select {
-	background-color:#FFF;
-	color:#000;
-}
-#loginFormContainer #loginButton {
-	background-color:#F7F5F1;
-}
-#loginRegisteredUsers {
-    font-size:0.8em;
-    padding-top:5px;
-}
-#errorContainer {
-	margin-left:100px;
-	color:red;
-}
-#headlineContainer {
-	position:absolute;
-	left:20px;
-	top:5px;
-	background-image:none;
-}
-#logoutChannelContainer {
-	position:absolute;
-	left:20px;
-	top:20px;
-	padding:3px;
-	color:#fff;
-}
-#logoutChannelContainer label {
-	margin-left:20px;
-	margin-bottom:4px;
-}
-#logoutChannelContainer select {
-	background-color:#F7F5F1;
-	color:#000;
-	margin-bottom:2px;
-}
-#logoutChannelContainer #logoutButton {
-	background-color:#F7F5F1;
-	color:#000;
-}
-#chatList {
-	position:absolute;
-	left:20px;
-	top:50px;
-	right:230px;
-	bottom:125px;
-	overflow:auto;
-	border:1px solid #ADADAD;
-	background-color:#FFF;
+
+div.rowOdd {
+	background-color:#ECEDF3;
 }
 
 #onlineListContainer {
@@ -286,26 +249,90 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	border:1px solid #ADADAD;
 	background-color:#FFF;
 	overflow:auto;
+} 
+#onlineListContainer h4 {
+	height:25px;
+	padding:2px;
+	margin:0px;
+	text-align:center;
+	font-size:1.0em;
+	background-color:#88A6C0;
+	color:#FFF;
 }
-#helpContainer {
+#onlineListContainer #onlineList {
 	position:absolute;
-	right:20px;
-	top:50px;
-	width:360px;
-	bottom:125px;
-	border:1px solid #ADADAD;
-	background-color:#FFF;
+	left:0px;
+	right:0px;
+	top:25px;
+	bottom:0px;
 	overflow:auto;
 }
+div.list {
+	padding:10px 2px;
+}
 
-#optionsContainer {
+#userOptions {
 	position:absolute;
 	right:20px;
 	bottom:20px;
 	color:#fff;
+	width:200px;
+}
+#soundDelay {
+	margin-left:50px;
+	padding:2px;
 }
 
-#emoticonsContainer {
+
+div.chat {
+	left:20px;
+	top:50px;
+	right:230px;
+	bottom:125px;
+}
+
+div.whisper {
+	height:100px;
+	bottom:20px;	
+}
+	
+
+#chatList {
+	left:20px;
+	right:230px;
+	overflow:auto;
+	border:1px solid #ADADAD;
+	background-color:#FFF;
+	position:absolute;
+}
+
+#inputContainer {
+	display:none;
+	position:absolute;
+	left:20px;
+	bottom:90px;
+	right:230px;
+	border:1px solid #ADADAD;
+	padding:3px;
+	background-color:#FFF;
+}
+
+#messageContainer {
+	position:absolute;
+	top:0px;
+	left:0px;
+}
+
+#submitButtonContainer {
+	position:absolute;
+	top:0px;
+	right:0px;
+	width: 100px;
+}
+
+
+#emoticonContainer {
+	display:none;
 	position:absolute;
 	left:20px;
 	bottom:10px;
@@ -313,103 +340,23 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	padding:3px;
 	background-color:#FFF;
 }
-#emoticonsContainer a {
+#emoticonContainer a {
 	margin-left:1px;
 	margin-right:1px;
 }
 
-#emoticonsContainer img {
+#emoticonContainer img {
 	border:none;
 	vertical-align:middle;
 	margin-bottom:2px;
 }
-#chatList div {
-	padding-left:10px;
-	padding-top:2px;
-	padding-right:10px;
-	padding-bottom:2px;
-}
-#chatList div.rowEven {
-	background-color:#ECEDF3;
-}
-#chatList div.rowOdd {
-	background-color:#F6F6F6;
-}
-#chatList span.dateTime {
-	font-size:0.7em;
-}
-#chatList span.guest {
-	font-weight:bold;
-	color:gray;
-}
-#chatList span.user {
-	font-weight:bold; 
-	color:#444; 
-}
-/* -------------------------Alter this for Special Colour Changes ------------------*/
-#chatList span.special,  #chatList span.default {
-	font-weight:normal; 
-	color:#FFC801;
-	background-color:#030988; 
-}
-/*----------------------------------------------------------------------------------*/
-#chatList span.moderator {
-	font-weight:bold;
-	color:#00006D;
-}
-#chatList span.admin {
-	font-weight:bold;
-/*	color:#AD001D; */
-	color:#036972;
-}
-#chatList span.honorary {
-	font-weight:bold;
-	color:#6A00FF;
-}
-#chatList span.baby {
-	font-weight:bold;
-	color:#008000;
-}
-#chatList span.chatBot {
-}
-#chatList .chatBotMessage {
-	font-style:italic;
-}
-#chatList .chatBotErrorMessage {
-	font-style:italic;
-	color:red;
-}
-#chatList .privmsg {
-	font-style:italic;
-}
-#chatList a {
-	color:#476C8E;
-	text-decoration:none;
-}
-#chatList a:hover {
-	text-decoration:underline;
-}
-#chatList img {
-	border:none;
-	vertical-align:middle;
-	margin-bottom:2px;
-}
-#chatList span.quote {
-}
-#chatList cite {
-	margin-right:5px;
-}
-#chatList q {
-	font-variant:small-caps;
-}
-#chatList code {
-	font-size:1.2em;
-}
+
+
 #messageContainer {
 	width:100%;
 	position:absolute;
-	left:20px;
-	bottom:90px;
+	left:0px;
+	top:0px;
 }
 #messageContainer #messageTextContainer {
 	position:absolute;
@@ -434,128 +381,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	clear:both;
 	width:600px;
 }
-#onlineListContainer h4 {
-	height:25px;
-	padding:2px;
-	margin:0px;
-	text-align:center;
-	font-size:1.0em;
-	background-color:#88A6C0;
-	color:#FFF;
-}
-#onlineListContainer #onlineList {
-	position:absolute;
-	left:0px;
-	right:0px;
-	top:25px;
-	bottom:0px;
-	overflow:auto;
-}
-#onlineListContainer #onlineList div {
-	padding-left:10px;
-	padding-top:2px;
-	padding-right:10px;
-	padding-bottom:2px;
-}
-#onlineListContainer #onlineList a {
-	display:block;
-	font-weight:bold;
-	color:#000;
-	text-decoration:none;
-}
-#onlineListContainer #onlineList a:hover {
-	text-decoration:underline;
-}
-#onlineListContainer #onlineList .rowEven {
-	background-color:#F6F6F6;
-}
-#onlineListContainer #onlineList .rowOdd {
-	background-color:#ECEDF3;
-}
-#helpContainer h3 {
-	height:25px;
-	padding:2px;
-	margin:0px;
-	text-align:center;
-	font-size:1.0em;
-	background-color:#88A6C0;
-	color:#FFF;
-}
-#helpContainer #helpList {
-	position:absolute;
-	left:0px;
-	top:25px;
-	right:0px;
-	bottom:0px;
-	overflow:auto;
-}
-#helpContainer #helpList table {
-	border-collapse:collapse;
-}
-#helpContainer #helpList td {
-	padding:4px;
-	vertical-align:top;
-}
-#helpContainer #helpList td.desc {
-	width:40%;
-}
-#helpContainer #helpList td.code {
-	font-style:italic;
-}
-#helpContainer #helpList .rowEven {
-	background-color:#ECEDF3;
-}
-#helpContainer #helpList .rowOdd {
-	background-color:#F6F6F6;
-}
-		#forum {
-			background:white url(/static/images/forum.gif) no-repeat;
-		}
 
-		#user-settings {
-			background:white url(/static/images/user-settings.gif) no-repeat;
-		}
 
-		#create-room {
-			background:white url(/static/images/create-room.gif) no-repeat;
-		}
 
-		#user-settings-input {
-			margin-left:115px;
-			font-size:.75em;
-			width:100px;
-			color:red;
-		}
-		.whoonline {
-			display:none;
-			position:absolute;
-			padding:0px;
-			margin:0px;
-			top:-20px;
-			right:-110px;
-			overflow:hidden;
-			background-color:white;
-			width:0px;
-			opacity:0.9;
-			z-index:2;
-		} 
-		.whoonline h4 {
-			background-color:#555555;
-			color:white;
-			text-align:center;
-			margin:0px;
-			padding:2px;
-		}
-		.onlinelist {
-			padding:5px;
-			color:black;
-			overflow:auto;
-		}
-		
-
-.loading {
-	background-image: url("/static/images/spinner.gif");
-	background-position: center;
-	background-repeat: no-repeat;
-}
 

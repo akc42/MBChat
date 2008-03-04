@@ -11,12 +11,19 @@
  * Positioning adjustments for IE versions < 7
  */
 
-#loginContent {
+#content {
 	height:expression(document.body.clientHeight-140);
 }
 
-#chatList {
+div.chat {
 	height:expression(document.body.clientHeight-315);
+}
+
+#chatList {
+	width:expression(document.body.clientWidth-250);
+}
+
+#inputContainer {
 	width:expression(document.body.clientWidth-250);
 }
 
@@ -25,14 +32,7 @@
 	height:expression(document.body.clientHeight-315);
 }
 
-#helpContainer {
-	height:expression(document.body.clientHeight-315);
-}
 #messageContainer #messageTextContainer {
 	width:expression(document.body.clientWidth-235);
 }
 
-#helpContainer #helpList {
-	height:expression(document.body.clientHeight-340);
-	width:expression(document.body.clientWidth-235);
-}

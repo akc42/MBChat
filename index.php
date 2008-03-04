@@ -31,38 +31,32 @@ define('MBCHAT_GREEN_ROOM',	3);
 define('MBCHAT_VAMP_CLUB',	4);
 define('MBCHAT_AUDITORIUM',	5);
 
+define('MBCHAT_POLL_INTERVAL',	2000);  //Poll interval in milliseconds
+define('MBCHAT_POLL_PRESENCE',	10);	//Rate of presence polls (mark online)
+
+define('MBCHAT_EMOTICON_PATH', '/static/images/emoticons/');
+
 define('MBCHAT_PURGE_MESSAGE_INTERVAL',7); //No of days messages kept for
-define('MBCHAT_TIMEOUT_USER',	3); //No of minutes before online user goes offline through lack of activity
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('db.php');
+require_once('db.php');
 $groups =& $user_info['groups'];
 $userName =& $user_info['name'];
-$role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
+$title = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
 			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
-			(in_array(SMF_CHAT_MODERATOR, $groups))? 'M' :(
-			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
+			(in_array(SMF_CHAT_MELINDA, $groups))?'M' :(
 			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :(
-			(in_array(SMF_CHAT_SPECIAL, $groups))?'S' : 'R'))))) ;
+			(in_array(SMF_CHAT_SPECIAL, $groups))?'S' : 'R')))) ;
+$role = (in_array(SMF_CHAT_MODERATOR,$groups))?'M' : (($title == 'M' || $title == 'G')? 'P' : 'V') ;
 
-//We have to mark user as online - but he may already be online else where
-dbQuery('START TRANSACTION ;');
-$sql= 'SELECT id FROM users WHERE id = '.dbMakeSafe($ID_MEMBER).';' ;
-$result = dbQuery($sql);
-if (mysql_num_rows($result) != 0) {
-	mysql_free_result($result);
-	$sql = 'UPDATE users SET name = '.dbMakeSafe($userName).' , role = '.dbMakeSafe($role);
-	$sql .= ',time = NOW() WHERE id = '.dbMakeSafe($ID_MEMBER).';';
-} else {
-	mysql_free_result($result);
-	$sql='INSERT INTO users (id,name,role) VALUES ('.
-				dbMakeSafe($ID_MEMBER).','.
-				dbMakeSafe($user_info['name']).','.
-				dbMakeSafe($role).') ; ' ;
-}
-dbQuery($sql);
-dbQuery('COMMIT ;');
+dbQuery('START TRANSACTION;');
+dbQuery('REPLACE INTO users (uid,name,title, role) VALUES ('.dbMakeSafe($ID_MEMBER).','.
+				dbMakeSafe($userName).','.dbMakeSafe($title).','.dbMakeSafe($role).') ; ') ;
+dbQuery('INSERT INTO log (uid, name, title, role, type, rid) VALUES ('.
+				dbMakeSafe($ID_MEMBER).','.dbMakeSafe($userName)
+				.','.dbMakeSafe($title).','.dbMakeSafe($role).', "LI" , 0 );');
+dbQuery('COMMIT;');
 		
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -84,13 +78,16 @@ dbQuery('COMMIT ;');
 var chat;
 
 window.addEvent('domready', function() {
-	chat = new MBChat({id: <?php echo $ID_MEMBER ;?>, 
+	MBchat.init({id: <?php echo $ID_MEMBER ;?>, 
 				name: '<?php echo $userName ; ?>',
+				title: '<?php echo $title; ?>',
 				 role: '<?php echo $role; ?>',
-				password : '<?php echo sha1("Key".$ID_MEMBER.$userName); ?>' });
+				password : '<?php echo sha1("Key".$ID_MEMBER); ?>' }, 
+				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?> ,
+				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>});
 });	
 window.addEvent('unload', function() {
-	chat.logout();
+	MBchat.logout();
 	
 });
 
@@ -119,20 +116,20 @@ window.addEvent('unload', function() {
 
 <div id="content">
 
-<div id="exit"></div>
+<div id="exit" class="exit-f"></div>
 
 <div id="entranceHall">
 	<div  class="rooms">
 	<h3>Main Rooms</h3>
 		<ul>
-			<li><a id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room" href="#"></a></li>
-<?php if($role != 'B') { ?>
-			<li><a id="R<?php echo MBCHAT_BLUE_ROOM; ?>" class="room" href="#"></a></li>
+			<li><a id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room" href="#">Members Lounge</a></li>
+<?php if($title != 'B') { ?>
+			<li><a id="R<?php echo MBCHAT_BLUE_ROOM; ?>" class="room" href="#">Blue Room</a></li>
 <?php } else { ?>
-			<li><a id="R<?php echo MBCHAT_GREEN_ROOM; ?>" class="room" href="#"></a></li>
+			<li><a id="R<?php echo MBCHAT_GREEN_ROOM; ?>" class="room" href="#">Green Room</a></li>
 <?php }; ?>
-			<li><a id="R<?php echo MBCHAT_VAMP_CLUB; ?>" class="room" href="#"></a></li>
-			<li><a id="R<?php echo MBCHAT_AUDITORIUM; ?>" class="room" href="#"></a></li>
+			<li><a id="R<?php echo MBCHAT_VAMP_CLUB; ?>" class="room" href="#">Vamp Club</a></li>
+			<li><a id="R<?php echo MBCHAT_AUDITORIUM; ?>" class="room" href="#">Auditorium</a></li>
 		</ul>
 		<div style="clear:both"></div>
 	</div>
@@ -150,7 +147,7 @@ window.addEvent('unload', function() {
 		<ul>
 		<?php		};
 				$i++; ?>
-	<li><a id="R<?php echo $row['id'];?>" class="room committee" href="#"><?php echo $row['name']; ?></a></li>
+	<li><a id="R<?php echo $row['rid'];?>" class="room committee" href="#"><?php echo $row['name']; ?></a></li>
 		<?php		if( ($i % 4) == 0 ) {
 				?></ul>
 		<div style="clear:both"></div>
@@ -169,51 +166,54 @@ window.addEvent('unload', function() {
 	};
 	mysql_free_result($result);
 ?>
-	<div id="whisperList"></div>
 </div>
 <div id="onlineListContainer">
 	<h4>Users Online</h4>
-	<div id="onlineList"></div>
+	<div id="onlineList" class="loading"></div>
 </div>
-<div id="chatRoom">
-	<div id="messageList"></div>
-	<div id="inputContainer"></div>
-	<div id="emoticonContainer"></div>
+<div id="chatList" class="whisper"></div>	
+
+<div id="inputContainer">
+	<form action="./" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		<div id="messageContainer">
+			<input id="messageText" type="text" name="text" maxlength="1000"/>
+		</div>
+		<div id="submitButtonContainer">
+			<input type="submit" name="submit" id="submitButton" value="Send"/>
+		</div>
+	</form>
+</div>
+<div id="emoticonContainer">
+<?php
+	$result=dbQuery('SELECT * FROM emoticons;');
+	while ($row = mysql_fetch_assoc($result)) {
+echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=":'.$row['key'].'" title=":'.$row['key'].'" />
+' ;
+	}
+	mysql_free_result($result);
+?>
 </div>
 
+
 <div id="userOptions">
+	<input id="autoScroll" type="checkbox" checked="checked" />
+	<label for="autoScroll">Autoscroll</label>
 	<input id="musicEnabled" type="checkbox" />
-	<input id="soundEnabled" type="checkbox" />
+	<label for="musicEnabled">Enable Music</label><br/>
+	<input id="soundEnabled" type="checkbox" checked="checked"/>
+	<label for="soundEnabled">Enable Sound</label><br/>
 	<input id="soundDelay" type="text" size="1" value="5" />
+	<label for="soundDelay">Minutes 'till sound</label>
 </div>
 
 <div id="copyright">MBChat &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
 
-<div id="whisperBox" class="whisperBox">
-	<div class="dragarea"></div>
-	<div class="close"></div>
-	<div class="whisperParticipants"></div>
-	<form action="whisper.php" method="get">
-	<input type="text" size="20" />
-	<input type="submit" value="Send" />
-	</form>
-</div>
 </body>
 
 </html><?php 
 	//purge messages that are too old from database
-	dbQuery('DELETE FROM messages WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
-	//timeout any users that are too old
-	$result=dbQuery('SELECT id, name, role FROM users WHERE NOW() > DATE_ADD(time, INTERVAL '.MBCHAT_TIMEOUT_USER.' MINUTE);');
-	if(mysql_num_rows($result) != 0) {
-		while($row=mysql_fetch_assoc($result)) {
-			dbQuery('START TRANSACTION ;');
-			dbQuery('INSERT INTO messages (id_from, name_from, role_from, type) VALUES ('.
-				dbMakeSafe($row['id']).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).', "L" ,'.
-				dbMakeSave($row['rid']).');');
-			dbQuery('DELETE FROM users WHERE id = '.dbMakeSafe($row['id']).' ;');
-			dbQuery('COMMIT ;');
-		}
-	};
-	mysql_free_result($result);
+	dbQuery('DELETE FROM log WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
+//timeout any users that are too old
+
+	include('timeout.php');	
 ?>
