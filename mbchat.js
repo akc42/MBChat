@@ -24,7 +24,24 @@ return {
 // Save key data about me
 		me =  user;  Basic Info
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
-
+		Element.Events.shiftclick = {
+			base: 'click', //we set a base type
+			condition: function(event){ //and a function to perform additional checks.
+				return (event.shift == true); //this means the event is free to fire
+			}
+		}
+		Element.Events.controlclick = {
+			base: 'click', //we set a base type
+			condition: function(event){ //and a function to perform additional checks.
+				return (event.control == true); //this means the event is free to fire
+			}
+		}
+		Element.Events.altclick = {
+			base: 'click', //we set a base type
+			condition: function(event){ //and a function to perform additional checks.
+				return (event.alt == true); //this means the event is free to fire
+			}
+		}
 // We need to setup all the entrance hall
 
 		var roomgroups = $$('.rooms');
@@ -91,9 +108,9 @@ return {
 	},
 	updateables : function () {
 		var processMessage = function(message) {
-			(message.lid > online.getLastId()) && online.processMessage(message);
-			(message.lid > message.getLastId()) && message.processMessage(message);
-			(message.lid > whispers.getLastId()) && whispers.processMessage(message);
+			online.processMessage(message);
+			message.processMessage(message);
+			whispers.processMessage(message);
 		};
 		return {
 			init : function (pollOptions) {
@@ -160,10 +177,41 @@ return {
 			online : function() {	//management of the online users list
 				var onlineList ;		//Actual Display List
 				var lastId;
+				var room;
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
-					
-					dragUser.display(div);
+					var span = new MBchat.User(user, div);
+					div.addEvent('click',function (e) {
+						e.stop();
+						var whisper = new MBchat.Whisper(user);
+					});
+					if (room && room.type === 'M') {
+					//room is moderated so need to adjust user
+						span.adjust();
+						if (me.role === 'M') {
+						// I am a moderator in a moderated room - therefore I need to be able to moderate
+							div.addEvents({
+								'altclick': function(e) {
+//TODO
+								},
+								'shiftclick':function(e) {
+//TODO
+								},
+								'controlclick':function(e) {
+//TODO
+								},
+								'question':function(e) {
+//TODO
+								},
+								'promote':function(e) {
+//TODO
+								},
+								'demote':function(e) {
+//TODO
+								}
+							});
+						}
+					}
 					div.inject(onlineList);
 				};
 				request = new Request.JSON({
@@ -203,29 +251,32 @@ return {
 						return lastId;
 					},
 					processMessage: function (msg) {
-						userDiv = $('U'+user.id);
-						switch (msgtype) {
-						case 'LO' :
-						case 'LT' :
-						case 'RX' :
-							if (userDiv) {
-								userDiv.destroy(); //removes from list
+						if (lastId < msg.lid) {
+							lastId = msg.lid;
+							userDiv = $('U'+user.id);
+							switch (msgtype) {
+							case 'LO' :
+							case 'LT' :
+							case 'RX' :
+								if (userDiv) {
+									userDiv.destroy(); //removes from list
+								}
+								break;
+							case 'LI' :
+							case 'RE' :
+								if (!userDiv && rid === currentRid) {
+									addUser(user);
+								}
+								break;
+							case 'RV' :
+	//TODO
+								break;
+							case 'RP' :
+	//TODO
+								break;
+							default :
+								break;
 							}
-							break;
-						case 'LI' :
-						case 'RE' :
-							if (!userDiv && rid === currentRid) {
-								addUser(user);
-							}
-							break;
-						case 'RV' :
-//TODO
-							break;
-						case 'RP' :
-//TODO
-							break;
-						default :
-							break;
 						}
 					}
 				};
@@ -303,12 +354,15 @@ return {
 						return room;
 					},
 					processMessage: function (msg) {
+						if (lastId < msg.lid) {
+							lastId = msg.lid;
 //TODO
+						}
 					}
 				}
 			}(),
 			whispers : function () {
-				lastId;
+				var lastId;
 				var request = new Request.JSON({
 					url:'whisper.php',
 					onComplete : function (response) {
@@ -352,7 +406,11 @@ return {
 						return wids;
 					},	
 					processMessage: function (msg) {
+						if (lastId < msg.lid) {
+							lastId = msg.lid;
+
 //TODO
+						}
 					}
 				};
 			}()	
@@ -365,52 +423,65 @@ return {
 
 MBchat.User = new Class({
 	extends : Element,
-	initialize : function (user) {
+	initialize : function (user, container) {
 		this.uid = user.uid;
 		this.name = user.name;
 		this.title = user.title || 'R' ;
-		this.role = user.role || 'V' ;  // is 'V' for visitor (ie can't speak) 'P' = can speak
-		this.parent('span',{
-			'class' : this.title,
-			'text' : this.name,
-			'events' : {
-				'mousedown' : function (e) {
-					e = new Event(e).stop();  //stop it propagating
-					if (this.uid !== MBchat.whoAmI().uid) { // only set up drag if its not you
-						var user = this;
-						var whispers = $$('div.whisperBox');
-						var clone = this.clone()
-							.setStyles(this.getCoordinates()) // this returns an object with left/top/bottom/right, so its perfect
-							.setStyles({'opacity': 0.7, 'position': 'absolute'})
-							.addClass('userDrag')
-							.addEvent('emptydrop', function() {
-	// This empty drop is strange, in that it really means we have dropped in a place where we need a new whisperbox
-								droppables.removeEvents();
-								var whisper = new Whisper({'uid':this.uid,'name':this.name,'title':this.title,'role':this.role},this.getCoordinates());
-								whisper.inject(document.body);
-								this.destroy();
-							}).inject(document.body);
-						var dragItem = new Drag.Move (clone,{
-							container: $('#content'),
-							droppables: whispers });
-						dropZones.addEvents({
-							'drop' : function() {
-								droppables.removeEvents();
-								MBChat.whisperAddUser(user,this.get('id'));
-								clone.destroy();
-							},
-							'over' : function() {
-	//TODO:  probably change color or opacity of this zone
-							},
-							'leave' : function() {
-	//TODO: back to old setting
-							}
-						});
-					}
-				}
-			}
-		});
-	}
+		this.role = user.role || 'P' ;  // is 'V' for visitor (ie can't speak) 'P' = can speak
+		this.parent('span',{'class' : this.title, 'text' : this.name });
+		this.inject(container);
+	},
+	adjustRole: function (role) {
+		if (role && role !== this.role) {
+			this.erase('style');
+			this.erase('class');
+			this.addClass(this.title);
+			this.role = role;
+		}
+		switch (this.role) {
+		case 'Q' : 
+			this.addClass('question');
+//fall through
+		case 'V' :
+			this.setStyle('font-weight','normal');
+			break;
+		case 'M' :
+			this.addClass('moderator');
+		default :
+			break;
+		}
+		return this.role;
+	},
+	toggleVisitor: function () {
+		switch (this.role) {
+		case 'Q' :
+			this.getParent().fireEvent('question');
+			this.removeClass('question');
+		case 'V' :
+			this.getParent().fireEvent('promote');
+			this.erase('style');
+			this.role = 'P';
+			break;
+		case 'P' :
+			this.role = 'V';
+			this.setStyle('font-weight','normal');
+			this.getParent().fireEvent('demote');
+			break;
+		default :
+			break;
+		}
+	},
+	toggleModerator: function() {
+		if (this.role === 'P') {
+			this.getParent().fireEvent('promote');
+			this.role = 'M';
+			this.addClass('moderator');
+		} else if (this.role === 'M' ) {
+			this.getParent().fireEvent('demote');
+			this.removeClass('moderator');
+			this.role = 'P';
+		}
+	}			
 });
 
 MBchat.Whisper = new Class({
