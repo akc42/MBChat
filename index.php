@@ -24,8 +24,9 @@ define('SMF_CHAT_MELINDA',	13);
 define('SMF_CHAT_HONORARY',	20);
 define('SMF_CHAT_SPECIAL',	19);
 
+define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
-define('MBCHAT_MEMBERS_LOUNGE',	1);
+define('MBCHAT_MEMBERS_LOUNGE', 1);
 define('MBCHAT_BLUE_ROOM',	2);
 define('MBCHAT_GREEN_ROOM',	3);
 define('MBCHAT_VAMP_CLUB',	4);
@@ -37,27 +38,29 @@ define('MBCHAT_POLL_PRESENCE',	10);	//Rate of presence polls (mark online)
 define('MBCHAT_EMOTICON_PATH', '/static/images/emoticons/');
 
 define('MBCHAT_PURGE_MESSAGE_INTERVAL',7); //No of days messages kept for
+define('MBCHAT_CHATBOT_NAME','Hephaestus');
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 $groups =& $user_info['groups'];
-$userName =& $user_info['name'];
-$title = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
+$uid = $ID_MEMBER;
+$name =& $user_info['name'];
+$role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
 			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
-			(in_array(SMF_CHAT_MELINDA, $groups))?'M' :(
+			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
 			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :(
 			(in_array(SMF_CHAT_SPECIAL, $groups))?'S' : 'R')))) ;
-$role = (in_array(SMF_CHAT_MODERATOR,$groups))?'M' : (($title == 'M' || $title == 'G')? 'P' : 'V') ;
+$mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 
 dbQuery('START TRANSACTION;');
-dbQuery('REPLACE INTO users (uid,name,title, role) VALUES ('.dbMakeSafe($ID_MEMBER).','.
-				dbMakeSafe($userName).','.dbMakeSafe($title).','.dbMakeSafe($role).') ; ') ;
+dbQuery('REPLACE INTO users (uid,name,role, mod) VALUES ('.dbMakeSafe($uid).','.
+				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
 dbQuery('INSERT INTO log (uid, name, title, role, type, rid) VALUES ('.
-				dbMakeSafe($ID_MEMBER).','.dbMakeSafe($userName)
-				.','.dbMakeSafe($title).','.dbMakeSafe($role).', "LI" , 0 );');
+				dbMakeSafe($uid).','.dbMakeSafe($name)
+				.','.dbMakeSafe($role).', "LI" , 0 );');
 dbQuery('COMMIT;');
-		
+$lid = mysql_insert_id();  // get the ID of this transaction for whisper management		
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
@@ -78,13 +81,16 @@ dbQuery('COMMIT;');
 var chat;
 
 window.addEvent('domready', function() {
-	MBchat.init({id: <?php echo $ID_MEMBER ;?>, 
-				name: '<?php echo $userName ; ?>',
-				title: '<?php echo $title; ?>',
+	MBchat.init({id: <?php echo $uid;?>, 
+				name: '<?php echo $name ; ?>',
 				 role: '<?php echo $role; ?>',
-				password : '<?php echo sha1("Key".$ID_MEMBER); ?>' }, 
-				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?> ,
-				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>});
+				password : '<?php echo sha1("Key".$uid); ?>',
+				mod: <?php echo $mod ; ?>  }, 
+				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
+				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
+				lastid: <?php echo $lid ; ?>},
+				'<?php echo MBCHAT_CHATBOT_NAME ; ?>',
+				'<?php echo MBCHAT_ENTRANCE_HALL ?>');
 });	
 window.addEvent('unload', function() {
 	MBchat.logout();
@@ -107,7 +113,7 @@ window.addEvent('unload', function() {
 	</td>
 		<td align="right" width="25" class="topbg_r2" valign="top">
 		<div id="roomNameContainer">
-			<h1>Entrance Hall</h1>
+			<h1><?php echo MBCHAT_ENTRANCE_HALL ?></h1>
 		</div>
 		<!-- blank -->
 		</td>
@@ -174,15 +180,25 @@ window.addEvent('unload', function() {
 <div id="chatList" class="whisper"></div>	
 
 <div id="inputContainer">
-	<form action="./" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		<div id="messageContainer">
-			<input id="messageText" type="text" name="text" maxlength="1000"/>
-		</div>
-		<div id="submitButtonContainer">
-			<input type="submit" name="submit" id="submitButton" value="Send"/>
-		</div>
+	<form action="message.php" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		<input type="hidden" name="user" value="<?php echo $uid;?>" />
+		<input type="hidden" name="password" value="<?php echo sha1("Key".$uid); ?>" />
+		<input id="messageText" type="text" name="text" maxlength="1000"/>
+		<input type="submit" name="submit" id="submitButton" value="Send"/>
 	</form>
 </div>
+
+<div id="whisperBoxTemplate" class="whisperBox">
+	<div class="whisperList"></div>
+	<form action="whisper.php" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		<input type="hidden" name="user" value="<?php echo $uid;?>" />
+		<input type="hidden" name="password" value="<?php echo sha1("Key".$uid); ?>" />
+		<input type="hidden" name="wid" value="0" />
+		<input id="whisperText" type="text" name="text" maxlength="300"/>
+		<input type="submit" name="submit" id="submitButton" value="Send"/>
+	</form>
+</div>
+
 <div id="emoticonContainer">
 <?php
 	$result=dbQuery('SELECT * FROM emoticons;');

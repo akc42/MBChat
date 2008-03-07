@@ -1,10 +1,10 @@
 <?php
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['lid'])))
-	die("Hacking attempt - wrong parameters");
+	die('{"error" : "Hacking attempt - wrong parameters"}');
 $uid = $_GET['user'];
 
 if ($_GET['password'] != sha1("Key".$uid))
-	die("Hacking attempt got: ".$_GET['password']." expected: ".sha1("Key".$uid));
+	die('{"error" :"Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid).'"}');
 $lid = $_GET['lid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
@@ -15,10 +15,10 @@ if (isset($_GET['presence'])) {
 	include('timeout.php');		//Timeout inactive users 
 }
 
-$sql = 'SELECT * FROM log WHERE lid > '.dbMakeSafe($lid);
+$sql = 'SELECT * FROM log WHERE lid > '.dbMakeSafe($lid).' AND ( uid = '.dbMakeSafe($uid) ;
 
 if (isset($_GET['rid']) || isset($_GET['wids'] ) ) {
-	$sql .= ' AND rid IN (' ;
+	$sql .= ' OR rid IN (' ;
 	if(isset($_GET['rid'])) {
 		$sql .= dbMakeSafe($_GET['rid']);
 		if (isset($_GET['wids'])) {
@@ -27,9 +27,9 @@ if (isset($_GET['rid']) || isset($_GET['wids'] ) ) {
 	} else {
 		$sql .= dbMakeSafe($_GET['wids']);
 	}
-	$sql .=')';
+	$sql .=') ';
 }
-$sql .= ';';
+$sql .= ' ) ;';
 $result = dbQuery($sql);
 $messages = array();
 if(mysql_num_rows($result) != 0) {
@@ -53,8 +53,4 @@ if(mysql_num_rows($result) != 0) {
 };
 mysql_free_result($result);
 echo '{"messages":'.json_encode($messages).'}';
-?> 
-		
-
-
 ?> 

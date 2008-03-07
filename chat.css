@@ -199,8 +199,8 @@ span.A , span.L {
 span.H {
 	color:#6A00FF;
 }
-/* guests - such as Janet, Kelley or Chaz */
-span.G {
+/* guests - such as Janet, Kelley or Chaz (life Members) or Special is ordinary members promoted */
+span.G, span.S {
 	color:#0000CD;
 }
 /* moderator */
@@ -215,10 +215,6 @@ span.B {
 span.R {
 	color:#414141;
 }
-/* special - a temporary assignment */
-span.S {
-	color:#C40000
-}
 /* chatbot */
 span.C {
 	font-style:italic;
@@ -226,9 +222,16 @@ span.C {
 }
 
 span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
-	font-weight:bold;
 	padding:0 2px;
 }
+
+/* circumstances when name is bold (others name will be in normal weight) */
+#onlineList.O, #onlineList.C,#chatList span.A,#chatList span.L,span.H,span.G,span.S,span.M,#chatList span.B, #chatList span.R,#chatList  span.S {
+	font-weight: bold;
+}
+
+
+
 
 
 
@@ -317,19 +320,17 @@ div.whisper {
 	background-color:#FFF;
 }
 
-#messageContainer {
-	position:absolute;
-	top:0px;
-	left:0px;
+#whisperBoxTemplate {
+	display:none;
 }
 
-#submitButtonContainer {
+.whisperBox {
+	padding: 5px;
 	position:absolute;
-	top:0px;
-	right:0px;
-	width: 100px;
+	opacity:0.6;
+	background-color:#ffed72;
+	width:300px;
 }
-
 
 #emoticonContainer {
 	display:none;
