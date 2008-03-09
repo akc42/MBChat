@@ -5,6 +5,7 @@ MBchat = function () {
 	var room;
 	var chatBot;
 	var messageListSize;
+	var emoticonSubstitution;
 	var displayUser = function(user,container) {
 		var el = new Element('span',{'class' : user.role, 'text' : user.name });
 		el.inject(container);
@@ -61,7 +62,7 @@ return {
 		var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
 		roomgroups.each( function (roomgroup,i) {
 			var rooms = roomgroup.getElements('.room');
-			var fx = new Fx.Elements(rooms, {wait: false, duration: 500, transition: roomTransition.easeOut });
+			var fx = new Fx.Elements(rooms, {link:'cancel', duration: 500, transition: roomTransition.easeOut });
 			rooms.each( function(room, i){
 				var request;
 				room.addEvent('mouseenter', function(e){
@@ -94,7 +95,7 @@ return {
 		});
 
 		var exit = $('exit');
-		var exitfx = new Fx.Morph(exit, { duration: 500, transition: roomTransition.easeOut});
+		var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
 		exit.addEvent('mouseenter',function(e) {
 			exitfx.start({width:100});
 		});
@@ -109,12 +110,17 @@ return {
 			}
 			MBchat.updateables.message.leaveRoom();
 		});
+		//Set up emoticons
+		emoticonSubstitution = new Hash({});
 		var emoticons = $$('img.emoticon');
 		emoticons.each(function(icon,i) {
+			var key = icon.get('alt').substr(1);
+			var img = '<img src="' + icon.get('src') + '" alt="' + key + '" title="' + key + '" />' ;
+			emoticonSubstitution.include(key,img);
 			icon.addEvent('click', function(e) {
-				e.stop();
+				e.stop();		
 				var msgText = $('messageText');
-				msgText.value += '{'+ icon.get('alt')+'}';
+				msgText.value += ':'+ key ;
 				msgText.focus();
 			});
 		});
@@ -359,10 +365,7 @@ return {
 					return msg;
 				};
 				var chatBotMessage = function (msg) {
-					var span = new Element( 'span', {
-						'class' : 'chatBotMessage',
-						'text' : msg });
-					return span;
+					return '<span class="chatBotMessage">'+msg+'</spam>';
 				};
 				return {
 					init: function () {
@@ -446,18 +449,12 @@ return {
 							lastId = msg.lid;
 							switch(msg.type) {
 							case 'ME' :
-								var span = new Element('span', { 'html' : insertEmoticons(msg.message) }); 
-								this.displayMessage(msg.time,msg.user,span);
+
+								this.displayMessage(msg.time,msg.user,msg.message);
 								break;
 							case 'WH' :
-								var whisper = new Element('span', {
-									'html': '(whispers)' + insertEmoticons(msg.message) ,
-									'events': {
-    										'click': function(){
-											MBchat.whispers.startNewWhisper(user);
-										}
-									}
-								});
+								var whisper ='<span class="whisper" onclick="javascript:MBchat.whispers.join('
+									+ msg.rid.toString() + ');>(whispers)</span>' +msg.message ;
 								this.displayMessage(msg.time,msg.user,whisper);
 								break;
 							default:
@@ -474,6 +471,47 @@ return {
 								number = '0'+number;
 							return number;
 						};
+						var replaceEmoticons = function(text) {
+						//Make regular subsistition patterns if not already.  arguments.callee is the function
+						//So we store this as a property of the function
+							if (!arguments.callee.regExp) {
+								var regExpStr = ':(';
+								var i=0;
+								emoticonSubstitution.each(function(value,key) {
+									if(i!=0)
+										regExpStr += '|';
+									regExpStr += key.replace(/\)/g,'\\)') ;
+									i++;
+								});
+								regExpStr += ')';
+								arguments.callee.regExp = new RegExp(regExpStr, 'gm');
+							}
+		
+							return text.replace(arguments.callee.regExp,function(match,p1) {
+								return emoticonSubstitution.get(p1);
+							});
+						};
+						var replaceHyperLinks = function(text) {
+						//Make regular subsistition patterns if not already.  arguments.callee is the function
+						//So we store this as a property of the function
+							if (!arguments.callee.regExp) {
+								arguments.callee.regExp = new RegExp(
+									'(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)',
+									'gm'
+								);
+							}
+								
+							return text.replace(
+								arguments.callee.regExp,
+								// Specifying an anonymous function as second parameter:
+								function(str, p1, p2) {
+									return p1 
+									+ '<a href="' + p2 
+									+ '" onclick="window.open(this.href); return false;">' + p2 + '</a>';
+								}
+							);
+						};
+
 						var div = new Element('div');
 						var date = new Date(time.toInt()*1000);
 						var hour = date.getHours();
@@ -492,7 +530,10 @@ return {
 								+ addLeadingZeros(date.getSeconds()) + suffix });
 						timeEl.inject(div);
 						displayUser(user,div);
-						msgText.inject(div);
+						msgText = replaceHyperLinks (msgText);  //replace Hperlinks first
+						msgText = replaceEmoticons(msgText); //Then replace emoticons.
+						var span = new Element('span',{'html': msgText }) ;
+						span.inject(div);
 						while (messageList.getChildren().length >= messageListSize) {
 							messageList.getFirst().destroy();
 						}	

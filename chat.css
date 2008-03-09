@@ -216,9 +216,13 @@ span.R {
 	color:#414141;
 }
 /* chatbot */
-span.C {
+span.C, span.chatBotMessage {
 	font-style:italic;
 	color:#476C8E;
+}
+
+span.chatBotMessage:before {
+	content:":-"
 }
 
 span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
