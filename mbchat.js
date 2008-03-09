@@ -463,10 +463,10 @@ return {
 								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
 								break;
 							case 'RX' :
-								this.displayMessage(msg.time.chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
 								break;
 							case 'LT' :
-								this.displayMessage(msg.time.chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
 								break;
 							case 'LI' :
 								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
