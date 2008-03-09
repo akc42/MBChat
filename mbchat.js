@@ -459,9 +459,34 @@ return {
 									+ msg.rid.toString() + ');>(whispers)</span>' +msg.message ;
 								this.displayMessage(msg.time,msg.user,whisper);
 								break;
+							case 'RE' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+								break;
+							case 'RX' :
+								this.displayMessage(msg.time.chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+								break;
+							case 'LT' :
+								this.displayMessage(msg.time.chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+								break:
+							case 'LI' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+								break;
+							case 'LO' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+								break;
+							case 'RM' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
+								break;
+							case 'RN' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+								break;
+							case 'WJ' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper room'));
+								break;
+							case 'WL' :
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper room'));
+								break;
 							default:
-//TODO All the other message types need a chatbox message with text
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.type + ' '+ msg.user.name));
 								break;
 							}
 						}
