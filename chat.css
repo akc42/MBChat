@@ -238,6 +238,13 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	padding:2px;
 }
 
+#onlineList span.whisperer {
+	cursor: pointer;
+}
+
+#onlineList span {
+	cursor:default;
+}
 
 
 

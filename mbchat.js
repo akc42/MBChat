@@ -244,6 +244,7 @@ return {
 								e.stop();
 								MBchat.whispers.startnewWhisper(user);
 							});
+							div.firstChild.addClass('whisperer');
 						}
 					} else {
 						if (user.uid != me.uid) {
@@ -251,6 +252,7 @@ return {
 								e.stop();
 								MBchat.whispers.startNewWhisper(user);
 							});
+							div.firstChild.addClass('whisperer');
 						}
 					} 
 					div.inject(onlineList); //Forces onlineList to have children
