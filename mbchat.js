@@ -114,7 +114,7 @@ return {
 			icon.addEvent('click', function(e) {
 				e.stop();
 				var msgText = $('messageText');
-				msgText.value += icon.get('alt');
+				msgText.value += '{'+ icon.get('alt')+'}';
 				msgText.focus();
 			});
 		});

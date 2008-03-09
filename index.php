@@ -204,7 +204,7 @@ window.addEvent('unload', function() {
 <?php
 	$result=dbQuery('SELECT * FROM emoticons;');
 	while ($row = mysql_fetch_assoc($result)) {
-echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=":'.$row['key'].'" title=":'.$row['key'].'" />
+echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt="'.$row['key'].'" title="'.$row['key'].'" />
 ' ;
 	}
 	mysql_free_result($result);
