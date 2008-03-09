@@ -19,7 +19,7 @@ if(mysql_num_rows($result) == 0) {
 }
 $room = mysql_fetch_assoc($result);
 mysql_free_result($result);
-$result = dbQuery('SELECT uid, name, role, mod FROM users WHERE uid = '.dbMakeSafe($uid).';');
+$result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if(mysql_num_rows($result) == 0) {
 	dbQuery('ROLLBACK;');
 	die('{"error":"Invalid User id"}');
@@ -27,29 +27,29 @@ if(mysql_num_rows($result) == 0) {
 $user = mysql_fetch_assoc($result);
 mysql_free_result($result);
 
-if ($room['type'] == 'M'  && $user['mod'] != 'N') {
+if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
 //This is a moderated room, and this person is not normal - so swap them into moderated room role
-	$role = $user['mod'];
+	$role = $user['moderator'];
 	$mod = $user['role'];
 } else {
 	$role = $user['role'];
-	$mod = $user['mod'];
+	$mod = $user['moderator'];
 }
 
 dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = NOW(), role = '.dbMakeSafe($role)
-			.', mod = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
+			.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
 
-dbQuery('INSERT INTO log (uid, name, title, role, type, rid) VALUES ('.
+dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 				', "RE" ,'.dbMakeSafe($rid).');');
-$sql = 'SELECT lid, type, uid, name, role, rid, time, text FROM log 
-	WHERE NOW() < DATE_ADD(time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) AND (uid = '.dbMakeSafe($uid).' OR rid = '.dbMakeSafe($rid).' OR rid IN (';
-$sql .= 'SELECT wid FROM participants WHERE uid = '.dbMakeSafe($uid).')) ORDER BY lid DESC LIMIT'.MBCHAT_MAX_MESSAGES.';';
+$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
+$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( participant.uid = '.dbMakeSafe($uid) ;
+$sql .= 'OR rid = '.dbMakeSafe($rid).') AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
+$sql .= 'ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
 $result = dbQuery($sql);
 $messages = array();
 if(mysql_num_rows($result) != 0) {
 	while($row=mysql_fetch_assoc($result)) {
-		$message = array();
 		$user = array();
 		$item = array();
 		$item['lid'] = $row['lid'];
@@ -59,15 +59,18 @@ if(mysql_num_rows($result) != 0) {
 		$user['name'] = $row['name'];
 		$user['role'] = $row['role'];
 		$item['user'] = $user;
-		$message['time'] = $row['time'];
-		$message['text'] = $row['text'];
-		$item['message'] = $message;
+		$item['time'] = $row['time'];
+		$item['message'] = $row['text'];
 		$messages[]= $item;
 	}		
 };
-
+mysql_free_result($result);
+$result = dbQuery('SELECT max(lid) AS lid FROM log;');
+$row = mysql_fetch_assoc($result);
+mysql_free_result($result);
 dbQuery('COMMIT ;');
 
-echo '{ "room" :'.json_encode($room).', "messages" :'.json_encode(array_reverse($messages)).'}';
+
+echo '{ "room" :'.json_encode($room).', "messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$row['lid'].'}';
 
 ?>

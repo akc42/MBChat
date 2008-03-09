@@ -39,6 +39,7 @@ define('MBCHAT_EMOTICON_PATH', '/static/images/emoticons/');
 
 define('MBCHAT_PURGE_MESSAGE_INTERVAL',7); //No of days messages kept for
 define('MBCHAT_CHATBOT_NAME','Hephaestus');
+define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in chat list
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
@@ -54,9 +55,10 @@ $role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L'
 $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 
 dbQuery('START TRANSACTION;');
-dbQuery('REPLACE INTO users (uid,name,role, mod) VALUES ('.dbMakeSafe($uid).','.
+
+dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.
 				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
-dbQuery('INSERT INTO log (uid, name, title, role, type, rid) VALUES ('.
+dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($uid).','.dbMakeSafe($name)
 				.','.dbMakeSafe($role).', "LI" , 0 );');
 dbQuery('COMMIT;');
@@ -81,16 +83,17 @@ $lid = mysql_insert_id();  // get the ID of this transaction for whisper managem
 var chat;
 
 window.addEvent('domready', function() {
-	MBchat.init({id: <?php echo $uid;?>, 
+	MBchat.init({uid: <?php echo $uid;?>, 
 				name: '<?php echo $name ; ?>',
 				 role: '<?php echo $role; ?>',
 				password : '<?php echo sha1("Key".$uid); ?>',
-				mod: <?php echo $mod ; ?>  }, 
+				mod: '<?php echo $mod ; ?>'  }, 
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
 				lastid: <?php echo $lid ; ?>},
 				'<?php echo MBCHAT_CHATBOT_NAME ; ?>',
-				'<?php echo MBCHAT_ENTRANCE_HALL ?>');
+				'<?php echo MBCHAT_ENTRANCE_HALL ?>',
+				<?php echo MBCHAT_MAX_MESSAGES ?>);
 });	
 window.addEvent('unload', function() {
 	MBchat.logout();
@@ -129,7 +132,7 @@ window.addEvent('unload', function() {
 	<h3>Main Rooms</h3>
 		<ul>
 			<li><a id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room" href="#">Members Lounge</a></li>
-<?php if($title != 'B') { ?>
+<?php if($role != 'B') { ?>
 			<li><a id="R<?php echo MBCHAT_BLUE_ROOM; ?>" class="room" href="#">Blue Room</a></li>
 <?php } else { ?>
 			<li><a id="R<?php echo MBCHAT_GREEN_ROOM; ?>" class="room" href="#">Green Room</a></li>
@@ -180,22 +183,20 @@ window.addEvent('unload', function() {
 <div id="chatList" class="whisper"></div>	
 
 <div id="inputContainer">
-	<form action="message.php" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		<input type="hidden" name="user" value="<?php echo $uid;?>" />
-		<input type="hidden" name="password" value="<?php echo sha1("Key".$uid); ?>" />
-		<input id="messageText" type="text" name="text" maxlength="1000"/>
-		<input type="submit" name="submit" id="submitButton" value="Send"/>
+	<form id="messageForm" action="message.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
+	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		<input id="messageText" type="text" name="text" />
+		<input type="submit" name="submit" value="Send"/>
 	</form>
 </div>
 
 <div id="whisperBoxTemplate" class="whisperBox">
 	<div class="whisperList"></div>
-	<form action="whisper.php" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		<input type="hidden" name="user" value="<?php echo $uid;?>" />
-		<input type="hidden" name="password" value="<?php echo sha1("Key".$uid); ?>" />
+	<form action="whisper.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
+	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
 		<input type="hidden" name="wid" value="0" />
-		<input id="whisperText" type="text" name="text" maxlength="300"/>
-		<input type="submit" name="submit" id="submitButton" value="Send"/>
+		<input type="text" name="text" />
+		<input type="submit" name="submit" value="Send"/>
 	</form>
 </div>
 
@@ -229,6 +230,8 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 </html><?php 
 	//purge messages that are too old from database
 	dbQuery('DELETE FROM log WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
+//Slightly longer for whispers to ensure log doesn't reference them
+	dbQuery('DELETE FROM whisper WHERE NOW() > DATE_ADD(DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY),INTERVAL 5 MINUTE) ;');
 //timeout any users that are too old
 
 	include('timeout.php');	

@@ -4,20 +4,18 @@ MBchat = function () {
 	var entranceHall;  //Entrance Hall Object
 	var room;
 	var chatBot;
+	var messageListSize;
 	var displayUser = function(user,container) {
-		var el = new Element('span',{'class' : this.role, 'text' : this.name });
+		var el = new Element('span',{'class' : user.role, 'text' : user.name });
 		el.inject(container);
 	};
-	var displayErrorMessage = function(text) {
-		var msg = {};
+	var displayErrorMessage = function(txt) {
+		var msg = new Element('span', {'class': 'errorMessage', 'text' : txt });
 		var d = new Date();
-		msg.time = d.UTC()
-		msg.user = chatBot;
-		msg.text = text;
-		MBchat.message.displayMessage(msg);
+		MBchat.message.displayMessage(d.UTC()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
 return {
-	init : function(user,pollOptions,chatBotName, entranceHallName) {
+	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
 		
 /*		soundManager.onload = function() {
 			soundManager.createSound({
@@ -38,6 +36,7 @@ return {
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
 		entranceHall = {rid:0, name: entranceHallName, type: 'O'};
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
+		messageListSize = msgLstSz;  //Size of message list
 		Element.Events.shiftclick = {
 			base: 'click', //we set a base type
 			condition: function(event){ //and a function to perform additional checks.
@@ -104,7 +103,7 @@ return {
 		});
 		exit.addEvent('click', function(e) {
 			e.stop();
-			if (MBchat.updateables.message.getRoom() === 0 ) {
+			if (MBchat.updateables.message.getRoom().rid == 0 ) {
 				MBchat.logout();
 				window.location = '/forum' ; //and go back to the forum
 			}
@@ -114,16 +113,18 @@ return {
 		emoticons.each(function(icon,i) {
 			icon.addEvent('click', function(e) {
 				e.stop();
-				var msgText = $('messageText').value;
-				if (msgText.lastIndexOf(' ') != (msgText.length-1)) {
-					//last character of text is not a space so add one
-					msgText += ' ';
-				}
-				msgText += icon.get('alt') + ' ';
-				$('messageText').value = msgText;
-			};
+				var msgText = $('messageText');
+				msgText.value += icon.get('alt');
+				msgText.focus();
+			});
 		});
-		room = {rid:0, name: 'Entrance Hall, type = 'O'};   //Set up to be in the entrance hall
+		
+		$('messageForm').addEvent('submit', function(e) {
+			e.stop();
+			this.send();
+			$('messageText').value = '';
+		});
+		room = {rid:0, name: 'Entrance Hall', type : 'O'};   //Set up to be in the entrance hall
 		MBchat.updateables.init(pollOptions);
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 		
@@ -132,11 +133,6 @@ return {
 		var logoutRequest = new Request ({url: 'logout.php'}).get(myRequestOptions);
 	},
 	updateables : function () {
-		var processMessage = function(message) {
-			online.processMessage(message);
-			message.processMessage(message);
-			whispers.processMessage(message);
-		};
 		return {
 			init : function (pollOptions) {
 				MBchat.updateables.online.init();
@@ -144,13 +140,17 @@ return {
 				MBchat.updateables.poller.init(pollOptions);
 				MBchat.updateables.whispers.init(pollOptions.lastid);
 			},
+			processMessage : function(message) {
+				MBchat.updateables.online.processMessage(message);
+				MBchat.updateables.message.processMessage(message);
+				MBchat.updateables.whispers.processMessage(message);
+			},
 			poller : function() {
 				var lastId = null;
 				var presenceInterval;
 				var presenceCounter = 0;
 				var pollInterval;
 				var pollerId;
-				var lastId;
 
 				var pollRequest = new Request.JSON({
 					url: 'poll.php',
@@ -159,24 +159,18 @@ return {
 						if(response) {
 							response.messages.each(function(item) {
 								lastId = (lastId < item.lid)? item.lid : lastId;
-								updateables.processMessage(item);
+								MBchat.updateables.processMessage(item);
 							});
 						}
 					}
 				});
 				var poll = function () {
-					if (this.online.getLastId() || this.message.getLastId() || this.whispers.getLastId()) {
-						var pollRequestOptions = {'lid':lastId };
+					if (this.online.getCurrentRid() >= 0) {
+						var pollRequestOptions = {'lid':lastId, 'rid': this.online.getCurrentRid() };
 						presenceCounter++;
 						if (presenceCounter > presenceInterval) {
 							presenceCounter = 0;
 							$extend(pollRequestOptions,{'presence': true });
-						}
-						if (this.message.getLastId()) {
-							$extend(pollRequestOptions, {'rid' : this.message.getRoom().rid});
-						}
-						if (this.whispers.getLastid()) {
-							$extend(pollRequestOptions, {'wids' : this.whispers.getWhisperIds() });
 						}
 						pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
 					}
@@ -189,7 +183,7 @@ return {
 					setLastId : function(lid) {
 						if (!lastId) {
 							lastId = lid;
-							pollerId = poll.periodical(pollInterval,updateables);
+							pollerId = poll.periodical(pollInterval,MBchat.updateables);
 						} else {
 							lastId = (lastId > lid)? lid : lastId;  //set to earliest value
 						}
@@ -203,11 +197,13 @@ return {
 			online : function() {	//management of the online users list
 				var onlineList ;		//Actual Display List
 				var lastId;
+				var loadingRid;
+				var currentRid;
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
 					displayUser(user,div)
 					if (room.type === 'M' && me.role === 'M') {
-						var question = new Element('div' {
+						var question = new Element('div' , {
 							'class': 'question hide',
 							'text' : user.question}).inject(div);
 								
@@ -230,26 +226,33 @@ return {
 							'shiftclick':function(e) {
 //TODO - downgrade self
 							},
-							'controlclick':function(e) {
-								e.stop();
-								MBchat.whispers.startnewWhisper(user);
-							},
 							'mouseover' : function(e) {
 								question.removeClass('hide');
-							),
+							},
 							'mouseleave' : function(e) {
 								question.addClass('hide');
 							}
 						});
-
+						if (user.uid != me.uid) {
+							div.addEvent('controlclick', function(e) {
+								e.stop();
+								MBchat.whispers.startnewWhisper(user);
+							});
+						}
 					} else {
-						div.addEvent('click',function (e) {
-							e.stop();
-							MBchat.whispers.startNewWhisper(user);
-						});
-					}
+						if (user.uid != me.uid) {
+							div.addEvent('click',function (e) {
+								e.stop();
+								MBchat.whispers.startNewWhisper(user);
+							});
+						}
 					} 
-					div.inject(onlineList);
+					div.inject(onlineList); //Forces onlineList to have children
+					if ((onlineList.getChildren().length % 2) == 0 ) {
+						div.addClass('rowEven');
+					} else {
+						div.addClass('rowOdd');
+					}
 				};
 				request = new Request.JSON({
 					url: 'online.php',
@@ -257,6 +260,8 @@ return {
 						if (response) {
 							onlineList.removeClass('loading');
 							onlineList.addClass(room.type);
+							currentRid = loadingRid;
+							loadingRid = -1;
 							var users = response.online;
 							if (users.length > 0 ) {
 								users.each(function(user) {
@@ -264,7 +269,7 @@ return {
 								});
 							}
 							lastId = response.lastid;
-							poller.setLastId(lastId);
+							MBchat.updateables.poller.setLastId(lastId);
 						}
 					}
 				});
@@ -272,6 +277,7 @@ return {
 					init: function () {
 						onlineList = $('onlineList');		//Actual Display List
 						lastId = null;
+						currentRid = -1;
 					},
 					show : function (rid) {
 						if (request.running) {//cancel previous request if running
@@ -280,37 +286,64 @@ return {
 						onlineList.empty();
 						onlineList.erase('class');
 						onlineList.addClass('loading');
+						currentRid = -1;
+						loadingRid = rid;
 						request.get($merge(myRequestOptions,{'rid':rid }));
 					},
-					getLastId: function () {
-						return lastId;
+//					getLastId: function () {
+//						return lastId;
+//					},
+					getCurrentRid: function() {
+						return currentRid;
 					},
 					processMessage: function (msg) {
+						if(!lastId) return;	//not processing messages yet
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
-							userDiv = $('U'+user.id);
-							switch (msgtype) {
-							case 'LO' :
-							case 'LT' :
-							case 'RX' :
-								if (userDiv) {
-									userDiv.destroy(); //removes from list
+							if (msg.rid == currentRid) {
+								userDiv = $('U'+msg.uid);
+								switch (msg.type) {
+								case 'LO' : //Logout, timeout or room exist are all the same
+								case 'LT' :
+								case 'RX' :
+									if (userDiv) {
+										userDiv.destroy(); //removes from list
+										var node = onlineList.firstChild;
+										if (node) {
+											var i = 0;
+											do {	
+												node.erase('class');
+												if( i%2 == 0) {
+													node.addClass('rowEven');
+												} else {
+													node.addClass('rowOdd');
+												}
+												i++;
+											} while (node = node.nextSibling);
+										}
+									}			 
+									break;
+								case 'LI' : //Login (to room) and room entry are the asme
+								case 'RE' :
+									if (!userDiv) {
+										addUser(msg.user);
+									}
+									break;
+								case 'RM' : // becomes moderator
+//TODO
+									break;
+								case 'RN' : // stops being moderator
+//TODO
+									break;
+								case 'MQ' : // User asks a question
+//TODO
+									break;
+								case 'MR' : //User removes question
+//TODO
+									break;
+								default :  // ignore anything else
+									break;
 								}
-								break;
-							case 'LI' :
-							case 'RE' :
-								if (!userDiv && rid === currentRid) {
-									addUser(user);
-								}
-								break;
-							case 'RV' :
-	//TODO
-								break;
-							case 'RP' :
-	//TODO
-								break;
-							default :
-								break;
 							}
 						}
 					}
@@ -319,22 +352,29 @@ return {
 			}(),
 			message : function () {
 				var messageList; 
-				var resizeML;
+				var mlScroller;
 				var lastId;
+				var insertEmoticons = function (msg) {
+//TODO
+					return msg;
+				};
+				var chatBotMessage = function (msg) {
+					var span = new Element( 'span', {
+						'class' : 'chatBotMessage',
+						'text' : msg });
+					return span;
+				};
 				return {
 					init: function () {
 						messageList = $('chatList');
-						resizeML = new Fx.Morph(messageList, {
-							duration: 1000,
-							transition: Fx.Transitions.Quad.easeOut,
-							onComplete : function (e) {
-								messageList.removeClass('whisper')  //This will only be here the first time, using transitions later
-							}
-						});
+						mlScroller = new Fx.Scroll(messageList,{'link':'cancel'});
 						lastId = null;
 					},
 					enterRoom: function(rid) {
-						resizeML.start('div.chat');
+						lastId = null;  //prepare to fill up with old messages
+						messageList.removeClass('whisper');
+						messageList.empty();
+						messageList.addClass('chat');
 						$('roomNameContainer').empty();
 						$('inputContainer').set('styles',{ 'display':'block'});
 						$('emoticonContainer').set('styles',{ 'display':'block'});
@@ -348,16 +388,19 @@ return {
 								if (response) {
 									room = response.room;
 									response.messages.each(function(msg) {
-										lastId = (lastId > msg.lid)? lastId : msg.lid;
-										processMessage(msg);
+										if(!lastId) lastId = msg.lid -1;
+										MBchat.updateables.processMessage(msg);
 									});
+									lastId = response.lastid;
 								//Ensure we get all message from here on in
-									poller.setLastId(lastId);
+									MBchat.updateables.poller.setLastId(lastId);
+								}
 								//Display room name at head of page
-									var el = new Element('h1')
-										.set('text', room.name )
-										.inject('roomNameContainer');
-								}							
+								var el = new Element('h1')
+									.set('text', room.name )
+									.inject('roomNameContainer');
+								MBchat.updateables.online.show(room.rid);	//Show online list for room	
+								$('messageText').focus();							
 							}
 						}).get($merge(myRequestOptions,{'rid' : rid}));
 					},
@@ -366,12 +409,22 @@ return {
 						var request = new Request.JSON ({
 							url :'exit.php',
 							onComplete : function(response) {
-//Currently not doing anything - this function should send status OK but don't need to check it
+								if (response) {
+									response.messages.each(function(msg) {
+										if(!lastId) lastId = msg.lid -1;
+										MBchat.updateables.processMessage(msg);
+									});
+									lastId = response.lastid;
+								//Ensure we get all message from here on in
+									MBchat.updateables.poller.setLastId(lastId);
+								}
+								MBchat.updateables.online.show(0);	//Show online list for entrance hall
 							}
 						}).get($merge(myRequestOptions,{'rid' : room.rid}));
-						room = entranceHall;   //Set up to be in the entrance hall						var request = new Request.JSON ({
-						
-						resizeML.start('div.whisper');
+						room = entranceHall;   //Set up to be in the entrance hall 
+						messageList.removeClass('chat');
+						messageList.empty();
+						messageList.addClass('whisper');
 						$('roomNameContainer').empty();
 						var el = new Element('h1')
 							.set('text', room.name)
@@ -387,10 +440,69 @@ return {
 						return room;
 					},
 					processMessage: function (msg) {
+						if (!lastId) return;	// not processing messages until set
+
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
-//TODO
+							switch(msg.type) {
+							case 'ME' :
+								var span = new Element('span', { 'html' : insertEmoticons(msg.message) }); 
+								this.displayMessage(msg.time,msg.user,span);
+								break;
+							case 'WH' :
+								var whisper = new Element('span', {
+									'html': '(whispers)' + insertEmoticons(msg.message) ,
+									'events': {
+    										'click': function(){
+											MBchat.whispers.startNewWhisper(user);
+										}
+									}
+								});
+								this.displayMessage(msg.time,msg.user,whisper);
+								break;
+							default:
+//TODO All the other message types need a chatbox message with text
+								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.type + ' '+ msg.user.name));
+								break;
+							}
 						}
+					},
+					displayMessage: function(time,user,msgText) {
+						var addLeadingZeros = function(number) {
+							number = number.toString();
+							if(number.length < 2)
+								number = '0'+number;
+							return number;
+						};
+						var div = new Element('div');
+						var date = new Date(time.toInt()*1000);
+						var hour = date.getHours();
+						var suffix = ' am';
+						if (hour > 12 ) {
+							suffix = ' pm';
+							hour = hour - 12;
+						} else {
+							if (hour == 12) {
+								suffix = ' pm';
+							}
+						}
+						var timeEl = new Element('span',{
+							'class':'time', 
+							'text':	addLeadingZeros(hour) + ':' + addLeadingZeros(date.getMinutes()) + ':'
+								+ addLeadingZeros(date.getSeconds()) + suffix });
+						timeEl.inject(div);
+						displayUser(user,div);
+						msgText.inject(div);
+						while (messageList.getChildren().length >= messageListSize) {
+							messageList.getFirst().destroy();
+						}	
+						if((!messageList.getLast()) || (messageList.getLast().get('class') == 'rowOdd') ) {
+							div.addClass('rowEven');
+						} else {
+							div.addClass('rowOdd');
+						}
+						div.inject(messageList);
+						if ($('autoScroll').checked) mlScroller.toBottom();
 					}
 				}
 			}(),
@@ -402,7 +514,7 @@ return {
 					onComplete : function (response) {
 						if (response) {
 							lastId = response.lastid;
-							poller.setLastId(lastId);
+							MBchat.updateables.poller.setLastId(lastId);
 //TODO
 						}
 					}
@@ -439,6 +551,7 @@ return {
 						return wids;
 					},	
 					processMessage: function (msg) {
+						if(!lastId) return;
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
 							switch(msg.type) {

@@ -12,7 +12,7 @@ include_once('db.php');
 
 
 dbQuery('START TRANSACTION;');
-$result = dbQuery('SELECT uid, name, role, text FROM users WHERE rid = '.dbMakeSafe($rid).' ;');
+$result = dbQuery('SELECT uid, name, role, question FROM users WHERE rid = '.dbMakeSafe($rid).' ;');
 $users = array();
 if(mysql_num_rows($result) != 0) {
 	while($row=mysql_fetch_assoc($result)) {

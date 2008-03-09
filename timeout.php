@@ -8,15 +8,12 @@
 	$result=dbQuery('SELECT uid, name, role, rid FROM users WHERE NOW() > DATE_ADD(time, INTERVAL '.MBCHAT_TIMEOUT_USER.' MINUTE);');
 	if(mysql_num_rows($result) != 0) {
 		while($row=mysql_fetch_assoc($result)) {
-			dbQuery('INSERT INTO messages (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['title']).','.dbMakeSafe($row['role']).
+			dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+				dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 				', "LT" ,'.dbMakeSafe($row['rid']).');');
 			dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($row['uid']).' ;');
 		}
 	};
 	mysql_free_result($result);
-//Delete any whisper channels where there is only one (or less) participant(s)
-	dbQuery('DELETE FROM whisper WHERE wid NOT IN (SELECT wid FROM participant GROUP BY wid HAVING count(*) > 1);'); 
 	dbQuery('COMMIT');
-
 ?> 

@@ -230,7 +230,9 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	font-weight: bold;
 }
 
-
+#onlineList>div {
+	padding:2px;
+}
 
 
 
@@ -239,7 +241,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	background-color:#F6F6F6;
 }
 
-div.rowOdd {
+.rowOdd {
 	background-color:#ECEDF3;
 }
 
@@ -315,9 +317,12 @@ div.whisper {
 	left:20px;
 	bottom:90px;
 	right:230px;
+	padding:3px 0px;
+}
+
+#messageText {
+	width: 90%;
 	border:1px solid #ADADAD;
-	padding:3px;
-	background-color:#FFF;
 }
 
 #whisperBoxTemplate {
