@@ -467,7 +467,7 @@ return {
 								break;
 							case 'LT' :
 								this.displayMessage(msg.time.chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-								break:
+								break;
 							case 'LI' :
 								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
 								break;
