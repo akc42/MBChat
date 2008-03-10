@@ -1,6 +1,6 @@
 <?php
 	if (!defined('MBC'))
-		die('{"error": "Hacking attempt..."}');
+		die('Hacking attempt...');
 
 	define('MBCHAT_TIMEOUT_USER',	3); //No of minutes before online user goes offline through lack of activity
 

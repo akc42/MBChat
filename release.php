@@ -1,9 +1,9 @@
 <?php
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid']) && isset($_GET['quid']) && isset($_GET['ques'])))
-	die('{error: "Hacking attempt - wrong parameters"}');
+	die('Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 if ($_GET['password'] != sha1("Key".$uid))
-	die('{error: "Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid).'"}');
+	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid)');
 $rid=$_GET['rid']
 $quid = $_GET['quid'];
 $ques = $_GET['ques'];
@@ -13,14 +13,14 @@ dbQuery('START TRANSACTION;');
 $result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
 if(mysql_num_rows($result) == 0) {
 	dbQuery('ROLLBACK;');
-	die('{error: "Invalid Room id"}');
+	die('Release Message - Invalid Room id');
 }
 $room = mysql_fetch_assoc($result);
 mysql_free_result($result);
 $result = dbQuery('SELECT uid, name, title, role FROM users WHERE uid = '.dbMakeSafe($quid).';');
 if(mysql_num_rows($result) == 0) {
 	dbQuery('ROLLBACK;');
-	die('{error: "Invalid User id" }');
+	die('Release Message - Invalid User id');
 }
 $user = mysql_fetch_assoc($result);
 mysql_free_result($result);

@@ -1,10 +1,10 @@
 <?php
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['lid']) && isset($_GET['rid'])))
-	die('{"error" : "Hacking attempt - wrong parameters"}');
+	die('Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 
 if ($_GET['password'] != sha1("Key".$uid))
-	die('{"error" :"Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid).'"}');
+	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
 $lid = $_GET['lid'];
 $rid = $_GET['rid'];
 

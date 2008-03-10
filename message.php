@@ -1,10 +1,10 @@
 <?php
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_POST['text'])))
-	die('{"error" : "Hacking attempt - wrong parameters"}');
+	die('Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 
 if ($_GET['password'] != sha1("Key".$uid))
-	die('{"error" :"Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid).'"}');
+	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
 
 
 $text = htmlentities(stripslashes($_POST['text']),ENT_QUOTES);   // we need to get the text in an html pure form as possible
@@ -15,9 +15,12 @@ include_once('db.php');
 
 dbQuery('START TRANSACTION;');
 $result = dbQuery('SELECT uid, users.name, role, question, users.rid, type FROM users LEFT JOIN rooms ON users.rid = rooms.rid WHERE uid = '.dbMakeSafe($uid).' ;');
-if(mysql_num_rows($result) != 0) {
-	$row=mysql_fetch_assoc($result);
-};
+if(mysql_num_rows($result) == 0) {
+	dbQuery('ROLLBACK;');
+	die('Message Send - Invalid User Id');
+}
+
+$row=mysql_fetch_assoc($result);
 mysql_free_result($result);
 
 $role = $row['role'];

@@ -161,12 +161,14 @@ return {
 				var pollRequest = new Request.JSON({
 					url: 'poll.php',
 					autoCancel: true,
-					onComplete : function(response) {
+					onComplete : function(response,errorMsg) {
 						if(response) {
 							response.messages.each(function(item) {
 								lastId = (lastId < item.lid)? item.lid : lastId;
 								MBchat.updateables.processMessage(item);
 							});
+						} else {
+							MBchat.displayErrorMessage(errorMsg);
 						}
 					}
 				});
@@ -264,7 +266,7 @@ return {
 				};
 				request = new Request.JSON({
 					url: 'online.php',
-					onComplete: function(response) {
+					onComplete: function(response,errorMsg) {
 						if (response) {
 							onlineList.removeClass('loading');
 							onlineList.addClass(room.type);
@@ -278,6 +280,8 @@ return {
 							}
 							lastId = response.lastid;
 							MBchat.updateables.poller.setLastId(lastId);
+						} else {
+							MBchat.displayErrorMessage(errorMsg);
 						}
 					}
 				});
@@ -399,12 +403,14 @@ return {
 									lastId = response.lastid;
 								//Ensure we get all message from here on in
 									MBchat.updateables.poller.setLastId(lastId);
-								}
 								//Display room name at head of page
-								var el = new Element('h1')
-									.set('text', room.name )
-									.inject('roomNameContainer');
-								MBchat.updateables.online.show(room.rid);	//Show online list for room	
+									var el = new Element('h1')
+										.set('text', room.name )
+										.inject('roomNameContainer');
+									MBchat.updateables.online.show(room.rid);	//Show online list for room	
+								} else {
+									MBchat.displayErrorMessage(errorMsg);
+								}
 								$('messageText').focus();							
 							}
 						}).get($merge(myRequestOptions,{'rid' : rid}));
@@ -422,8 +428,10 @@ return {
 									lastId = response.lastid;
 								//Ensure we get all message from here on in
 									MBchat.updateables.poller.setLastId(lastId);
+									MBchat.updateables.online.show(0);	//Show online list for entrance hall
+								} else {
+									MBchat.displayErrorMessage(errorMsg);
 								}
-								MBchat.updateables.online.show(0);	//Show online list for entrance hall
 							}
 						}).get($merge(myRequestOptions,{'rid' : room.rid}));
 						room = entranceHall;   //Set up to be in the entrance hall 
@@ -584,6 +592,8 @@ return {
 							lastId = response.lastid;
 							MBchat.updateables.poller.setLastId(lastId);
 //TODO
+						} else {
+							MBchat.displayErrorMessage(errorMsg);
 						}
 					}
 				});	
