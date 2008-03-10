@@ -1,5 +1,5 @@
 <?php
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_POST['text']) && isset($_POST['room']))
+if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_POST['text']) && isset($_POST['room'])))
 	die('Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 

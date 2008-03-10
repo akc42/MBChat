@@ -326,9 +326,13 @@ div.whisper {
 	left:20px;
 	right:230px;
 	overflow:auto;
-	border:1px solid #ADADAD;
+/*	border:1px solid #ADADAD; */
 	background-color:#FFF;
 	position:absolute;
+}
+
+#chatList div {
+	padding:2px 1px;
 }
 
 #inputContainer {
