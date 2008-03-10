@@ -419,7 +419,7 @@ return {
 										.inject('roomNameContainer');
 									MBchat.updateables.online.show(room.rid);	//Show online list for room	
 								} else {
-									MBchat.displayErrorMessage(errorMsg);
+									displayErrorMessage(errorMsg);
 								}
 								$('messageText').focus();							
 							}
