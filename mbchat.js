@@ -230,10 +230,10 @@ return {
 							'click' : function(e) {
 								var request = new request.JSON({
 									'url' : 'release.php',
-									'onComplete' : function (response) {
+									'onComplete' : function (response,errorMsg) {
 										//Not interested in normal return as message will appear via poll
-										if(response.error) {
-											displayError(response.error);
+										if(!response) {
+											displayError(errorMsg);
 										}
 									}
 								}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
