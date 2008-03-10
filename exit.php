@@ -43,6 +43,9 @@ dbQuery('UPDATE users SET rid = 0, time = NOW(), role = '.dbMakeSafe($role)
 dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 				', "RX" ,'.dbMakeSafe($rid).');');
+dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
+				', "RE" ,0);');
 
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( participant.uid = '.dbMakeSafe($uid) ;

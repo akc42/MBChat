@@ -38,6 +38,9 @@ if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
 
 dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = NOW(), role = '.dbMakeSafe($role)
 			.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
+dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
+				', "RX" ,0);');
 
 dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).

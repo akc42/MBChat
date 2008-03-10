@@ -323,7 +323,7 @@ return {
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
 							if (msg.rid == currentRid) {
-								userDiv = $('U'+msg.uid);
+								userDiv = $('U'+msg.user.uid);
 								switch (msg.type) {
 								case 'LO' : //Logout, timeout or room exist are all the same
 								case 'LT' :
