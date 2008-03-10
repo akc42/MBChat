@@ -13,7 +13,7 @@ MBchat = function () {
 		el.inject(container);
 	};
 	var displayErrorMessage = function(txt) {
-		var msg = new Element('span', {'class': 'errorMessage', 'text' : txt });
+		var msg = '<span class="errorMessage">'+txt+'</spam>';
 		var d = new Date();
 		MBchat.message.displayMessage(d.UTC()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};

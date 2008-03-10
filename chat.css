@@ -218,11 +218,12 @@ span.R {
 /* chatbot */
 span.C, span.chatBotMessage {
 	font-style:italic;
-	color:#476C8E;
+	color:black;
 }
 
-span.chatBotMessage:before {
-	content:":-"
+span.errorMessage {
+	font-style:italic;
+	color:red;
 }
 
 span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
