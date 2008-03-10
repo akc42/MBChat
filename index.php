@@ -50,8 +50,7 @@ $name =& $user_info['name'];
 $role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
 			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
-			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :(
-			(in_array(SMF_CHAT_SPECIAL, $groups))?'S' : 'R')))) ;
+			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :'R'))) ;
 $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 
 dbQuery('START TRANSACTION;');
