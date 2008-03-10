@@ -216,9 +216,17 @@ span.R {
 	color:#414141;
 }
 /* chatbot */
-span.C, span.chatBotMessage {
+
+
+span.C {
 	font-style:italic;
-	color:black;
+	font-weight: bold;
+	color:#476C8E;
+}
+
+span.chatBotMessage {
+	font-style:italic;
+	color:#444;
 }
 
 span.errorMessage {
@@ -326,6 +334,7 @@ div.whisper {
 #inputContainer {
 	display:none;
 	position:absolute;
+	height: 25px;
 	left:20px;
 	bottom:90px;
 	right:230px;
