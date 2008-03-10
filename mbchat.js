@@ -403,7 +403,7 @@ return {
 						exit.removeClass('exit-f');
 						var request = new Request.JSON({
 							url: 'room.php',
-							onComplete : function(response) {
+							onComplete : function(response,errorMsg) {
 								if (response) {
 									room = response.room;
 									response.messages.each(function(msg) {
