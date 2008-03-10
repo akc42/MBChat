@@ -137,6 +137,7 @@ return {
 
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
+			$('messageRoom').value = room.rid;
 			this.send();
 			$('messageText').value = '';
 		});

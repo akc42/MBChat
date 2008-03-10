@@ -185,6 +185,7 @@ window.addEvent('unload', function() {
 <div id="inputContainer">
 	<form id="messageForm" action="message.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
 	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		<input id="messageRoom" type="hidden" value="0" name="room" />
 		<input id="messageText" type="text" name="text" />
 		<input type="submit" name="submit" value="Send"/>
 	</form>
