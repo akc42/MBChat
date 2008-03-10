@@ -5,7 +5,9 @@ MBchat = function () {
 	var room;
 	var chatBot;
 	var messageListSize;
+	var hyperlinkRegExp;
 	var emoticonSubstitution;
+	var emoticonRegExpStr;
 	var displayUser = function(user,container) {
 		var el = new Element('span',{'class' : user.role, 'text' : user.name });
 		el.inject(container);
@@ -110,13 +112,18 @@ return {
 			}
 			MBchat.updateables.message.leaveRoom();
 		});
+		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
+		
+		var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)
 		var emoticons = $$('img.emoticon');
 		emoticons.each(function(icon,i) {
 			var key = icon.get('alt').substr(1);
 			var img = '<img src="' + icon.get('src') + '" alt="' + key + '" title="' + key + '" />' ;
 			emoticonSubstitution.include(key,img);
+			if(i!=0) regExpStr += '|';
+			regExpStr += key.replace(/\)/g,'\\)') ;  //regular expression is key except if has ) in it which we need to escape
 			icon.addEvent('click', function(e) {
 				e.stop();		
 				var msgText = $('messageText');
@@ -124,7 +131,10 @@ return {
 				msgText.focus();
 			});
 		});
-		
+		//finish pattern and turn it into a regular expression to use;
+		regExpStr += ')';
+		emoticonRegExpStr = new RegExp(regExpStr, 'gm');
+
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
 			this.send();
@@ -507,44 +517,15 @@ return {
 							return number;
 						};
 						var replaceEmoticons = function(text) {
-						//Make regular subsistition patterns if not already.  arguments.callee is the function
-						//So we store this as a property of the function
-							if (!arguments.callee.regExp) {
-								var regExpStr = ':(';
-								var i=0;
-								emoticonSubstitution.each(function(value,key) {
-									if(i!=0)
-										regExpStr += '|';
-									regExpStr += key.replace(/\)/g,'\\)') ;
-									i++;
-								});
-								regExpStr += ')';
-								arguments.callee.regExp = new RegExp(regExpStr, 'gm');
-							}
-		
-							return text.replace(arguments.callee.regExp,function(match,p1) {
+							return text.replace(emoticonRegExpStr,function(match,p1) {
 								return emoticonSubstitution.get(p1);
 							});
 						};
 						var replaceHyperLinks = function(text) {
-						//Make regular subsistition patterns if not already.  arguments.callee is the function
-						//So we store this as a property of the function
-							if (!arguments.callee.regExp) {
-								arguments.callee.regExp = new RegExp(
-									'(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)',
-									'gm'
-								);
-							}
-								
-							return text.replace(
-								arguments.callee.regExp,
-								// Specifying an anonymous function as second parameter:
-								function(str, p1, p2) {
-									return p1 
-									+ '<a href="' + p2 
+							return text.replace(hyperlinkRegExp,function(str, p1, p2) {
+								return p1 + '<a href="' + p2 
 									+ '" onclick="window.open(this.href); return false;">' + p2 + '</a>';
-								}
-							);
+							});
 						};
 
 						var div = new Element('div');
