@@ -1,4 +1,8 @@
 <?php
+//This is a convenient place to force everything we output to not be cached (even 
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+
 	if (!defined('MBC'))
 		die('Hacking attempt...');
 	$db_server = 'localhost';
@@ -17,4 +21,4 @@
 	function dbMakeSafe($value) {
 		return "'".mysql_real_escape_string($value)."'" ;
 	}
-?> 
+?>
