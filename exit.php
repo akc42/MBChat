@@ -46,10 +46,10 @@ dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 				', "RE" ,0);');
-
+//should only return the whispers
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
-$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( participant.uid = '.dbMakeSafe($uid) ;
-$sql .= 'OR rid = 0 ) AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
+$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = '.dbMakeSafe($uid) ;
+$sql .= 'AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
 $sql .= 'ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
 $result = dbQuery($sql);
 $messages = array();
