@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 07, 2008 at 07:00 AM
+-- Generation Time: Mar 09, 2008 at 10:56 PM
 -- Server version: 5.0.51
 -- PHP Version: 5.2.5-3
 
@@ -66,12 +66,12 @@ CREATE TABLE IF NOT EXISTS `log` (
   `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT 'time as utc',
   `uid` mediumint(8) NOT NULL COMMENT 'user id of sender',
   `name` tinytext NOT NULL,
-  `title` enum('A','L','M','B','H','G','S','R') NOT NULL,
+  `role` enum('A','L','M','B','H','G','S','R') NOT NULL,
   `rid` bigint(20) NOT NULL COMMENT 'this is either a rid or wid',
-  `type` enum('LI','LO','LT','RE','RX','RM','RN','WE','WX','WJ','WU','SM','ME','WH','MQ','MR') NOT NULL COMMENT 'Login Room Whisper Message',
+  `type` enum('LI','LO','LT','RE','RX','RM','RN','WJ','WL','SM','ME','WH','MQ','MR') NOT NULL COMMENT 'Login Room Whisper Message',
   `text` text,
   PRIMARY KEY  (`lid`)
-) ENGINE=MyISAM  DEFAULT CHARSET=ascii AUTO_INCREMENT=139 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=ascii AUTO_INCREMENT=601 ;
 
 --
 -- Dumping data for table `log`
@@ -87,7 +87,6 @@ CREATE TABLE IF NOT EXISTS `log` (
 DROP TABLE IF EXISTS `participant`;
 CREATE TABLE IF NOT EXISTS `participant` (
   `uid` mediumint(9) NOT NULL,
-  `scope` enum('WJ','WE') NOT NULL default 'WJ' COMMENT 'Set when the user has not actually opened the channel',
   `wid` bigint(20) NOT NULL,
   PRIMARY KEY  (`uid`,`wid`),
   KEY `uid` (`uid`),
@@ -141,9 +140,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `uid` mediumint(8) NOT NULL COMMENT 'id from smf',
   `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP COMMENT 'last activity by user',
   `name` tinytext NOT NULL COMMENT 'display name in smf',
-  `role` enum('A','L','H','B','G','R') NOT NULL default 'R' COMMENT 'Role on the forum, which contributes, but doesn''t completely define) role in room',
+  `role` enum('A','L','H','B','G','R','M','S') NOT NULL default 'R' COMMENT 'Role on the forum, which contributes, but doesn''t completely define) role in room',
   `rid` tinyint(4) NOT NULL default '0' COMMENT 'room id',
-  `mod` enum('M','N','S') NOT NULL default 'N' COMMENT 'Reseve role in moderated rooms',
+  `moderator` enum('A','L','H','B','G','R','M','N','S') NOT NULL default 'N' COMMENT 'Reseve role in moderated rooms',
   `question` text COMMENT 'Pending Question to be asked in Moderated Room',
   PRIMARY KEY  (`uid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COMMENT='Users - mirroring SMF database to some extent';
@@ -162,6 +161,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 DROP TABLE IF EXISTS `whisper`;
 CREATE TABLE IF NOT EXISTS `whisper` (
   `wid` bigint(20) NOT NULL auto_increment,
+  `time` timestamp NOT NULL default CURRENT_TIMESTAMP,
   PRIMARY KEY  (`wid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COMMENT='Whisper Channel - Really for auto_increment' AUTO_INCREMENT=1 ;
 
@@ -178,5 +178,4 @@ CREATE TABLE IF NOT EXISTS `whisper` (
 -- Constraints for table `participant`
 --
 ALTER TABLE `participant`
-  ADD CONSTRAINT `participant_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `users` (`uid`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `participant_ibfk_2` FOREIGN KEY (`wid`) REFERENCES `whisper` (`wid`) ON DELETE CASCADE ON UPDATE CASCADE;
