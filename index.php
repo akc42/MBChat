@@ -14,6 +14,7 @@ require_once(MBCHAT_PATH.'../forum/SSI.php');
 //If not logged in to the forum, not allowed any further so redirect to page to say so
 if($user_info['is_guest']) {
 	header( 'Location: http://mb.home/static/Chat.htm' ) ;
+	exit;
 };
 
 // SMF membergroup IDs for the groups that we have used to define characteristics which control Chat Group
