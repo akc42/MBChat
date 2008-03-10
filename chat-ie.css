@@ -25,6 +25,7 @@ div.chat {
 
 #inputContainer {
 	width:expression(document.body.clientWidth-250);
+	height:expression(document.body.clientHeight-280);
 }
 
 
