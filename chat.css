@@ -98,6 +98,7 @@ body, td, th
 	background-color:#4A7DB5;
 	background-image:none;
 	color:#000;
+	overflow:auto;
 }
 
 #copyright {
@@ -107,9 +108,8 @@ body, td, th
 }
 
 #entranceHall {
-	position:absolute;
-	top:50px;
-	left:70px;
+	margin-top:50px;
+	margin-left:70px;
 	width:600px;
 	text-align:center;
 	background-color: #4A7DB5;
@@ -314,21 +314,19 @@ div.chat {
 	top:50px;
 	right:230px;
 	bottom:125px;
+	position:absolute;
 }
 
 div.whisper {
 	height:100px;
-	bottom:20px;	
+	margin:20px 230px 20px 20px;	
 }
 	
 
 #chatList {
-	left:20px;
-	right:230px;
 	overflow:auto;
 /*	border:1px solid #ADADAD; */
 	background-color:#FFF;
-	position:absolute;
 }
 
 #chatList div {
