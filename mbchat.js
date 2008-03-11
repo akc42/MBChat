@@ -255,7 +255,7 @@ return {
 						if (user.uid != me.uid) {
 							div.addEvent('controlclick', function(e) {
 								e.stop();
-								MBchat.whispers.startnewWhisper(user);
+								MBchat.updateables.whispers.startnewWhisper(user);
 							});
 							div.firstChild.addClass('whisperer');
 						}
@@ -263,7 +263,7 @@ return {
 						if (user.uid != me.uid) {
 							div.addEvent('click',function (e) {
 								e.stop();
-								MBchat.whispers.startNewWhisper(user);
+								MBchat.updateables.whispers.startNewWhisper(user);
 							});
 							div.firstChild.addClass('whisperer');
 						}
@@ -634,7 +634,7 @@ return {
 						}
 					}
 				};
-			}()	
+			}()
 		};
 	}()
   }; 
