@@ -93,6 +93,12 @@ return {
 					e.stop();			//browser should not follow link
 					MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
 				});
+				if (me.role == 'A' || me.role == 'L' or room.hasClass('committee') ) {
+					room.addEvent('shiftclick', function(e) {
+						e.stop();
+						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt());
+					});
+				});
 			});
 		});
 
@@ -112,6 +118,12 @@ return {
 				MBchat.updateables.message.leaveRoom();
 			}
 		});
+		if (me.role == 'A') {
+			exit.addEvent('altclick',function(e) {
+				e.stop();
+				MBchat.updateables.logger.startLog(0);
+			});
+		}
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
@@ -632,6 +644,13 @@ return {
 								break;
 							}
 						}
+					}
+				};
+			}(),
+			logger : function () {
+				return {
+					startLog: function (rid) {
+//TODO
 					}
 				};
 			}()
