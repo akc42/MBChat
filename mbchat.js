@@ -107,10 +107,10 @@ return {
 		exit.addEvent('click', function(e) {
 			e.stop();
 			if (MBchat.updateables.message.getRoom().rid == 0 ) {
-				MBchat.logout();
 				window.location = '/forum' ; //and go back to the forum
+			} else {
+				MBchat.updateables.message.leaveRoom();
 			}
-			MBchat.updateables.message.leaveRoom();
 		});
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
@@ -430,7 +430,7 @@ return {
 						lastId = null;
 						var request = new Request.JSON ({
 							url :'exit.php',
-							onComplete : function(response) {
+							onComplete : function(response,errorMsg) {
 								if (response) {
 									response.messages.each(function(msg) {
 										if(!lastId) lastId = msg.lid -1;
