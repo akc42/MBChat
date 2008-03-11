@@ -41,22 +41,28 @@ return {
 		entranceHall = {rid:0, name: entranceHallName, type: 'O'};
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
-		Element.Events.shiftclick = {
-			base: 'click', //we set a base type
+		Element.Events.promote = {
+			base: 'mousedown', //we set a base type
 			condition: function(event){ //and a function to perform additional checks.
 				return (event.shift == true); //this means the event is free to fire
+			}
+		}
+		Element.Events.demote = {
+			base: 'mousedown', //we set a base type
+			condition: function(event){ //and a function to perform additional checks.
+				return (event.control == true); //this means the event is free to fire
+			}
+		}
+		Element.Events.moderate = {
+			base: 'mousedown', //we set a base type
+			condition: function(event){ //and a function to perform additional checks.
+				return (event.alt == true); //this means the event is free to fire
 			}
 		}
 		Element.Events.controlclick = {
 			base: 'click', //we set a base type
 			condition: function(event){ //and a function to perform additional checks.
 				return (event.control == true); //this means the event is free to fire
-			}
-		}
-		Element.Events.altclick = {
-			base: 'click', //we set a base type
-			condition: function(event){ //and a function to perform additional checks.
-				return (event.alt == true); //this means the event is free to fire
 			}
 		}
 // We need to setup all the entrance hall
@@ -94,12 +100,12 @@ return {
 					e.stop();			//browser should not follow link
 					MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
 				});
-				if (me.role == 'A' || me.role == 'L' or room.hasClass('committee') ) {
+				if (me.role == 'A' || me.role == 'L' || room.hasClass('committee') ) {
 					room.addEvent('controlclick', function(e) {
 						e.stop();
 						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt());
 					});
-				});
+				};
 			});
 		});
 
@@ -120,7 +126,7 @@ return {
 			}
 		});
 		if (me.role == 'A') {
-			exit.addEvent('altclick',function(e) {
+			exit.addEvent('controlclick',function(e) {
 				e.stop();
 				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid,true);
 			});
@@ -234,50 +240,54 @@ return {
 				var currentRid;
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
-					displayUser(user,div)
+					var span = displayUser(user,div)
 					if (room.type === 'M' && me.role === 'M') {
 						var question = new Element('div' , {
 							'class': 'question hide',
 							'text' : user.question}).inject(div);
 								
-					// I am a moderator in a moderated room - therefore I need to be able to moderate
-						div.addEvents({
-							'click' : function(e) {
-								var request = new request.JSON({
-									'url' : 'release.php',
-									'onComplete' : function (response,errorMsg) {
-										//Not interested in normal return as message will appear via poll
-										if(!response) {
-											displayError(errorMsg);
-										}
-									}
-								}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
-							},
-							'altclick': function(e) {
-//TODO - make moderator
-							},
-							'shiftclick':function(e) {
-//TODO - downgrade self
-							},
-							'mouseover' : function(e) {
-								question.removeClass('hide');
-							},
-							'mouseleave' : function(e) {
-								question.addClass('hide');
-							}
-						});
 						if (user.uid != me.uid) {
-							div.addEvent('controlclick', function(e) {
-								e.stop();
-								MBchat.updateables.whispers.whisperWith(user);
+							// I am a moderator in a moderated room - therefore I need to be able to moderate others
+							div.addEvents({
+								'moderate' : function(e) {
+									e.stop();
+									var request = new request.JSON({
+										'url' : 'release.php',
+										'onComplete' : function (response,errorMsg) {
+											//Not interested in normal return as message will appear via poll
+											if(!response) {
+												displayError(errorMsg);
+											}
+										}
+									}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
+								},
+								'promote': function(e) {
+									e.stop();
+	//TODO - make moderator
+								},
+								'mouseover' : function(e) {
+									question.removeClass('hide');
+								},
+								'mouseleave' : function(e) {
+									question.addClass('hide');
+								},
+								'mousedown' : function(e) {
+									e.stop();
+									MBchat.updateables.whispers.whisperWith(user,span);
+								}
 							});
 							div.firstChild.addClass('whisperer');
+						} else {
+							div.addEvent('demote', function(e) {
+								e.stop();
+//TODO downgrade self
+							});
 						}
 					} else {
 						if (user.uid != me.uid) {
-							div.addEvent('click',function (e) {
+							div.addEvent('mousedown',function (e) {
 								e.stop();
-								MBchat.updateables.whispers.whisperWith(user);
+								MBchat.updateables.whispers.whisperWith(user,span);
 							});
 							div.firstChild.addClass('whisperer');
 						}
@@ -595,14 +605,14 @@ return {
 					}
 				});
 				var getNewWhisperReq = new Request.JSON({
-					url:'newwhisper.php'
+					url:'newwhisper.php',
 					onComplete: function(response,errorMsg) {
 						if(response) {
 							var whisper = $('whisperBoxTemplate').clone();
 							whisper.set('id','W'+response.wid);
 							var whisperList = whisper.firstchild;
 							//inject a user element into box
-							var user displayUser(response.user,whisperList);
+							var user = displayUser(response.user,whisperList);
 							user.setClass('whisperer');
 							user.set('id', 'W'+wid+'U'+response.user.uid);
 							//Now we have to make the whole thing draggable.
@@ -615,32 +625,70 @@ return {
 						}
 					}
 				});
-	
+				var addUserToWhisperReq = new Request.JSON({
+					url:'joinwhisper.pnp',
+					onComplete: function(response,errorMsg) {
+						if(response) {
+//TODO - what?
+						} else {
+								MBchat.displayErrorMessage(errorMsg);
+						}
+					}
+				});
 				return {
 					init: function (lid) {
 						lastId = lid;
 					},
-					whisperWith : function (user) {
-//See if we are already in a whisper with this user
-						var thisWhisper = false;
-						var whispersBoxes = $$('.whisperBox);
-						whisperBoxes.each(function(whisperBox,i) {
-							if (thisWhisper) return;
-							var widStr = whisperBox.get('id');
-							var whisperers = whisperBox.firstChild.getChildren('.whispering');   //gets users in whisper
-							if (whisperers.length == 1) { //we only want to worry about this if only other person
-								whisperers.each(function(whisperer,i) {
-									if (thisWhisper) return;
-									if (whisperer.get('id').substr(widStr.length+1).toInt() == user.uid) (
-										thisWhisper = whisperBox;
-										thisWhisper.getChildren('.whisperInput').focus();
-									}
-								});
-							}		 
+					whisperWith : function (user,el) {
+						var dropZones = $$('.whisperBox');
+						dropZones.addEvent('drop', function(e) {
+//TODO - add user to whisper
 						});
-						if (thisWhisper) return;
+						var dropNew = $('inputContainer');
+						dropNew.addEvent('drop',function(e) {
+//See if we are already in a whisper with this user
+							var thisWhisper = false;
+							var whispersBoxes = $$('.whisperBox');
+							whisperBoxes.each(function(whisperBox,i) {
+								if (thisWhisper) return;
+								var widStr = whisperBox.get('id');
+								var whisperers = whisperBox.firstChild.getChildren('.whispering');   //gets users in whisper
+								if (whisperers.length == 1) { //we only want to worry about this if only other person
+									whisperers.each(function(whisperer,i) {
+										if (thisWhisper) return;
+										if (whisperer.get('id').substr(widStr.length+1).toInt() == user.uid) {
+											thisWhisper = whisperBox;
+											thisWhisper.getChildren('.whisperInput').focus();
+										}
+									});
+								}		 
+							});
+							if (thisWhisper) return;
 //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
-						getNewWhisperReq.get($merge(myRequestOptions,{'whisperer':user.uid}));
+							getNewWhisperReq.get($merge(myRequestOptions,{'whisperer':user.uid}));
+//TODO create completely new whisper
+						});
+						dropZones.include(dropNew);
+						dropZones.addEvents({
+							'over':function () {
+								dropZones.addClass('dragOver');
+							},
+							'leave':function () {
+								dropZones.removeClass('dragOver');
+							}
+						});
+						var dragman = new Element('div',{'class':'dragBox'});
+						displayUser(user,dragman);
+						dragman.setStyles(el.getCoordinates());
+						dragman.addEvent('emptydrop', function(e) {
+							this.destroy();
+							dropZones.removeEvents();
+						});
+
+
+
+
+
 					},
 					join: function(wid) {
 //TODO

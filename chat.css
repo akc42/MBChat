@@ -360,6 +360,18 @@ div.whisper {
 	width:300px;
 }
 
+.dragBox {
+	padding:5px;
+	width:auto;
+	border:2px solid blue;
+	background:transparent;
+	position:absolute;
+	opacity:0.7;
+}
+.dragOver {
+	border:3px solid black;
+}
+
 #emoticonContainer {
 	display:none;
 	position:absolute;
