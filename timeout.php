@@ -16,4 +16,4 @@
 	};
 	mysql_free_result($result);
 	dbQuery('COMMIT');
-?> 
+?>
