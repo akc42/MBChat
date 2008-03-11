@@ -11,11 +11,12 @@ MBchat = function () {
 	var displayUser = function(user,container) {
 		var el = new Element('span',{'class' : user.role, 'text' : user.name });
 		el.inject(container);
+		return el;
 	};
 	var displayErrorMessage = function(txt) {
 		var msg = '<span class="errorMessage">'+txt+'</spam>';
 		var d = new Date();
-		MBchat.message.displayMessage(d.UTC()/1000,chatBot,msg);  //need to convert from millisecs to secs
+		MBchat.message.displayMessage(0,d.UTC()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
@@ -93,6 +94,12 @@ return {
 					e.stop();			//browser should not follow link
 					MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
 				});
+				if (me.role == 'A' || me.role == 'L' or room.hasClass('committee') ) {
+					room.addEvent('controlclick', function(e) {
+						e.stop();
+						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt());
+					});
+				});
 			});
 		});
 
@@ -112,6 +119,12 @@ return {
 				MBchat.updateables.message.leaveRoom();
 			}
 		});
+		if (me.role == 'A') {
+			exit.addEvent('altclick',function(e) {
+				e.stop();
+				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid,true);
+			});
+		}
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
@@ -156,6 +169,7 @@ return {
 				MBchat.updateables.message.init();
 				MBchat.updateables.poller.init(pollOptions);
 				MBchat.updateables.whispers.init(pollOptions.lastid);
+				MBchat.updateables.logger.init();
 			},
 			processMessage : function(message) {
 				MBchat.updateables.online.processMessage(message);
@@ -255,7 +269,7 @@ return {
 						if (user.uid != me.uid) {
 							div.addEvent('controlclick', function(e) {
 								e.stop();
-								MBchat.updateables.whispers.startnewWhisper(user);
+								MBchat.updateables.whispers.whisperWith(user);
 							});
 							div.firstChild.addClass('whisperer');
 						}
@@ -263,7 +277,7 @@ return {
 						if (user.uid != me.uid) {
 							div.addEvent('click',function (e) {
 								e.stop();
-								MBchat.updateables.whispers.startNewWhisper(user);
+								MBchat.updateables.whispers.whisperWith(user);
 							});
 							div.firstChild.addClass('whisperer');
 						}
@@ -471,46 +485,46 @@ return {
 							switch(msg.type) {
 							case 'ME' :
 
-								this.displayMessage(msg.time,msg.user,msg.message);
+								this.displayMessage(lastId,msg.time,msg.user,msg.message);
 								break;
 							case 'WH' :
 								var whisper ='<span class="whisper" onclick="javascript:MBchat.whispers.join('
 									+ msg.rid.toString() + ');>(whispers)</span>' +msg.message ;
-								this.displayMessage(msg.time,msg.user,whisper);
+								this.displayMessage(lastId,msg.time,msg.user,whisper);
 								break;
 							case 'RE' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
 								break;
 							case 'RX' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
 								break;
 							case 'LT' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
 								break;
 							case 'LI' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
 								break;
 							case 'LO' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
 								break;
 							case 'RM' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
 								break;
 							case 'RN' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
 								break;
 							case 'WJ' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper room'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper room'));
 								break;
 							case 'WL' :
-								this.displayMessage(msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper room'));
+								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper room'));
 								break;
 							default:
 								break;
 							}
 						}
 					},
-					displayMessage: function(time,user,msgText) {
+					displayMessage: function(lid,time,user,msgText) {
 						var addLeadingZeros = function(number) {
 							number = number.toString();
 							if(number.length < 2)
@@ -530,6 +544,7 @@ return {
 						};
 
 						var div = new Element('div');
+						if (lid != 0) div.set('id','L'+lid);	//This should be all messages except errors
 						var date = new Date(time.toInt()*1000);
 						var hour = date.getHours();
 						var suffix = ' am';
@@ -569,7 +584,7 @@ return {
 				var channels = null;
 				var request = new Request.JSON({
 					url:'whisper.php',
-					onComplete : function (response) {
+					onComplete : function (response,errorMsg) {
 						if (response) {
 							lastId = response.lastid;
 							MBchat.updateables.poller.setLastId(lastId);
@@ -578,13 +593,56 @@ return {
 							MBchat.displayErrorMessage(errorMsg);
 						}
 					}
-				});	
+				});
+				var getNewWhisperReq = new Request.JSON({
+					url:'newwhisper.php'
+					onComplete: function(response,errorMsg) {
+						if(response) {
+							var whisper = $('whisperBoxTemplate').clone();
+							whisper.set('id','W'+response.wid);
+							var whisperList = whisper.firstchild;
+							//inject a user element into box
+							var user displayUser(response.user,whisperList);
+							user.setClass('whisperer');
+							user.set('id', 'W'+wid+'U'+response.user.uid);
+							//Now we have to make the whole thing draggable.
+							whisper.setStyle('display','block');
+							whisper.draggable();
+							whisper.inject(document.body);
+							whisper.getChildren('.whisperInput').focus();
+						} else {
+							MBchat.displayErrorMessage(errorMsg);
+						}
+					}
+				});
+	
 				return {
 					init: function (lid) {
 						lastId = lid;
 					},
-					startNewWhisper : function (user) {
-						request.get($merge(myRequestOptions,{'whisperer':user.uid}));
+					whisperWith : function (user) {
+//See if we are already in a whisper with this user
+						var thisWhisper = false;
+						var whispersBoxes = $$('.whisperBox);
+						whisperBoxes.each(function(whisperBox,i) {
+							if (thisWhisper) return;
+							var widStr = whisperBox.get('id');
+							var whisperers = whisperBox.firstChild.getChildren('.whispering');   //gets users in whisper
+							if (whisperers.length == 1) { //we only want to worry about this if only other person
+								whisperers.each(function(whisperer,i) {
+									if (thisWhisper) return;
+									if (whisperer.get('id').substr(widStr.length+1).toInt() == user.uid) (
+										thisWhisper = whisperBox;
+										thisWhisper.getChildren('.whisperInput').focus();
+									}
+								});
+							}		 
+						});
+						if (thisWhisper) return;
+//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
+						getNewWhisperReq.get($merge(myRequestOptions,{'whisperer':user.uid}));
+					},
+					join: function(wid) {
 //TODO
 					},
 					addUser : function (user,wid) {
@@ -596,20 +654,6 @@ return {
 					getLastId : function () {
 						return lastId;
 					},
-					getWhisperIds: function () {
-						var wids = '';
-						if (channels) {
-							var commaNeeded = false;
-							channels.each(function (whisper) {
-								if (commaNeeded) {
-									wids += ',';
-								}
-								commaNeeded = true;
-								wids += whisper.get('id').substr(1);
-							});
-						}
-						return wids;
-					},	
 					processMessage: function (msg) {
 						if(!lastId) return;
 						if (lastId < msg.lid) {
@@ -632,6 +676,15 @@ return {
 								break;
 							}
 						}
+					}
+				};
+			}(),
+			logger : function () {
+				return {
+					init: function() {
+					},
+					startLog: function (rid,ww) {
+//TODO
 					}
 				};
 			}()

@@ -195,8 +195,7 @@ window.addEvent('unload', function() {
 	<div class="whisperList"></div>
 	<form action="whisper.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
 	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		<input type="hidden" name="wid" value="0" />
-		<input type="text" name="text" />
+		<input type="text" name="text" class="whisperInput" />
 		<input type="submit" name="submit" value="Send"/>
 	</form>
 </div>
