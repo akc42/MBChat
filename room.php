@@ -40,13 +40,9 @@ dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = NOW(), role = '.dbM
 			.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
 dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-				', "RX" ,0);');
-
-dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 				', "RE" ,'.dbMakeSafe($rid).');');
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
-$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( participant.uid = '.dbMakeSafe($uid) ;
+$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( (participant.uid = '.dbMakeSafe($uid).' AND type = "WH" )' ;
 $sql .= 'OR rid = '.dbMakeSafe($rid).') AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
 $sql .= 'ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
 $result = dbQuery($sql);

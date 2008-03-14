@@ -350,15 +350,82 @@ div.whisper {
 
 #whisperBoxTemplate {
 	display:none;
+	top:145px;
+	left:180px;
+	width:300px;
 }
 
 .whisperBox {
-	padding: 5px;
+	display:block;
+	top:145px;
+	left:180px;
+	padding: 0px;
 	position:absolute;
-	opacity:0.6;
-	background-color:#ffed72;
+	background:transparent;
 	width:300px;
+	height:81px;
+	border:1px solid red;
 }
+
+.dragHandle {
+	background-color:#ffed72;
+	color:black;
+	font-weight:bold;
+	text-align:center;
+	position:absolute;
+	top:0px;
+	left:0px;
+	height:21px;
+	width:279px;
+	opacity:0.7;
+	cursor:move;
+}
+
+.closeBox {
+	background:#0066ff url(closebox.gif) no-repeat;
+	height:21px;
+	width:21px;
+	position:absolute;
+	top:0px;
+	right:0px;
+	opacity:0.7;
+}
+
+.whisperList {
+	position:absolute;
+	top:21px;
+	left:2px;
+	width:296px;;
+	height:30px;
+	background:transparent;
+	opacity:1.0;
+	float:left;
+	overflow:auto;
+}
+
+.whisperInput {
+	position:absolute;
+	top:51px;
+	left:2px;
+	width:230px;
+	height:25px;
+	border:1px solid black;
+	background:transparent;
+}
+
+.whisperSend {
+	position:absolute;
+	top:51px;
+	right:2px;
+	width: 55px;
+	height:25px;
+	background:transparent;
+}
+
+span.whisper {
+	font-style:italic;
+}
+		
 
 .dragBox {
 	padding:5px;
@@ -393,35 +460,7 @@ div.whisper {
 }
 
 
-#messageContainer {
-	width:100%;
-	position:absolute;
-	left:0px;
-	top:0px;
-}
-#messageContainer #messageTextContainer {
-	position:absolute;
-	left:0px;
-	right:215px;
-	bottom:0px;
-}
-#messageContainer #messageTextContainer #messageText {
-	width:100%;
-}
-#messageContainer #submitButtonContainer {
-	position:absolute;
-	right:0px;
-	bottom:0px;
-	width:202px;
-}
-#messageContainer #submitButtonContainer #submitButton {
-	background-color:#F7F5F1;
-	color:#000;
-}
-#messageContainer #messageText {
-	clear:both;
-	width:600px;
-}
+
 
 
 

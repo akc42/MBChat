@@ -14,9 +14,14 @@ MBchat = function () {
 		return el;
 	};
 	var displayErrorMessage = function(txt) {
-		var msg = '<span class="errorMessage">'+txt+'</spam>';
+		var msg;
+		if (txt) {
+			msg = '<span class="errorMessage">'+txt+'</spam>';
+		} else {
+			msg = '<span class="errorMessage">Server Error</span>';
+		}
 		var d = new Date();
-		MBchat.message.displayMessage(0,d.UTC()/1000,chatBot,msg);  //need to convert from millisecs to secs
+		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
@@ -125,10 +130,10 @@ return {
 				MBchat.updateables.message.leaveRoom();
 			}
 		});
-		if (me.role == 'A') {
+		if (me.additional) {
 			exit.addEvent('controlclick',function(e) {
 				e.stop();
-				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid,true);
+				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid);
 			});
 		}
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
@@ -195,11 +200,11 @@ return {
 					onComplete : function(response,errorMsg) {
 						if(response) {
 							response.messages.each(function(item) {
-								lastId = (lastId < item.lid)? item.lid : lastId;
+								lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
 								MBchat.updateables.processMessage(item);
 							});
 						} else {
-							MBchat.displayErrorMessage(errorMsg);
+							displayErrorMessage(errorMsg);
 						}
 					}
 				});
@@ -229,7 +234,7 @@ return {
 					},
 					stop : function() {
 						$clear(pollerId);
-						lastId = null;
+						lastId = null; //Ensure no more polls come through
 					}
 				};
 			}(),
@@ -272,8 +277,8 @@ return {
 									question.addClass('hide');
 								},
 								'mousedown' : function(e) {
-									e.stop();
-									MBchat.updateables.whispers.whisperWith(user,span);
+									e= new Event(e).stop();
+									MBchat.updateables.whispers.whisperWith(user,span,e);
 								}
 							});
 							div.firstChild.addClass('whisperer');
@@ -286,8 +291,8 @@ return {
 					} else {
 						if (user.uid != me.uid) {
 							div.addEvent('mousedown',function (e) {
-								e.stop();
-								MBchat.updateables.whispers.whisperWith(user,span);
+								e=new Event(e).stop();
+								MBchat.updateables.whispers.whisperWith(user,span,e);
 							});
 							div.firstChild.addClass('whisperer');
 						}
@@ -316,7 +321,7 @@ return {
 							lastId = response.lastid;
 							MBchat.updateables.poller.setLastId(lastId);
 						} else {
-							MBchat.displayErrorMessage(errorMsg);
+							displayErrorMessage(errorMsg);
 						}
 					}
 				});
@@ -465,7 +470,7 @@ return {
 									MBchat.updateables.poller.setLastId(lastId);
 									MBchat.updateables.online.show(0);	//Show online list for entrance hall
 								} else {
-									MBchat.displayErrorMessage(errorMsg);
+									displayErrorMessage(errorMsg);
 								}
 							}
 						}).get($merge(myRequestOptions,{'rid' : room.rid}));
@@ -488,8 +493,6 @@ return {
 						return room;
 					},
 					processMessage: function (msg) {
-						if (!lastId) return;	// not processing messages until set
-
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
 							switch(msg.type) {
@@ -498,9 +501,17 @@ return {
 								this.displayMessage(lastId,msg.time,msg.user,msg.message);
 								break;
 							case 'WH' :
-								var whisper ='<span class="whisper" onclick="javascript:MBchat.whispers.join('
-									+ msg.rid.toString() + ');>(whispers)</span>' +msg.message ;
-								this.displayMessage(lastId,msg.time,msg.user,whisper);
+								//Must only display whispers for me
+								var whisperBoxes = $$('.whisperBox');
+								if(!whisperBoxes.every(function(whisperBox) {
+									if(msg.rid == whisperBox.get('id').substr(1).toInt()) {
+										return false;
+									}
+									return true;
+								})) {
+									var whisper ='<span class="whisper">(whispers)' +msg.message+'</span>' ;
+									this.displayMessage(lastId,msg.time,msg.user,whisper);
+								}
 								break;
 							case 'RE' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
@@ -524,10 +535,14 @@ return {
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
 								break;
 							case 'WJ' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper room'));
+								if(msg.user.uid != me.uid) {
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper room'));
+								}
 								break;
 							case 'WL' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper room'));
+								if(msg.user.uid != me.uid) {
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper room'));
+								}
 								break;
 							default:
 								break;
@@ -592,132 +607,203 @@ return {
 			whispers : function () {
 				var lastId = null;
 				var channels = null;
-				var request = new Request.JSON({
-					url:'whisper.php',
-					onComplete : function (response,errorMsg) {
-						if (response) {
-							lastId = response.lastid;
-							MBchat.updateables.poller.setLastId(lastId);
-//TODO
-						} else {
-							MBchat.displayErrorMessage(errorMsg);
+				var addUser = function (user,whisperBox) {
+					var idLen = whisperBox.get('id').length+1;
+					var whisperList = whisperBox.getElement('.whisperList');
+					var whisperers = whisperList.getChildren();
+					if( whisperers.every(function(whisperer) {
+						if (whisperer.get('id').substr(idLen).toInt() == user.uid ) {
+								return false;  // Found it, so do nothing
+						}
+						return true;
+					})) {
+						// if we get here, we haven't found the user, so we need to add him
+						displayUser(user,whisperList);
+						return true
+					}
+					return false;
+				}
+				var createWhisperBox = function (wid,user) {
+					var whisper = $('whisperBoxTemplate').clone();
+					whisper.set('id','W'+wid);
+					var whisperList = whisper.getElement('.whisperList');
+					if (user) {
+						//inject a user element into box
+						var whisperer = displayUser(user,whisperList);
+						whisperer.addClass('whisperer');
+						whisperer.set('id', 'W'+wid+'U'+user.uid);
+					}
+					//Now we have to make the whole thing draggable.
+					whisper.addClass('whisperBox');
+					var closeBox = whisper.getElement('.closeBox');
+					closeBox.addEvent('click', function(e) {
+						e.stop();
+						var leaveWhisper = new Request.JSON({
+							url:'leavewhisper.php',
+							onComplete: function(response,errorMsg) {
+								if(response) {
+									whisper.destroy();
+								} else { 
+									displayErrorMessage(errorMsg);
+								}
+							}
+						});
+						leaveWhisper.get($merge(myRequestOptions,{'wid': this.getParent().get('id').substr(1).toInt()}));
+					});
+					whisper.getElement('form').addEvent('submit', function(e) {
+						e.stop();
+						whisper.getElement('.wid').value = wid;
+						this.send();
+						whisper.getElement('.whisperInput').value = '';
+					});
+					whisper.inject(document.body);
+					
+					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
+					return whisper;
+				}
+				var removeUser = function(whisperBox,uid) {
+					if (me.uid == uid) {
+						whisperBox.destroy();
+					} else {
+						var span = $(whisperBox.get('id')+'U'+uid);
+						if (span) {
+							span.destroy();
+						}
+						if (whisperBox.getElement('.whisperList').getChildren().length == 0 ) {
+							whisperBox.destroy();
 						}
 					}
-				});
-				var getNewWhisperReq = new Request.JSON({
-					url:'newwhisper.php',
-					onComplete: function(response,errorMsg) {
-						if(response) {
-							var whisper = $('whisperBoxTemplate').clone();
-							whisper.set('id','W'+response.wid);
-							var whisperList = whisper.firstchild;
-							//inject a user element into box
-							var user = displayUser(response.user,whisperList);
-							user.setClass('whisperer');
-							user.set('id', 'W'+wid+'U'+response.user.uid);
-							//Now we have to make the whole thing draggable.
-							whisper.setStyle('display','block');
-							whisper.draggable();
-							whisper.inject(document.body);
-							whisper.getChildren('.whisperInput').focus();
-						} else {
-							MBchat.displayErrorMessage(errorMsg);
-						}
-					}
-				});
-				var addUserToWhisperReq = new Request.JSON({
-					url:'joinwhisper.pnp',
-					onComplete: function(response,errorMsg) {
-						if(response) {
-//TODO - what?
-						} else {
-								MBchat.displayErrorMessage(errorMsg);
-						}
-					}
-				});
+				}
 				return {
 					init: function (lid) {
 						lastId = lid;
 					},
-					whisperWith : function (user,el) {
+					whisperWith : function (user,el,event) {
+						var dropNew;
+						if (MBchat.updateables.message.getRoom().rid == 0 ) {
+							dropNew = $('chatList');
+						} else {
+							dropNew = $('inputContainer');
+						}
 						var dropZones = $$('.whisperBox');
-						dropZones.addEvent('drop', function(e) {
-//TODO - add user to whisper
-						});
-						var dropNew = $('inputContainer');
-						dropNew.addEvent('drop',function(e) {
-//See if we are already in a whisper with this user
-							var thisWhisper = false;
-							var whispersBoxes = $$('.whisperBox');
-							whisperBoxes.each(function(whisperBox,i) {
-								if (thisWhisper) return;
-								var widStr = whisperBox.get('id');
-								var whisperers = whisperBox.firstChild.getChildren('.whispering');   //gets users in whisper
-								if (whisperers.length == 1) { //we only want to worry about this if only other person
-									whisperers.each(function(whisperer,i) {
-										if (thisWhisper) return;
-										if (whisperer.get('id').substr(widStr.length+1).toInt() == user.uid) {
-											thisWhisper = whisperBox;
-											thisWhisper.getChildren('.whisperInput').focus();
-										}
-									});
-								}		 
-							});
-							if (thisWhisper) return;
-//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
-							getNewWhisperReq.get($merge(myRequestOptions,{'whisperer':user.uid}));
-//TODO create completely new whisper
-						});
-						dropZones.include(dropNew);
-						dropZones.addEvents({
-							'over':function () {
-								dropZones.addClass('dragOver');
-							},
-							'leave':function () {
-								dropZones.removeClass('dragOver');
+						var dragMan = new Element('div',{'class':'dragBox'});
+						displayUser(user,dragMan);
+						var dragReturn = new Fx.Morph(dragMan, {
+							link: 'cancel',
+							duration: 500,
+							transition: Fx.Transitions.Quad.easeOut,
+							onComplete: function (el) {
+								el.destroy();
 							}
 						});
-						var dragman = new Element('div',{'class':'dragBox'});
-						displayUser(user,dragman);
-						dragman.setStyles(el.getCoordinates());
-						dragman.addEvent('emptydrop', function(e) {
-							this.destroy();
-							dropZones.removeEvents();
+						dragMan.setStyles(el.getCoordinates());
+						dragMan.inject(document.body);
+						dropZones.include(dropNew);
+						var drag = new Drag.Move(dragMan,{
+							droppables:dropZones,
+							onDrop: function(element, droppable){
+								dropZones.removeClass('dragOver');
+								if(droppable) {
+									if(droppable == dropNew) {
+										//See if we are already in a whisper with this user
+										var whisperBoxes = $$('.whisperBox');
+										if (whisperBoxes.every(function(whisperBox,i) {
+											var widStr = whisperBox.get('id');
+											var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
+											if (whisperers.length == 1) { //we only want to worry about this if only other person
+												if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
+													whisperBox.getElement('.whisperInput').focus();
+													this.start(whisperBox.getCoordinates());
+													return false;
+												}
+											}
+											return true;		 
+										}, dragReturn)){ 
+								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
+											var getNewWhisperReq = new Request.JSON({
+												url:'newwhisper.php',
+												onComplete: function(response,errorMsg) {
+													if(response) {
+														var whisper = createWhisperBox(response.wid,response.user);
+														dragReturn.start(whisper.getCoordinates()); //move towards it
+														whisper.getElement('.whisperInput').focus(); //and focus on it
+													} else {
+														displayErrorMessage(errorMsg);
+													}
+												}
+											});
+											getNewWhisperReq.get($merge(myRequestOptions,{'wuid':user.uid}));
+										}
+									} else {
+										//See if already in whisper with this user
+										var span = element.getElement('span');
+										var uid = span.get('id').substr(1).toInt();
+										if (addUser ({
+											'uid': uid,
+											'name' : span.text,
+											'role' : span.get('class')},droppable) ) {
+
+											var addUserToWhisperReq = new Request.JSON({
+												url:'joinwhisper.pnp',
+												onComplete: function(response,errorMsg) {
+													if(!response) {
+														displayErrorMessage(errorMsg);
+													}
+												}
+											});
+											addUserToWhisperReq.get($merge(myRequestOptions,{'wuid':uid,'wid':droppable.get('id').substr(1).toInt()}));
+										}
+									}
+								} else {
+									dragReturn.start(el.getCoordinates());  // should make dragman return on online list
+								}
+							},
+   							onEnter: function(element, droppable){
+								droppable.addClass('dragOver');
+							},
+ 							onLeave: function(element, droppable){
+								droppable.removeClass('dragOver');
+							}							
 						});
-
-
-
-
-
-					},
-					join: function(wid) {
-//TODO
-					},
-					addUser : function (user,wid) {
-//TODO
-					},
-					leaveWhisper : function (wid) {
-//TODO
-					},
-					getLastId : function () {
-						return lastId;
+						drag.start(event);
 					},
 					processMessage: function (msg) {
-						if(!lastId) return;
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
 							switch(msg.type) {
-							case 'WE':
-//TODO
-								break;
 							case 'WJ' :
-//TODO
+								if ($$('.whisperBox').every(function(whisperBox) {
+									var whisperStr = whisperBox.get('id');
+									if(whisperStr.substr(1).toInt() == msg.rid) {
+										if (me.uid != msg.user.uid) {
+											addUser(msg.user,whisperBox);
+										}
+										return false;
+									}
+									return true;
+								})) {
+									// If we get here, this is a WJ for a whisper box we don't have
+									if (me.uid == msg.user.uid ) {
+										//OK - someone else has selected me to be in a whisper
+										createWhisperBox(msg.rid);  //but without (yet) any other user
+									}
+									// Throw others away 
+								}
 								break;
-							case 'WX' :
-//TODO
+							case 'LT':
+							case 'LO':
+								var whisperBoxes = $$('.whisperBox');
+								if (whisperBoxes) {
+									whisperBoxes.each(function(whisperBox) {
+										removeUser(whisperBox,msg.user.uid);
+									});
+								}
 								break;
-							case 'WH' :
-//TODO
+							case 'WL' :
+								var whisperBox = $('W'+msg.rid);
+								if(whisperBox) {
+									removeUser(whisperBox,msg.user.uid);
+								}
 								break;
 							default:
 							//ignore the rest of the messages
@@ -731,7 +817,8 @@ return {
 				return {
 					init: function() {
 					},
-					startLog: function (rid,ww) {
+					startLog: function (rid) {
+						updateables.poller.stop();
 //TODO
 					}
 				};
@@ -742,19 +829,3 @@ return {
 
 
 }();
-
-MBchat.Whisper = new Class({
-	initialize: function (user) {
-//TODO
-	},
-	addUser: function (user) {
-//TODO
-	},
-	removeUser: function (user) {
-//TODO
-	},
-	display: function() {
-//TODO
-	}
-});
-

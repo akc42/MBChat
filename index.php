@@ -52,6 +52,7 @@ $role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L'
 			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
 			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :'R'))) ;
+
 $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 
 dbQuery('START TRANSACTION;');
@@ -80,14 +81,13 @@ $lid = mysql_insert_id();  // get the ID of this transaction for whisper managem
 <body>
 <script type="text/javascript">
 	<!--
-var chat;
 
 window.addEvent('domready', function() {
 	MBchat.init({uid: <?php echo $uid;?>, 
 				name: '<?php echo $name ; ?>',
 				 role: '<?php echo $role; ?>',
 				password : '<?php echo sha1("Key".$uid); ?>',
-				mod: '<?php echo $mod ; ?>'  }, 
+				mod: '<?php echo $mod ; if (isset($_GET['super']) && $role == 'A' ) { echo ', additional : true';} ?>'  }, 
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
 				lastid: <?php echo $lid ; ?>},
@@ -191,12 +191,14 @@ window.addEvent('unload', function() {
 	</form>
 </div>
 
-<div id="whisperBoxTemplate" class="whisperBox">
+<div id="whisperBoxTemplate">
+	<div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
 	<div class="whisperList"></div>
 	<form action="whisper.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
 	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		<input type="hidden" name="wid" class="wid"/>
 		<input type="text" name="text" class="whisperInput" />
-		<input type="submit" name="submit" value="Send"/>
+		<input type="submit" name="submit" value="Send" class="whisperSend"/>
 	</form>
 </div>
 
@@ -230,8 +232,6 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 </html><?php 
 	//purge messages that are too old from database
 	dbQuery('DELETE FROM log WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
-//Slightly longer for whispers to ensure log doesn't reference them
-	dbQuery('DELETE FROM whisper WHERE NOW() > DATE_ADD(DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY),INTERVAL 5 MINUTE) ;');
 //timeout any users that are too old
 
 	include('timeout.php');	

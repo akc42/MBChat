@@ -43,14 +43,11 @@ dbQuery('UPDATE users SET rid = 0, time = NOW(), role = '.dbMakeSafe($role)
 dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 				', "RX" ,'.dbMakeSafe($rid).');');
-dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-				', "RE" ,0);');
 //should only return the whispers
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = '.dbMakeSafe($uid) ;
-$sql .= 'AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
-$sql .= 'ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
+$sql .= ' AND type = "WH" AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR)';
+$sql .= ' ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
 $result = dbQuery($sql);
 $messages = array();
 if(mysql_num_rows($result) != 0) {
