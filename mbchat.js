@@ -608,17 +608,19 @@ return {
 				var lastId = null;
 				var channels = null;
 				var addUser = function (user,whisperBox) {
-					var idLen = whisperBox.get('id').length+1;
+					var widStr = whisperBox.get('id');
 					var whisperList = whisperBox.getElement('.whisperList');
 					var whisperers = whisperList.getChildren();
 					if( whisperers.every(function(whisperer) {
-						if (whisperer.get('id').substr(idLen).toInt() == user.uid ) {
+						if (whisperer.get('id').substr(widStr.length+1).toInt() == user.uid ) {
 								return false;  // Found it, so do nothing
 						}
 						return true;
 					})) {
 						// if we get here, we haven't found the user, so we need to add him
-						displayUser(user,whisperList);
+						var span = displayUser(user,whisperList);
+						span.addClass('whisperer');
+						span.set('id',widStr+'U'+user.uid);
 						return true
 					}
 					return false;
@@ -679,6 +681,7 @@ return {
 						lastId = lid;
 					},
 					whisperWith : function (user,el,event) {
+						var startPosition = el.getCoordinates();
 						var dropNew;
 						if (MBchat.updateables.message.getRoom().rid == 0 ) {
 							dropNew = $('chatList');
@@ -692,11 +695,11 @@ return {
 							link: 'cancel',
 							duration: 500,
 							transition: Fx.Transitions.Quad.easeOut,
-							onComplete: function (el) {
-								el.destroy();
+							onComplete: function (dragged) {
+								dragged.destroy();
 							}
 						});
-						dragMan.setStyles(el.getCoordinates());
+						dragMan.setStyles(startPosition);
 						dragMan.inject(document.body);
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
@@ -755,7 +758,7 @@ return {
 										}
 									}
 								} else {
-									dragReturn.start(el.getCoordinates());  // should make dragman return on online list
+									dragReturn.start(startPosition);  // should make dragman return on online list
 								}
 							},
    							onEnter: function(element, droppable){
