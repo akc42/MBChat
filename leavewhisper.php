@@ -4,17 +4,16 @@ if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['wid'])))
 $uid = $_GET['user'];
 if ($_GET['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
-$wuid = $_GET['wuid'];
 $wid = $_GET['wid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 dbQuery('START TRANSACTION;');
 
-$result = dbQuery('SELECT users.uid, name, role, wid FROM users JOIN participant ON users.uid = participant.uid 
+$result = dbQuery('SELECT users.uid, name, role, wid FROM users JOIN particpant ON users.uid = particpant.uid 
 		WHERE users.uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 if(mysql_num_rows($result) == 0) {
 	dbQuery('ROLLBACK;');
-	die('Join Whisper - Invalid Parameters');
+	die('Leave Whisper - Invalid Parameters');
 }
 $row = mysql_fetch_assoc($result);
 mysql_free_result($result);
