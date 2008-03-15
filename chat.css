@@ -90,7 +90,8 @@ body, td, th
 	position:absolute;
 	top:140px;
 	left:0px;
-	bottom:0px;
+	bottom:0px; 
+	right:0px;
 	width:100%;
 	font-family:Verdana, Arial, Helvetica, sans-serif;
 	font-size:0.8em;
@@ -427,11 +428,10 @@ span.whisper {
 		
 
 .dragBox {
-	padding:5px;
-	width:auto;
+	position:absolute;
+	padding:2px 5px;
 	border:2px solid blue;
 	background:transparent;
-	position:absolute;
 }
 .dragOver {
 	border:3px solid black;

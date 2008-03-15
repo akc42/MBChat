@@ -649,9 +649,9 @@ return {
 							if(response) {
 								response.whisperers.each(function(whisperer) {
 									//inject a user element into box
-									var whisperer = displayUser(whisperer,whisperList);
-									whisperer.addClass('whisperer');
-									whisperer.set('id', 'W'+wid+'U'+whisperer.uid);	
+									if(me.uid != whisperer.uid) {
+										addUser(whisperer,whisper);
+									}
 								});
 							} else { 
 								displayErrorMessage(errorMsg);
@@ -686,7 +686,7 @@ return {
 					position.top = position.top + (Math.random()-0.5) * 50;
 					position.left = position.left + (Math.random()-0.5) * 50;
 					whisper.setStyles(position);
-					
+
 					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
 					return whisper;
 				}
@@ -730,8 +730,8 @@ return {
 								dragged.destroy();
 							}
 						});
-						dragMan.setStyles(startPosition);
 						dragMan.inject(document.body);
+						dragMan.setStyles(startPosition);
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
 							droppables:dropZones,
