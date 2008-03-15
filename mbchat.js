@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.2';
+	var version = 'v0.9.3';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -26,7 +26,8 @@ MBchat = function () {
 	};
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
-		$('version').set('text', version);
+		var span = $('version');
+		span.set('text', version);
 		
 /*		soundManager.onload = function() {
 			soundManager.createSound({
