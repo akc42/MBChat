@@ -536,12 +536,12 @@ return {
 								break;
 							case 'WJ' :
 								if(msg.user.uid != me.uid) {
-									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper room'));
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper box'));
 								}
 								break;
 							case 'WL' :
 								if(msg.user.uid != me.uid) {
-									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper room'));
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper box'));
 								}
 								break;
 							default:
@@ -627,6 +627,7 @@ return {
 				}
 				var createWhisperBox = function (wid,user) {
 					var whisper = $('whisperBoxTemplate').clone();
+					whisper.addClass('whisperBox');
 					whisper.set('id','W'+wid);
 					var whisperList = whisper.getElement('.whisperList');
 					if (user) {
@@ -636,7 +637,6 @@ return {
 						whisperer.set('id', 'W'+wid+'U'+user.uid);
 					}
 					//Now we have to make the whole thing draggable.
-					whisper.addClass('whisperBox');
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
 						e.stop();
@@ -739,23 +739,18 @@ return {
 										}
 									} else {
 										//See if already in whisper with this user
-										var span = element.getElement('span');
-										var uid = span.get('id').substr(1).toInt();
-										if (addUser ({
-											'uid': uid,
-											'name' : span.text,
-											'role' : span.get('class')},droppable) ) {
-
+										if (addUser (user,droppable) ) {
 											var addUserToWhisperReq = new Request.JSON({
-												url:'joinwhisper.pnp',
+												url:'joinwhisper.php',
 												onComplete: function(response,errorMsg) {
 													if(!response) {
 														displayErrorMessage(errorMsg);
 													}
 												}
 											});
-											addUserToWhisperReq.get($merge(myRequestOptions,{'wuid':uid,'wid':droppable.get('id').substr(1).toInt()}));
+											addUserToWhisperReq.get($merge(myRequestOptions,{'wuid':user.uid,'wid':droppable.get('id').substr(1).toInt()}));
 										}
+										dragReturn.start(droppable.getCoordinates());
 									}
 								} else {
 									dragReturn.start(startPosition);  // should make dragman return on online list
