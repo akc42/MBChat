@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.3';
+	var version = 'v0.9.5';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -629,7 +629,8 @@ return {
 					return false;
 				}
 				var createWhisperBox = function (wid,user) {
-					var whisper = $('whisperBoxTemplate').clone();
+					var template = $('whisperBoxTemplate');
+					var whisper = template.clone();
 					whisper.addClass('whisperBox');
 					whisper.set('id','W'+wid);
 					var whisperList = whisper.getElement('.whisperList');
@@ -662,6 +663,10 @@ return {
 						whisper.getElement('.whisperInput').value = '';
 					});
 					whisper.inject(document.body);
+					var position = whisper.getCoordinates();
+					position.top = position.top + (Math.random()-0.5) * 50;
+					position.left = position.left + (Math.random()-0.5) * 50;
+					whisper.setStyles(position);
 					
 					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
 					return whisper;

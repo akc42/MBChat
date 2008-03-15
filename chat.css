@@ -357,8 +357,8 @@ div.whisper {
 
 .whisperBox {
 	display:block;
-	top:145px;
-	left:180px;
+	top:60px;
+	right:50px;
 	padding: 0px;
 	position:absolute;
 	background:transparent;
