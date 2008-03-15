@@ -13,7 +13,7 @@ define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
 require_once(MBCHAT_PATH.'../forum/SSI.php');
 //If not logged in to the forum, not allowed any further so redirect to page to say so
 if($user_info['is_guest']) {
-	header( 'Location: http://www.melindasbackups.com/static/Chat.htm' ) ;
+	header( 'Location: http://mb.home/static/Chat.htm' ) ;
 	exit;
 };
 
