@@ -634,12 +634,31 @@ return {
 					whisper.addClass('whisperBox');
 					whisper.set('id','W'+wid);
 					var whisperList = whisper.getElement('.whisperList');
+					whisperList.addClass('loading');
 					if (user) {
 						//inject a user element into box
 						var whisperer = displayUser(user,whisperList);
 						whisperer.addClass('whisperer');
 						whisperer.set('id', 'W'+wid+'U'+user.uid);
 					}
+					//Now need to get a full picture of who might be in this wid
+					var request = new Request.JSON({
+						url:'getwhisperers.php',
+						onComplete: function(response,errorMsg) {
+							whisperList.removeClass('loading');
+							if(response) {
+								response.whisperers.each(function(whisperer) {
+									//inject a user element into box
+									var whisperer = displayUser(whisperer,whisperList);
+									whisperer.addClass('whisperer');
+									whisperer.set('id', 'W'+wid+'U'+whisperer.uid);	
+								});
+							} else { 
+								displayErrorMessage(errorMsg);
+							}
+						}
+					});
+					request.get($merge(myRequestOptions,{'wid':wid}));	
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
@@ -698,6 +717,10 @@ return {
 						}
 						var dropZones = $$('.whisperBox');
 						var dragMan = new Element('div',{'class':'dragBox'});
+						var dragDestroy = function() {
+							this.destroy();
+						}
+						dragMan.addEvent('mouseleave', dragDestroy);
 						displayUser(user,dragMan);
 						var dragReturn = new Fx.Morph(dragMan, {
 							link: 'cancel',
@@ -712,6 +735,9 @@ return {
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
 							droppables:dropZones,
+							onSnap: function(element) {
+								element.removeEvent('mouseleave',dragDestroy);
+							},
 							onDrop: function(element, droppable){
 								dropZones.removeClass('dragOver');
 								if(droppable) {

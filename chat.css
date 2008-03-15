@@ -92,7 +92,6 @@ body, td, th
 	left:0px;
 	bottom:0px;
 	width:100%;
-	min-height:300px;
 	font-family:Verdana, Arial, Helvetica, sans-serif;
 	font-size:0.8em;
 	background-color:#4A7DB5;
@@ -273,7 +272,6 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	bottom:125px;
 	border:1px solid #ADADAD;
 	background-color:#FFF;
-	overflow:auto;
 } 
 #onlineListContainer h4 {
 	height:25px;
@@ -283,13 +281,14 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	font-size:1.0em;
 	background-color:#88A6C0;
 	color:#FFF;
+	display:block;
 }
-#onlineListContainer #onlineList {
-	position:absolute;
+#onlineList {
+/*	position:absolute; 
 	left:0px;
 	right:0px;
 	top:25px;
-	bottom:0px;
+	bottom:0px; */
 	overflow:auto;
 }
 div.list {
@@ -433,7 +432,6 @@ span.whisper {
 	border:2px solid blue;
 	background:transparent;
 	position:absolute;
-	opacity:0.7;
 }
 .dragOver {
 	border:3px solid black;
