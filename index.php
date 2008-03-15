@@ -13,7 +13,7 @@ define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
 require_once(MBCHAT_PATH.'../forum/SSI.php');
 //If not logged in to the forum, not allowed any further so redirect to page to say so
 if($user_info['is_guest']) {
-	header( 'Location: http://mb.home/static/Chat.htm' ) ;
+	header( 'Location: http://www.melindasbackups.com/static/Chat.htm' ) ;
 	exit;
 };
 
@@ -225,7 +225,7 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 	<label for="soundDelay">Minutes 'till sound</label>
 </div>
 
-<div id="copyright">MBChat &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+<div id="copyright">MBChat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
 
 </body>
 
