@@ -29,20 +29,6 @@ return {
 		var span = $('version');
 		span.set('text', version);
 		
-/*		soundManager.onload = function() {
-			soundManager.createSound({
-				id : 'entrance',
-				url : '/static/sounds/mfv.mp3',
-				autoLoad : true ,
-				autoPlay : false ,
-				onfinish : function () {
-					soundManager.play('entrance');
-				},
-				volume : 10
-			});
-			soundManager.play('entrance');
-		};
-*/
 // Save key data about me
 		me =  user; 
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
@@ -176,6 +162,12 @@ return {
 	logout: function () {
 		var logoutRequest = new Request ({url: 'logout.php'}).get(myRequestOptions);
 	},
+	sounds: function () {
+		return {
+			init: function () {
+			},
+		};
+	}(),
 	updateables : function () {
 		return {
 			init : function (pollOptions) {

@@ -100,6 +100,31 @@ window.addEvent('unload', function() {
 	
 });
 
+var soundReady = false;
+
+soundManager.onload = function() {
+	soundManager.createSound({
+		id : 'whispers',
+		url : '/static/sounds/ding.mp3',
+		autoLoad : true ,
+		autoPlay : false ,
+	});
+	soundManager.createSound({
+		id : 'move',
+		url : '/static/sounds/exit.mp3',
+		autoLoad : true ,
+		autoPlay : false ,
+	});
+	soundManager.createSound({
+		id : 'speak',
+		url : '/static/sounds/poptop.mp3',
+		autoLoad : true ,
+		autoPlay : false ,
+	});
+	soundReady=true;
+};
+
+
 
 	// -->
 </script>
