@@ -432,6 +432,7 @@ span.whisper {
 	padding:2px 5px;
 	border:2px solid blue;
 	background:transparent;
+	cursor:move;
 }
 .dragOver {
 	border:3px solid black;
