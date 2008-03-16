@@ -255,7 +255,9 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	cursor:default;
 }
 
-
+#onlineList span.ask {
+	background-color:yellow;
+}
 
 .rowEven {
 	background-color:#F6F6F6;
