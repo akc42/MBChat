@@ -241,47 +241,53 @@ return {
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
 					var span = displayUser(user,div)
-					if (room.type === 'M' && me.role === 'M') {
-						var question = new Element('div' , {
-							'class': 'question hide',
-							'text' : user.question}).inject(div);
-								
-						if (user.uid != me.uid) {
-							// I am a moderator in a moderated room - therefore I need to be able to moderate others
-							div.addEvents({
-								'moderate' : function(e) {
-									e.stop();
-									var request = new request.JSON({
-										'url' : 'release.php',
-										'onComplete' : function (response,errorMsg) {
-											//Not interested in normal return as message will appear via poll
-											if(!response) {
-												displayError(errorMsg);
+					if (room.type === 'M') {
+						if (me.role === 'M') {
+							var question = new Element('div' , {
+								'class': 'question hide',
+								'text' : user.question}).inject(div);
+									
+							if (user.uid != me.uid) {
+								// I am a moderator in a moderated room - therefore I need to be able to moderate others
+								div.addEvents({
+									'moderate' : function(e) {
+										e.stop();
+										var request = new request.JSON({
+											'url' : 'release.php',
+											'onComplete' : function (response,errorMsg) {
+												//Not interested in normal return as message will appear via poll
+												if(!response) {
+													displayError(errorMsg);
+												}
 											}
-										}
-									}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
-								},
-								'promote': function(e) {
+										}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
+									},
+									'promote': function(e) {
+										e.stop();
+		//TODO - make moderator
+									},
+									'mouseover' : function(e) {
+										question.removeClass('hide');
+									},
+									'mouseleave' : function(e) {
+										question.addClass('hide');
+									},
+									'mousedown' : function(e) {
+										e= new Event(e).stop();
+										MBchat.updateables.whispers.whisperWith(user,span,e);
+									}
+								});
+								div.firstChild.addClass('whisperer');
+							} else {
+								div.addEvent('demote', function(e) {
 									e.stop();
-	//TODO - make moderator
-								},
-								'mouseover' : function(e) {
-									question.removeClass('hide');
-								},
-								'mouseleave' : function(e) {
-									question.addClass('hide');
-								},
-								'mousedown' : function(e) {
-									e= new Event(e).stop();
-									MBchat.updateables.whispers.whisperWith(user,span,e);
-								}
-							});
-							div.firstChild.addClass('whisperer');
+	//TODO downgrade self
+								});
+							}
 						} else {
-							div.addEvent('demote', function(e) {
-								e.stop();
-//TODO downgrade self
-							});
+							if (user.question != '') {
+								span.addClass('ask');
+							}
 						}
 					} else {
 						if (user.uid != me.uid) {
