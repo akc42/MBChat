@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.5';
+	var version = 'v0.9.6';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -157,6 +157,7 @@ return {
 		});
 		room = {rid:0, name: 'Entrance Hall', type : 'O'};   //Set up to be in the entrance hall
 		MBchat.updateables.init(pollOptions);
+		MBchat.sounds.init();		//start sound system
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 		
 	},
@@ -183,13 +184,13 @@ return {
 				Timer.counter = Timer.start;
 			},
 			roomMove : function() {
-				if(soundReady && counter == 0 && $('soundEnabled').checked) soundManager.play('move');
+				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('move');
 			},
 			newWhisper: function() {
-				if(soundReady && counter == 0 && $('soundEnabled').checked) soundManager.play('whispers');
+				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('whispers');
 			},
 			messageArrives:function() {
-				if(soundReady && counter == 0 && $('soundEnabled').checked) soundManager.play('speak');
+				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('speak');
 			}
 		};
 	}(),
@@ -480,6 +481,7 @@ return {
 								$('messageText').focus();							
 							}
 						}).get($merge(myRequestOptions,{'rid' : rid}));
+						MBchat.sounds.resetTimer();
 					},
 					leaveRoom: function () {
 						lastId = null;
@@ -514,6 +516,7 @@ return {
 						var exit = $('exit');	
 						exit.addClass('exit-f');
 						exit.removeClass('exit-r');
+						MBchat.sounds.resetTimer();
 					},
 					getRoom: function () {
 						return room;
@@ -710,6 +713,7 @@ return {
 						whisper.getElement('.wid').value = wid;
 						this.send();
 						whisper.getElement('.whisperInput').value = '';
+						MBchat.sounds.resetTimer();
 					});
 					whisper.inject(document.body);
 					var position = whisper.getCoordinates();

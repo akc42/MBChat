@@ -107,19 +107,19 @@ soundManager.onload = function() {
 		id : 'whispers',
 		url : '/static/sounds/ding.mp3',
 		autoLoad : true ,
-		autoPlay : false ,
+		autoPlay : false 
 	});
 	soundManager.createSound({
 		id : 'move',
 		url : '/static/sounds/exit.mp3',
 		autoLoad : true ,
-		autoPlay : false ,
+		autoPlay : false 
 	});
 	soundManager.createSound({
 		id : 'speak',
 		url : '/static/sounds/poptop.mp3',
 		autoLoad : true ,
-		autoPlay : false ,
+		autoPlay : false 
 	});
 	soundReady=true;
 };
