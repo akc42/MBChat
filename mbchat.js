@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.6';
+	var version = 'v0.9.7';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -24,6 +24,7 @@ MBchat = function () {
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
+	var contentSize;
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
 		var span = $('version');
@@ -155,6 +156,11 @@ return {
 			$('messageText').value = '';
 			MBchat.sounds.resetTimer();
 		});
+		contentSize = $('content').getCoordinates();
+		window.addEvent('resize', function() {
+			contentSize = $('content').getCoordinates();
+		});
+
 		room = {rid:0, name: 'Entrance Hall', type : 'O'};   //Set up to be in the entrance hall
 		MBchat.updateables.init(pollOptions);
 		MBchat.sounds.init();		//start sound system
@@ -730,6 +736,7 @@ return {
 							onComplete: function(response,errorMsg) {
 								if(response) {
 									whisper.destroy();
+									$('content').setStyles(contentSize);
 								} else { 
 									displayErrorMessage(errorMsg);
 								}
@@ -751,6 +758,7 @@ return {
 					whisper.setStyles(position);
 
 					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
+					$('content').setStyles(contentSize);
 					return whisper;
 				}
 				var removeUser = function(whisperBox,uid) {
@@ -782,6 +790,7 @@ return {
 						var dragMan = new Element('div',{'class':'dragBox'});
 						var dragDestroy = function() {
 							this.destroy();
+						$('content').setStyles(contentSize);
 						}
 						dragMan.addEvent('mouseleave', dragDestroy);
 						displayUser(user,dragMan);
@@ -861,6 +870,7 @@ return {
 							}							
 						});
 						drag.start(event);
+						$('content').setStyles(contentSize);
 					},
 					processMessage: function (msg) {
 						if (lastId < msg.lid) {
