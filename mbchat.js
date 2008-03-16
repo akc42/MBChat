@@ -165,6 +165,9 @@ return {
 		var logoutRequest = new Request ({url: 'logout.php'}).get(myRequestOptions);
 	},
 	sounds: function () {
+		var music = false;
+		var musicEnabled;
+		var playAgain = true;
 		var Timer = {counter:30 , start : 30 }; //Units of 10 seconds
 		var countDown = function() {
 			if (this.counter > 0 ) this.counter-- ;
@@ -174,11 +177,37 @@ return {
 				this.start = soundDelay;
 				if (this.counter < 0) this.counter = 0;
 			}
+			
+			if (!music && soundReady) {
+				music = soundManager.getSoundById('music');
+				music.onfinish = function () {
+					playAgain = true;
+				}
+				music.volume = 10;
+			}
+			if (musicEnabled.checked) {
+				if (playAgain) {
+					soundManager.play('music');
+					playAgain = false;
+				}
+			} else {
+				if(!playAgain) {
+					soundManager.stop('music');
+					playAgain = true;
+				}
+			}
 		}
 		
 		return {
 			init: function () {
-				countDown.periodical(10000,Timer); //countdown in 10 sec chunks
+				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
+				musicEnabled = $('musicEnabled');
+				musicEnabled.addEvent('click', function(e) {
+					if(!musicEnabled.checked) {
+						soundManager.stop('music');
+						playAgain = true;
+					}
+				});
 			},
 			resetTimer: function() {
 				Timer.counter = Timer.start;
