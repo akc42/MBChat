@@ -410,8 +410,9 @@ div.whisper {
 	width:230px;
 	height:25px;
 	border:1px solid black;
-	background:transparent;
+	background:white;
 }
+
 
 .whisperSend {
 	position:absolute;
