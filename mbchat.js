@@ -29,7 +29,7 @@ MBchat = function () {
 		autoCancel: true,
 		onComplete : function(response,errorMsg) {
 			if(response) {
-				MBchat.updateables.pollResponse(response)
+				MBchat.updateables.poller.pollResponse(response)
 			} else {
 				displayErrorMessage(errorMsg);
 			}
@@ -40,7 +40,7 @@ MBchat = function () {
 		autoCancel: true,
 		onComplete : function(response,errorMsg) {
 			if(response) {
-				MBchat.updateables.pollResponse(response)
+				MBchat.updateables.poller.pollResponse(response)
 			} else {
 				displayErrorMessage(errorMsg);
 			}
@@ -174,7 +174,7 @@ return {
 
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
-			messageReq.get({$merge(myRequestOptions,{
+			messageReq.get($merge(myRequestOptions,{
 				'rid':room.rid,
 				'lid':MBchat.updateables.poller.getLastId(),
 				'text':$('messageText').value}));
@@ -263,12 +263,6 @@ return {
 				MBchat.updateables.whispers.init(pollOptions.lastid);
 				MBchat.updateables.logger.init();
 			},
-			pollResponse : function(response) {
-				response.messages.each(function(item) {
-					lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
-					MBchat.updateables.processMessage(item);
-				});
-			},
 			processMessage : function(message) {
 				MBchat.updateables.online.processMessage(message);
 				MBchat.updateables.message.processMessage(message);
@@ -286,7 +280,7 @@ return {
 					autoCancel: true,
 					onComplete : function(response,errorMsg) {
 						if(response) {
-							MBchat.updateables.pollResponse(response)
+							MBchat.updateables.poller.pollResponse(response)
 						} else {
 							displayErrorMessage(errorMsg);
 						}
@@ -318,6 +312,12 @@ return {
 					},
 					getLastId: function() {
 						return lastId;
+					},
+					pollResponse : function(response) {
+						response.messages.each(function(item) {
+							lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
+							MBchat.updateables.processMessage(item);
+						});
 					},
 					stop : function() {
 						$clear(pollerId);
@@ -777,7 +777,7 @@ return {
 					});
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
-						whisperReq.get({$merge(myRequestOptions,{
+						whisperReq.get($merge(myRequestOptions,{
 							'wid':wid,
 							'rid':room.rid,
 							'lid':MBchat.updateables.poller.getLastId(),
