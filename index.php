@@ -215,9 +215,8 @@ soundManager.onload = function() {
 <div id="chatList" class="whisper"></div>	
 
 <div id="inputContainer">
-	<form id="messageForm" action="message.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
-	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		<input id="messageRoom" type="hidden" value="0" name="room" />
+	<form id="messageForm" action="/"
+	 enctype="application/x-www-form-urlencoded" autocomplete="off" >
 		<input id="messageText" type="text" name="text" />
 		<input type="submit" name="submit" value="Send"/>
 	</form>
@@ -226,9 +225,8 @@ soundManager.onload = function() {
 <div id="whisperBoxTemplate">
 	<div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
 	<div class="whisperList"></div>
-	<form action="whisper.php?user=<?php echo $uid;?>&password=<?php echo sha1("Key".$uid); ?>"
-	 method="post" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		<input type="hidden" name="wid" class="wid"/>
+	<form action="/"
+	 	enctype="application/x-www-form-urlencoded" autocomplete="off" >
 		<input type="text" name="text" class="whisperInput" />
 		<input type="submit" name="submit" value="Send" class="whisperSend"/>
 	</form>

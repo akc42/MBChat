@@ -24,6 +24,29 @@ MBchat = function () {
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
+	var messageReq = new Request.JSON({
+		url: 'message.php',
+		autoCancel: true,
+		onComplete : function(response,errorMsg) {
+			if(response) {
+				MBchat.updateables.pollResponse(response)
+			} else {
+				displayErrorMessage(errorMsg);
+			}
+		}
+	});
+	var whisperReq = new Request.JSON({
+		url: 'whisper.php',
+		autoCancel: true,
+		onComplete : function(response,errorMsg) {
+			if(response) {
+				MBchat.updateables.pollResponse(response)
+			} else {
+				displayErrorMessage(errorMsg);
+			}
+		}
+	});
+		
 	var contentSize;
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
@@ -151,8 +174,10 @@ return {
 
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
-			$('messageRoom').value = room.rid;
-			this.send();
+			messageReq.get({$merge(myRequestOptions,{
+				'rid':room.rid,
+				'lid':MBchat.updateables.poller.getLastId(),
+				'text':$('messageText').value}));
 			$('messageText').value = '';
 			MBchat.sounds.resetTimer();
 		});
@@ -238,27 +263,30 @@ return {
 				MBchat.updateables.whispers.init(pollOptions.lastid);
 				MBchat.updateables.logger.init();
 			},
+			pollResponse : function(response) {
+				response.messages.each(function(item) {
+					lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
+					MBchat.updateables.processMessage(item);
+				});
+			},
 			processMessage : function(message) {
 				MBchat.updateables.online.processMessage(message);
 				MBchat.updateables.message.processMessage(message);
 				MBchat.updateables.whispers.processMessage(message);
 			},
 			poller : function() {
-				var lastId = null;
 				var presenceInterval;
 				var presenceCounter = 0;
 				var pollInterval;
 				var pollerId;
+				var lastId = null;
 
 				var pollRequest = new Request.JSON({
 					url: 'poll.php',
 					autoCancel: true,
 					onComplete : function(response,errorMsg) {
 						if(response) {
-							response.messages.each(function(item) {
-								lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
-								MBchat.updateables.processMessage(item);
-							});
+							MBchat.updateables.pollResponse(response)
 						} else {
 							displayErrorMessage(errorMsg);
 						}
@@ -287,6 +315,9 @@ return {
 						} else {
 							lastId = (lastId > lid)? lid : lastId;  //set to earliest value
 						}
+					},
+					getLastId: function() {
+						return lastId;
 					},
 					stop : function() {
 						$clear(pollerId);
@@ -746,8 +777,11 @@ return {
 					});
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
-						whisper.getElement('.wid').value = wid;
-						this.send();
+						whisperReq.get({$merge(myRequestOptions,{
+							'wid':wid,
+							'rid':room.rid,
+							'lid':MBchat.updateables.poller.getLastId(),
+							'text':whisper.getElement('.whisperInput').value}));
 						whisper.getElement('.whisperInput').value = '';
 						MBchat.sounds.resetTimer();
 					});

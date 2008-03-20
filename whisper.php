@@ -1,13 +1,13 @@
 <?php
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_POST['text']) && isset($_POST['wid'])))
+if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['text']) && isset($_GET['wid'])))
 	die('Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 
 if ($_GET['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
 
-$wid = $_POST['wid'];
-$text = htmlentities(stripslashes($_POST['text']),ENT_QUOTES);   // we need to get the text in an html pure form as possible
+$wid = $_GET['wid'];
+$text = htmlentities(stripslashes($_GET['text']),ENT_QUOTES);   // we need to get the text in an html pure form as possible
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
@@ -33,5 +33,5 @@ if ($text != '') {  //only insert non blank text - ignore other
 dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
 
 dbQuery('COMMIT ;');
-echo '{"lastid":'.mysql_insert_id().'}';
+include('poll.php');  //by including this we send current messages immediately
 ?> 
