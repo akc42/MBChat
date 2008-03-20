@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.7';
+	var version = 'v0.9.8';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -790,7 +790,7 @@ return {
 						var dragMan = new Element('div',{'class':'dragBox'});
 						var dragDestroy = function() {
 							this.destroy();
-						$('content').setStyles(contentSize);
+							$('content').setStyles(contentSize);
 						}
 						dragMan.addEvent('mouseleave', dragDestroy);
 						displayUser(user,dragMan);
@@ -800,6 +800,7 @@ return {
 							transition: Fx.Transitions.Quad.easeOut,
 							onComplete: function (dragged) {
 								dragged.destroy();
+								$('content').setStyles(contentSize);
 							}
 						});
 						dragMan.inject(document.body);
