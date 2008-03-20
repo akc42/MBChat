@@ -597,16 +597,41 @@ return {
 								MBchat.sounds.messageArrives();
 								break;
 							case 'WH' :
+								var whisperList;
+								var whisperIdStr;
 								//Must only display whispers for me
 								var whisperBoxes = $$('.whisperBox');
 								if(!whisperBoxes.every(function(whisperBox) {
-									if(msg.rid == whisperBox.get('id').substr(1).toInt()) {
+									whisperIdStr = whisperBox.get('id');
+									if(msg.rid == whisperIdStr.substr(1).toInt()) {
+										whisperList = whisperBox.getElement('.whisperers');
 										return false;
 									}
 									return true;
 								})) {
-									var whisper ='<span class="whisper">(whispers)' +msg.message+'</span>' ;
-									this.displayMessage(lastId,msg.time,msg.user,whisper);
+									var whisper = new Element('span',{'class':'whisper'});
+									if (me.uid = msg.user.uid) {
+										whisper.appendText('(whispers to')
+									} else {
+										whisper.appendText('(whispers to me')
+									//whisperList says who the other whisperers are
+									var othersAdded = false;
+									var whisperers = whisperList.getChildren();
+									whisperers.every(function(whisperer) {
+										var uid = whisperer.get('id').substr(wisperIdStr.length+1).toInt();
+										if (uid != meg.user.uid) { //This is not the whisperer so include
+											if(othersAdded) {
+												whisper.appendText(', ');
+											}else {
+												whisper.appendText(' ');
+											}
+											var newwhisperer = whisperer.clone(); //Make a clone to remove Id 
+											newwispererer.inject(whisper);
+											othersAdded = true;
+										});
+									}
+									whisper.append(')' +msg.message) ;
+									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html'));
 									MBchat.sounds.messageArrives();
 								}
 								break;
