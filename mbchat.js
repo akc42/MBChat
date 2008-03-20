@@ -604,33 +604,34 @@ return {
 								if(!whisperBoxes.every(function(whisperBox) {
 									whisperIdStr = whisperBox.get('id');
 									if(msg.rid == whisperIdStr.substr(1).toInt()) {
-										whisperList = whisperBox.getElement('.whisperers');
+										whisperList = whisperBox.getElement('.whisperList');
 										return false;
 									}
 									return true;
 								})) {
 									var whisper = new Element('span',{'class':'whisper'});
-									if (me.uid = msg.user.uid) {
+									if (me.uid == msg.user.uid) {
 										whisper.appendText('(whispers to')
 									} else {
 										whisper.appendText('(whispers to me')
+									}
 									//whisperList says who the other whisperers are
 									var othersAdded = false;
 									var whisperers = whisperList.getChildren();
 									whisperers.every(function(whisperer) {
-										var uid = whisperer.get('id').substr(wisperIdStr.length+1).toInt();
-										if (uid != meg.user.uid) { //This is not the whisperer so include
+										var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
+										if (uid != msg.user.uid) { //This is not the whisperer so include
 											if(othersAdded) {
 												whisper.appendText(', ');
 											}else {
 												whisper.appendText(' ');
+												othersAdded = true;
 											}
-											var newwhisperer = whisperer.clone(); //Make a clone to remove Id 
-											newwispererer.inject(whisper);
-											othersAdded = true;
-										});
-									}
-									whisper.append(')' +msg.message) ;
+											var newWhisperer = whisperer.clone(); //Make a clone to remove Id 
+											newWhisperer.inject(whisper);
+										};
+									});
+									whisper.appendText(') ' +msg.message) ;
 									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html'));
 									MBchat.sounds.messageArrives();
 								}
