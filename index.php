@@ -136,7 +136,7 @@ soundManager.onload = function() {
 	// -->
 </script>
 
-<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" >
+<table id="header" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" >
 <tbody>
 	<tr>
 	<td align="left" width="30" class="topbg_l" height="70">&nbsp;</td>
@@ -156,7 +156,22 @@ soundManager.onload = function() {
 </table>
 
 <div id="content">
-
+<div id="logControls" class="hide">
+	<div id="exitLog"></div>
+	<div id="timeSelectLog">
+		<div id="timeSelectStartLog">
+			<div id="startTextLog>Start:</div>
+			<div id="minusStartLog"></div><div id="timeShowStartLog"></div><div id="plusStartLog"></div>
+			<div id="startSelectedLog"></div>
+		</div>
+		<div id="timeSelectEndLog">
+			<div id="endTextLog>End:</div>
+			<div id="minusEndLog"></div><div id="timeShowEndLog"></div><div id="plusEndLog"></div>
+			<div id="endSelectedLog"></div>
+		</div>
+	</div>
+	<div id="fetchLog"></div>
+</div>
 <div id="exit" class="exit-f"></div>
 
 <div id="entranceHall">
@@ -255,8 +270,13 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 	<label for="soundDelay">Minutes 'till sound</label>
 </div>
 
-<div id="copyright">MBChat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
-
+<div id="copyright">MBchat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+<div id="printScreen" class="hide">
+	<h1>Melinda&quot;s Backups Chat History Log</h1>
+	<h2></h2> <!-- Room Name to go in here -->
+	<h3></h3> <!-- Dates to go in here ->
+	<div id="printLog"><div>
+</div>
 </body>
 
 </html><?php 

@@ -146,7 +146,9 @@ return {
 		if (me.additional) {
 			exit.addEvent('controlclick',function(e) {
 				e.stop();
-				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid);
+				if (MBchat.updateables.message.getRoom().rid == 0 ) {
+					MBchat.updateables.logger.startLog(99); //Only do this from entrance hall
+				}
 			});
 		}
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
@@ -319,6 +321,8 @@ return {
 					getLastId: function() {
 						return lastId;
 					},
+					start : function () {
+						pollerId = poll.periodical(pollInterval,MBchat.updateables);
 					stop : function() {
 						$clear(pollerId);
 						lastId = null; //Ensure no more polls come through
@@ -980,11 +984,41 @@ return {
 				};
 			}(),
 			logger : function () {
+				var logControls;
+				var printScreen;
+				var printLog;
+				var function = timeCount() {
+//TODO - 'this' is a time 
+				}
+				var returnToEntranceHall = function() {
+					logControls.addClass('hide');
+					printLog.empty();
+					messageList.empty();
+//TODO
+					messageList.removeClass('chat');
+					messageList.addClass('whisper');
+					$('exit').removeClass('hide');
+					MBchat.updateables.poller.start();
+					MBchat.updateables.online.show(0);	//Show online list for entrance hall
+				}
 				return {
 					init: function() {
+						logControls = $('logControls');
+						printScreen = $('printScreen');
+						printLog = $('printLog');
 					},
 					startLog: function (rid) {
-						updateables.poller.stop();
+						MBchat.updateables.poller.stop();
+						messageList.removeClass('whisper');
+						messageList.empty();
+						messageList.addClass('chat');
+						$('roomNameContainer').empty();
+						$('entranceHall').set('styles',{'display':'none'});	
+						var exit = $('exit');
+						exit.removeClass('exit-r');
+						exit.addClass('exit-f');
+						exit.addClass('hide');
+						logControls.removeClass(hide);
 //TODO
 					}
 				};

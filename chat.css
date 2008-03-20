@@ -190,6 +190,10 @@ body, td, th
 	background: white url(/static/images/spinner.gif) no-repeat center;
 }
 
+.hide {
+	display:none;
+}
+
 /* these are the classes related to user types */
 /* admin/leadership team */
 span.A , span.L {
