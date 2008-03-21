@@ -138,6 +138,7 @@ return {
 		exit.addEvent('click', function(e) {
 			e.stop();
 			if (MBchat.updateables.message.getRoom().rid == 0 ) {
+				MBchat.logout();
 				window.location = '/forum' ; //and go back to the forum
 			} else {
 				MBchat.updateables.message.leaveRoom();
@@ -610,15 +611,16 @@ return {
 									return true;
 								})) {
 									var whisper = new Element('span',{'class':'whisper'});
+									var othersAdded = false;
 									if (me.uid == msg.user.uid) {
 										whisper.appendText('(whispers to')
 									} else {
 										whisper.appendText('(whispers to me')
+										othersAdded = true;
 									}
 									//whisperList says who the other whisperers are
-									var othersAdded = false;
 									var whisperers = whisperList.getChildren();
-									whisperers.every(function(whisperer) {
+									whisperers.each(function(whisperer) {
 										var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
 										if (uid != msg.user.uid) { //This is not the whisperer so include
 											if(othersAdded) {
@@ -824,6 +826,7 @@ return {
 				var removeUser = function(whisperBox,uid) {
 					if (me.uid == uid) {
 						whisperBox.destroy();
+						$('content').setStyles(contentSize);
 					} else {
 						var span = $(whisperBox.get('id')+'U'+uid);
 						if (span) {
@@ -831,6 +834,7 @@ return {
 						}
 						if (whisperBox.getElement('.whisperList').getChildren().length == 0 ) {
 							whisperBox.destroy();
+							$('content').setStyles(contentSize);
 						}
 					}
 				}

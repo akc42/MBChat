@@ -18,7 +18,7 @@ if (isset($_GET['presence'])) {
 
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE lid > '.dbMakeSafe($lid).' AND ( participant.uid = '.dbMakeSafe($uid);
-$sql .= 'OR rid = '.dbMakeSafe($rid).');';
+$sql .= 'OR rid = '.dbMakeSafe($rid).' OR type IN ("LO","LT")) ORDER BY lid;';
 
 
 $result = dbQuery($sql);
