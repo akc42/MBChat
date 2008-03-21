@@ -245,6 +245,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 
 #onlineList>div {
 	padding:2px;
+	position:relative;
 }
 
 #onlineList span.whisperer {
@@ -267,6 +268,21 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	background-color:#ECEDF3;
 }
 
+.hide {
+	display: none;
+}
+
+.question {
+	position:absolute;
+	top: 20px;
+	left:20px;
+	width:150px;
+	z-index:10;
+	border:1px dotted green;
+	padding:2px 5px;
+	font-size:x-small;
+}
+
 #onlineListContainer {
 	position:absolute;
 	right:20px;
@@ -287,16 +303,14 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	display:block;
 }
 #onlineList {
-/*	position:absolute; 
-	left:0px;
-	right:0px;
-	top:25px;
-	bottom:0px; */
 	overflow:auto;
 }
 div.list {
 	padding:10px 2px;
 }
+
+
+
 
 #userOptions {
 	position:absolute;

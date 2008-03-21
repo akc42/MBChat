@@ -383,12 +383,27 @@ return {
 					var div = new Element('div', {'id': 'U'+user.uid});
 					var span = displayUser(user,div)
 					if (room.type === 'M') {
-						if (me.role === 'M') {
-							var question = new Element('div' , {
-								'class': 'question hide',
-								'text' : user.question}).inject(div);
-									
+						if (me.mod === 'M') {
 							if (user.uid != me.uid) {
+								if (user.question) {
+									span.addClass('ask');
+									var question = new Element('div' , {
+										'class': 'question hide',
+										'text' : user.question}).inject(div);
+									div.addEvents({
+										'mouseover' : function(e) {
+											question.removeClass('hide');
+											var dummy = new Element('div', {
+												'id' : 'onlineDummy',
+												'height' : '30px'});
+											dummy.inject($('onlineList'));
+										},
+										'mouseleave' : function(e) {
+											$('onlineDummy').destroy();
+											question.addClass('hide');
+										}
+									});
+								}
 								// I am a moderator in a moderated room - therefore I need to be able to moderate others
 								div.addEvents({
 									'moderate' : function(e) {
@@ -419,17 +434,7 @@ return {
 											}
 										}).get($merge(myRequestOptions,{
 											'lid':MBchat.updateables.poller.getLastId(),
-											'puid':user.uid));
-									},
-									'mouseover' : function(e) {
-										question.removeClass('hide');
-									},
-									'mouseleave' : function(e) {
-										question.addClass('hide');
-									},
-									'mousedown' : function(e) {
-										e= new Event(e).stop();
-										MBchat.updateables.whispers.whisperWith(user,span,e);
+											'puid':user.uid}));
 									}
 								});
 								div.firstChild.addClass('whisperer');
@@ -450,19 +455,18 @@ return {
 								});
 							}
 						} else {
-							if (user.question != '') {
+							if (user.question) {
 								span.addClass('ask');
 							}
 						}
-					} else {
-						if (user.uid != me.uid) {
-							div.addEvent('mousedown',function (e) {
-								e=new Event(e).stop();
-								MBchat.updateables.whispers.whisperWith(user,span,e);
-							});
-							div.firstChild.addClass('whisperer');
-						}
 					} 
+					if (user.uid != me.uid) {
+						div.addEvent('mousedown',function (e) {
+							e=new Event(e).stop();
+							MBchat.updateables.whispers.whisperWith(user,span,e);
+						});
+						div.firstChild.addClass('whisperer');
+					}
 					div.inject(onlineList); //Forces onlineList to have children
 					if ((onlineList.getChildren().length % 2) == 0 ) {
 						div.addClass('rowEven');
@@ -544,13 +548,20 @@ return {
 								case 'LI' : //Login (to room) and room entry are the asme
 								case 'RE' :
 									if (!userDiv) {
-										var user = msg.user
-										user.question = msg.message
+										var user = msg.user;
+										user.question = msg.message;
 										addUser(user);
 									}
 									break;
 								case 'RM' : // becomes moderator
 								case 'RN' : // stops being moderator
+									if (me.uid == msg.user.uid) {
+										if (msg.user.role == 'M') {
+											me.mod == 'M'
+										} else {
+											me.mod == 'N'
+										}
+									}
 									if (userDiv) {
 									// If user exists we remove him from the list and then add him back
 									// As lots of complicated events need to be dealt with
@@ -568,8 +579,8 @@ return {
 												i++;
 											} while (node = node.nextSibling);
 										}
-										var user = msg.user
-										user.question = msg.message
+										var user = msg.user;
+										user.question = msg.message;
 										addUser(user);
 									}			 
 
@@ -577,16 +588,18 @@ return {
 								case 'MQ' : // User asks a question
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
-									if (room.type == 'M' && me.role == 'M') {
+									if (room.type == 'M' && me.mod == 'M') {
 										var question = new Element('div' , {
 											'class': 'question hide',
-											'text' : msg.message}).inject(div);
+											'text' : msg.message}).inject(userDiv);
+									}
 									break;
-								case 'MR' : //User removes question
-								case 'ME' : //A message from a user must mean he no longer has a question outstanding
+								case 'MR' :
+								case 'ME' :
+								//A message from a user must mean he no longer has a question outstanding
 									var span = userDiv.getElement('span');
 									span.removeClass('ask');
-									if (room.type == 'M' && me.role == 'M') {
+									if (room.type == 'M' && me.mod == 'M') {
 										var div = userDiv.getElement('div');  //This is the hidden question
 										if(div) {
 											div.destroy();
