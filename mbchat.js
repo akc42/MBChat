@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.9';
+	var version = 'v0.9.10';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -245,10 +245,16 @@ return {
 				Timer.counter = Timer.start;
 			},
 			roomMove : function() {
-				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('move');
+				if(soundReady && $('soundEnabled').checked) {
+					if(room.rid == 4) { //special for vamp club
+						soundManager.play('creaky');
+					} else {
+						soundManager.play('move');
+					}
+				}
 			},
 			newWhisper: function() {
-				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('whispers');
+				if(soundReady && $('soundEnabled').checked) soundManager.play('whispers');
 			},
 			messageArrives:function() {
 				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('speak');

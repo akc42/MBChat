@@ -122,6 +122,12 @@ soundManager.onload = function() {
 		autoPlay : false 
 	});
 	soundManager.createSound({
+		id : 'creaky',
+		url : '/static/sounds/creaky.mp3',
+		autoLoad : true ,
+		autoPlay : false
+	});
+	soundManager.createSound({
 		id : 'music',
 		url : '/static/sounds/mfv.mp3',
 		autoLoad : true ,
