@@ -412,8 +412,9 @@ div.whisper {
 	width:230px;
 	height:25px;
 	border:1px solid black;
-	background:transparent;
+	background:white;
 }
+
 
 .whisperSend {
 	position:absolute;
@@ -434,6 +435,7 @@ span.whisper {
 	padding:2px 5px;
 	border:2px solid blue;
 	background:transparent;
+	cursor:move;
 }
 .dragOver {
 	border:3px solid black;

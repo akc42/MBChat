@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.5';
+	var version = 'v0.9.11';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -24,6 +24,30 @@ MBchat = function () {
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
+	var messageReq = new Request.JSON({
+		url: 'message.php',
+		autoCancel: true,
+		onComplete : function(response,errorMsg) {
+			if(response) {
+				MBchat.updateables.poller.pollResponse(response)
+			} else {
+				displayErrorMessage(errorMsg);
+			}
+		}
+	});
+	var whisperReq = new Request.JSON({
+		url: 'whisper.php',
+		autoCancel: true,
+		onComplete : function(response,errorMsg) {
+			if(response) {
+				MBchat.updateables.poller.pollResponse(response)
+			} else {
+				displayErrorMessage(errorMsg);
+			}
+		}
+	});
+		
+	var contentSize;
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
 		var span = $('version');
@@ -114,6 +138,7 @@ return {
 		exit.addEvent('click', function(e) {
 			e.stop();
 			if (MBchat.updateables.message.getRoom().rid == 0 ) {
+				MBchat.logout();
 				window.location = '/forum' ; //and go back to the forum
 			} else {
 				MBchat.updateables.message.leaveRoom();
@@ -150,12 +175,21 @@ return {
 
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
-			$('messageRoom').value = room.rid;
-			this.send();
+			messageReq.get($merge(myRequestOptions,{
+				'rid':room.rid,
+				'lid':MBchat.updateables.poller.getLastId(),
+				'text':$('messageText').value}));
 			$('messageText').value = '';
+			MBchat.sounds.resetTimer();
 		});
+		contentSize = $('content').getCoordinates();
+		window.addEvent('resize', function() {
+			contentSize = $('content').getCoordinates();
+		});
+
 		room = {rid:0, name: 'Entrance Hall', type : 'O'};   //Set up to be in the entrance hall
 		MBchat.updateables.init(pollOptions);
+		MBchat.sounds.init();		//start sound system
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 		
 	},
@@ -163,9 +197,110 @@ return {
 		var logoutRequest = new Request ({url: 'logout.php'}).get(myRequestOptions);
 	},
 	sounds: function () {
+		var music = false;
+		var musicEnabled;
+		var soundEnabled;
+		var playAgain = true;
+		var Timer = {counter:30 , start : 30 }; //Units of 10 seconds
+		var countDown = function() {
+			if (this.counter > 0 ) this.counter-- ;
+			var soundDelay = 6*$('soundDelay').value ;
+			if ( soundDelay != this.start) {
+				this.counter += soundDelay -this.start ;
+				this.start = soundDelay;
+				if (this.counter < 0) this.counter = 0;
+				Cookie.write('soundDelay', $('soundDelay').value.toString(),{duration:50});
+			}
+			
+			if (!music && soundReady) {
+				music = soundManager.getSoundById('music');
+				music.onfinish = function () {
+					playAgain = true;
+				}
+				music.volume = 10;
+			}
+			if (musicEnabled.checked) {
+				if (playAgain) {
+					soundManager.play('music');
+					playAgain = false;
+				}
+			} else {
+				if(!playAgain) {
+					soundManager.stop('music');
+					playAgain = true;
+				}
+			}
+		}
+		
 		return {
 			init: function () {
+				var sd = Cookie.read('soundDelay')
+				Cookie.write('soundDeley',sd,{duration:50}); //Just write so validity starts again
+				if (sd) {
+					var delayMin = sd.toInt()
+					Timer.start = 6 * delayMin;
+					Timer.counter = Timer.start;
+					$('soundDelay').value = delayMin;
+				}
+				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
+				musicEnabled = $('musicEnabled');
+				var mu = Cookie.read('musicEnabled');
+				Cookie.write('musicEnabled', mu ,{duration:50});
+				if (mu) {
+					if (mu == 'true') {
+						musicEnabled.checked = true;
+					} else {
+						musicEnabled.checked = false;
+					}
+				}
+				musicEnabled.addEvent('click', function(e) {
+					if(!musicEnabled.checked) {
+						soundManager.stop('music');
+						playAgain = true;
+						Cookie.write('musicEnabled', 'false',{duration:50});
+					} else {
+						Cookie.write('musicEnabled', 'true',{duration:50});
+					}
+
+				});
+				soundEnabled = $('soundEnabled');
+				var so = Cookie.read('soundEnabled');
+				Cookie.write('soundEnabled', so,{duration:50});
+				if (so) {
+					if (so == 'true') {
+						soundEnabled.checked = true;
+					} else {
+						soundEnabled.checked = false;
+					}
+				}
+				soundEnabled.addEvent('click', function(e) {
+					if(!soundEnabled.checked) {
+						Cookie.write('soundEnabled', 'false',{duration:50});
+					} else {
+						Cookie.write('soundEnabled', 'true',{duration:50});
+					}
+
+				});
+				
 			},
+			resetTimer: function() {
+				Timer.counter = Timer.start;
+			},
+			roomMove : function() {
+				if(soundReady && soundEnabled.checked) {
+					if(room.rid == 4) { //special for vamp club
+						soundManager.play('creaky');
+					} else {
+						soundManager.play('move');
+					}
+				}
+			},
+			newWhisper: function() {
+				if(soundReady && soundEnabled.checked) soundManager.play('whispers');
+			},
+			messageArrives:function() {
+				if(soundReady && Timer.counter == 0 && soundEnabled.checked) soundManager.play('speak');
+			}
 		};
 	}(),
 	updateables : function () {
@@ -183,21 +318,18 @@ return {
 				MBchat.updateables.whispers.processMessage(message);
 			},
 			poller : function() {
-				var lastId = null;
 				var presenceInterval;
 				var presenceCounter = 0;
 				var pollInterval;
 				var pollerId;
+				var lastId = null;
 
 				var pollRequest = new Request.JSON({
 					url: 'poll.php',
 					autoCancel: true,
 					onComplete : function(response,errorMsg) {
 						if(response) {
-							response.messages.each(function(item) {
-								lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
-								MBchat.updateables.processMessage(item);
-							});
+							MBchat.updateables.poller.pollResponse(response)
 						} else {
 							displayErrorMessage(errorMsg);
 						}
@@ -226,6 +358,15 @@ return {
 						} else {
 							lastId = (lastId > lid)? lid : lastId;  //set to earliest value
 						}
+					},
+					getLastId: function() {
+						return lastId;
+					},
+					pollResponse : function(response) {
+						response.messages.each(function(item) {
+							lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
+							MBchat.updateables.processMessage(item);
+						});
 					},
 					stop : function() {
 						$clear(pollerId);
@@ -455,6 +596,7 @@ return {
 								$('messageText').focus();							
 							}
 						}).get($merge(myRequestOptions,{'rid' : rid}));
+						MBchat.sounds.resetTimer();
 					},
 					leaveRoom: function () {
 						lastId = null;
@@ -489,6 +631,7 @@ return {
 						var exit = $('exit');	
 						exit.addClass('exit-f');
 						exit.removeClass('exit-r');
+						MBchat.sounds.resetTimer();
 					},
 					getRoom: function () {
 						return room;
@@ -500,34 +643,68 @@ return {
 							case 'ME' :
 
 								this.displayMessage(lastId,msg.time,msg.user,msg.message);
+								MBchat.sounds.messageArrives();
 								break;
 							case 'WH' :
+								var whisperList;
+								var whisperIdStr;
 								//Must only display whispers for me
 								var whisperBoxes = $$('.whisperBox');
 								if(!whisperBoxes.every(function(whisperBox) {
-									if(msg.rid == whisperBox.get('id').substr(1).toInt()) {
+									whisperIdStr = whisperBox.get('id');
+									if(msg.rid == whisperIdStr.substr(1).toInt()) {
+										whisperList = whisperBox.getElement('.whisperList');
 										return false;
 									}
 									return true;
 								})) {
-									var whisper ='<span class="whisper">(whispers)' +msg.message+'</span>' ;
-									this.displayMessage(lastId,msg.time,msg.user,whisper);
+									var whisper = new Element('span',{'class':'whisper'});
+									var othersAdded = false;
+									if (me.uid == msg.user.uid) {
+										whisper.appendText('(whispers to')
+									} else {
+										whisper.appendText('(whispers to me')
+										othersAdded = true;
+									}
+									//whisperList says who the other whisperers are
+									var whisperers = whisperList.getChildren();
+									whisperers.each(function(whisperer) {
+										var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
+										if (uid != msg.user.uid) { //This is not the whisperer so include
+											if(othersAdded) {
+												whisper.appendText(', ');
+											}else {
+												whisper.appendText(' ');
+												othersAdded = true;
+											}
+											var newWhisperer = whisperer.clone(); //Make a clone to remove Id 
+											newWhisperer.inject(whisper);
+										};
+									});
+									whisper.appendText(') ') ;
+									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html') + msg.message);
+									MBchat.sounds.messageArrives();
 								}
 								break;
 							case 'RE' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+								MBchat.sounds.roomMove();
 								break;
 							case 'RX' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+								MBchat.sounds.roomMove();
 								break;
 							case 'LT' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+								MBchat.sounds.roomMove();
 								break;
 							case 'LI' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+								MBchat.sounds.roomMove();
 								break;
 							case 'LO' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+								MBchat.sounds.roomMove();
 								break;
 							case 'RM' :
 								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
@@ -666,6 +843,7 @@ return {
 							onComplete: function(response,errorMsg) {
 								if(response) {
 									whisper.destroy();
+									$('content').setStyles(contentSize);
 								} else { 
 									displayErrorMessage(errorMsg);
 								}
@@ -675,9 +853,13 @@ return {
 					});
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
-						whisper.getElement('.wid').value = wid;
-						this.send();
+						whisperReq.get($merge(myRequestOptions,{
+							'wid':wid,
+							'rid':room.rid,
+							'lid':MBchat.updateables.poller.getLastId(),
+							'text':whisper.getElement('.whisperInput').value}));
 						whisper.getElement('.whisperInput').value = '';
+						MBchat.sounds.resetTimer();
 					});
 					whisper.inject(document.body);
 					var position = whisper.getCoordinates();
@@ -686,11 +868,13 @@ return {
 					whisper.setStyles(position);
 
 					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
+					$('content').setStyles(contentSize);
 					return whisper;
 				}
 				var removeUser = function(whisperBox,uid) {
 					if (me.uid == uid) {
 						whisperBox.destroy();
+						$('content').setStyles(contentSize);
 					} else {
 						var span = $(whisperBox.get('id')+'U'+uid);
 						if (span) {
@@ -698,6 +882,7 @@ return {
 						}
 						if (whisperBox.getElement('.whisperList').getChildren().length == 0 ) {
 							whisperBox.destroy();
+							$('content').setStyles(contentSize);
 						}
 					}
 				}
@@ -717,6 +902,7 @@ return {
 						var dragMan = new Element('div',{'class':'dragBox'});
 						var dragDestroy = function() {
 							this.destroy();
+							$('content').setStyles(contentSize);
 						}
 						dragMan.addEvent('mouseleave', dragDestroy);
 						displayUser(user,dragMan);
@@ -726,6 +912,7 @@ return {
 							transition: Fx.Transitions.Quad.easeOut,
 							onComplete: function (dragged) {
 								dragged.destroy();
+								$('content').setStyles(contentSize);
 							}
 						});
 						dragMan.inject(document.body);
@@ -796,6 +983,7 @@ return {
 							}							
 						});
 						drag.start(event);
+						$('content').setStyles(contentSize);
 					},
 					processMessage: function (msg) {
 						if (lastId < msg.lid) {
@@ -816,6 +1004,7 @@ return {
 									if (me.uid == msg.user.uid ) {
 										//OK - someone else has selected me to be in a whisper
 										createWhisperBox(msg.rid);  //but without (yet) any other user
+										MBchat.sounds.newWhisper();
 									}
 									// Throw others away 
 								}
