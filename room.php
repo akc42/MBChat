@@ -19,7 +19,7 @@ if(mysql_num_rows($result) == 0) {
 }
 $room = mysql_fetch_assoc($result);
 mysql_free_result($result);
-$result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
+$result = dbQuery('SELECT uid, name, role, moderator,question FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if(mysql_num_rows($result) == 0) {
 	dbQuery('ROLLBACK;');
 	die('Go to Room failed - Invalid User id');
@@ -38,9 +38,9 @@ if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
 
 dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = NOW(), role = '.dbMakeSafe($role)
 			.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
-dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-				', "RE" ,'.dbMakeSafe($rid).');');
+				', "RE" ,'.dbMakeSafe($rid).','.dbMakeSafe($user['question']).');');
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( (participant.uid = '.dbMakeSafe($uid).' AND type = "WH" )' ;
 $sql .= 'OR rid = '.dbMakeSafe($rid).') AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';

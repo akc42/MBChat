@@ -396,16 +396,30 @@ return {
 										var request = new request.JSON({
 											'url' : 'release.php',
 											'onComplete' : function (response,errorMsg) {
-												//Not interested in normal return as message will appear via poll
-												if(!response) {
-													displayError(errorMsg);
+												if(response) {
+													MBchat.updateables.poller.pollResponse(response)
+												} else {
+													displayErrorMessage(errorMsg);
 												}
 											}
-										}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
+										}).get($merge(myRequestOptions,{
+											'lid':MBchat.updateables.poller.getLastId(),
+											'quid':user.uid}));
 									},
 									'promote': function(e) {
 										e.stop();
-		//TODO - make moderator
+										var request = new request.JSON({
+											'url' : 'promote.php',
+											'onComplete' : function (response,errorMsg) {
+												if(response) {
+													MBchat.updateables.poller.pollResponse(response)
+												} else {
+													displayErrorMessage(errorMsg);
+												}
+											}
+										}).get($merge(myRequestOptions,{
+											'lid':MBchat.updateables.poller.getLastId(),
+											'puid':user.uid));
 									},
 									'mouseover' : function(e) {
 										question.removeClass('hide');
@@ -422,7 +436,17 @@ return {
 							} else {
 								div.addEvent('demote', function(e) {
 									e.stop();
-	//TODO downgrade self
+									var request = new request.JSON({
+										'url' : 'demote.php',
+										'onComplete' : function (response,errorMsg) {
+											if(response) {
+												MBchat.updateables.poller.pollResponse(response)
+											} else {
+												displayErrorMessage(errorMsg);
+											}
+										}
+									}).get($merge(myRequestOptions,{
+										'lid':MBchat.updateables.poller.getLastId()}));
 								});
 							}
 						} else {
@@ -520,20 +544,54 @@ return {
 								case 'LI' : //Login (to room) and room entry are the asme
 								case 'RE' :
 									if (!userDiv) {
-										addUser(msg.user);
+										var user = msg.user
+										user.question = msg.message
+										addUser(user);
 									}
 									break;
 								case 'RM' : // becomes moderator
-//TODO
-									break;
 								case 'RN' : // stops being moderator
-//TODO
+									if (userDiv) {
+									// If user exists we remove him from the list and then add him back
+									// As lots of complicated events need to be dealt with
+										userDiv.destroy(); //removes from list
+										var node = onlineList.firstChild;
+										if (node) {
+											var i = 0;
+											do {	
+												node.erase('class');
+												if( i%2 == 0) {
+													node.addClass('rowEven');
+												} else {
+													node.addClass('rowOdd');
+												}
+												i++;
+											} while (node = node.nextSibling);
+										}
+										var user = msg.user
+										user.question = msg.message
+										addUser(user);
+									}			 
+
 									break;
 								case 'MQ' : // User asks a question
-//TODO
+									var span = userDiv.getElement('span');
+									span.addClass('ask');
+									if (room.type == 'M' && me.role == 'M') {
+										var question = new Element('div' , {
+											'class': 'question hide',
+											'text' : msg.message}).inject(div);
 									break;
 								case 'MR' : //User removes question
-//TODO
+								case 'ME' : //A message from a user must mean he no longer has a question outstanding
+									var span = userDiv.getElement('span');
+									span.removeClass('ask');
+									if (room.type == 'M' && me.role == 'M') {
+										var div = userDiv.getElement('div');  //This is the hidden question
+										if(div) {
+											div.destroy();
+										}
+									}
 									break;
 								default :  // ignore anything else
 									break;
