@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.10';
+	var version = 'v0.9.11';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -199,6 +199,7 @@ return {
 	sounds: function () {
 		var music = false;
 		var musicEnabled;
+		var soundEnabled;
 		var playAgain = true;
 		var Timer = {counter:30 , start : 30 }; //Units of 10 seconds
 		var countDown = function() {
@@ -208,6 +209,7 @@ return {
 				this.counter += soundDelay -this.start ;
 				this.start = soundDelay;
 				if (this.counter < 0) this.counter = 0;
+				Cookie.write('soundDelay', $('soundDelay').value.toString(),{duration:50});
 			}
 			
 			if (!music && soundReady) {
@@ -232,20 +234,60 @@ return {
 		
 		return {
 			init: function () {
+				var sd = Cookie.read('soundDelay')
+				Cookie.write('soundDeley',sd,{duration:50}); //Just write so validity starts again
+				if (sd) {
+					var delayMin = sd.toInt()
+					Timer.start = 6 * delayMin;
+					Timer.counter = Timer.start;
+					$('soundDelay').value = delayMin;
+				}
 				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
 				musicEnabled = $('musicEnabled');
+				var mu = Cookie.read('musicEnabled');
+				Cookie.write('musicEnabled', mu ,{duration:50});
+				if (mu) {
+					if (mu == 'true') {
+						musicEnabled.checked = true;
+					} else {
+						musicEnabled.checked = false;
+					}
+				}
 				musicEnabled.addEvent('click', function(e) {
 					if(!musicEnabled.checked) {
 						soundManager.stop('music');
 						playAgain = true;
+						Cookie.write('musicEnabled', 'false',{duration:50});
+					} else {
+						Cookie.write('musicEnabled', 'true',{duration:50});
 					}
+
 				});
+				soundEnabled = $('soundEnabled');
+				var so = Cookie.read('soundEnabled');
+				Cookie.write('soundEnabled', so,{duration:50});
+				if (so) {
+					if (so == 'true') {
+						soundEnabled.checked = true;
+					} else {
+						soundEnabled.checked = false;
+					}
+				}
+				soundEnabled.addEvent('click', function(e) {
+					if(!soundEnabled.checked) {
+						Cookie.write('soundEnabled', 'false',{duration:50});
+					} else {
+						Cookie.write('soundEnabled', 'true',{duration:50});
+					}
+
+				});
+				
 			},
 			resetTimer: function() {
 				Timer.counter = Timer.start;
 			},
 			roomMove : function() {
-				if(soundReady && $('soundEnabled').checked) {
+				if(soundReady && soundEnabled.checked) {
 					if(room.rid == 4) { //special for vamp club
 						soundManager.play('creaky');
 					} else {
@@ -254,10 +296,10 @@ return {
 				}
 			},
 			newWhisper: function() {
-				if(soundReady && $('soundEnabled').checked) soundManager.play('whispers');
+				if(soundReady && soundEnabled.checked) soundManager.play('whispers');
 			},
 			messageArrives:function() {
-				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('speak');
+				if(soundReady && Timer.counter == 0 && soundEnabled.checked) soundManager.play('speak');
 			}
 		};
 	}(),
