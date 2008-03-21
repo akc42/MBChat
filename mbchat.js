@@ -633,8 +633,8 @@ return {
 											newWhisperer.inject(whisper);
 										};
 									});
-									whisper.appendText(') ' +msg.message) ;
-									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html'));
+									whisper.appendText(') ') ;
+									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html') + msg.message);
 									MBchat.sounds.messageArrives();
 								}
 								break;
