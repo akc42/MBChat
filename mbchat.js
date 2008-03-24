@@ -149,7 +149,7 @@ return {
 				e.stop();
 				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid);
 			});
-		}f83eb90b21ec4e2c989713aa9ebd251f2c02a95d
+		}
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
@@ -640,11 +640,6 @@ return {
 						if (lastId < msg.lid) {
 							lastId = msg.lid;
 							switch(msg.type) {
-							case 'ME' :
-
-								this.displayMessage(lastId,msg.time,msg.user,msg.message);
-								MBchat.sounds.messageArrives();
-								break;
 							case 'WH' :
 								var whisperList;
 								var whisperIdStr;
@@ -686,32 +681,6 @@ return {
 									MBchat.sounds.messageArrives();
 								}
 								break;
-							case 'RE' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'RX' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'LT' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'LI' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'LO' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'RM' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
-								break;
-							case 'RN' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
-								break;
 							case 'WJ' :
 								if(msg.user.uid != me.uid) {
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper box'));
@@ -723,6 +692,40 @@ return {
 								}
 								break;
 							default:
+								if (msg.rid == room.rid) {
+									switch(msg.type) {
+									case 'ME' :
+										this.displayMessage(lastId,msg.time,msg.user,msg.message);
+										MBchat.sounds.messageArrives();
+										break;
+									case 'RE' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'RX' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'LT' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'LI' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'LO' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'RM' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
+										break;
+									case 'RN' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+										break;
+									}
+								}
 								break;
 							}
 						}
