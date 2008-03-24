@@ -390,12 +390,61 @@ return {
 								'text' : user.question}).inject(div);
 									
 							if (user.uid != me.uid) {
+<<<<<<< HEAD:mbchat.js
+=======
+								if (user.question) {
+									span.addClass('ask');
+									div.store('question',user.question);
+									div.addEvents({
+										'mouseenter' : function(e) {
+											var qtext = div.retrieve('question');
+											if (qtext) {
+												var question = new Element('div', {
+													'id' : 'question',
+													'text' : qtext });
+												question.inject(document.body);
+												question.setStyles({'top': e.client.y, 'left':e.client.x});
+											}
+											
+										},
+										'mouseleave' : function(e) {
+											var question = $('question');
+											if (question) {
+												question.destroy();
+											}
+										}
+									});
+								}
+>>>>>>> Updates to chat:mbchat.js
 								// I am a moderator in a moderated room - therefore I need to be able to moderate others
 								div.addEvents({
+<<<<<<< HEAD:mbchat.js
 									'moderate' : function(e) {
 										e.stop();
 										var request = new request.JSON({
 											'url' : 'release.php',
+=======
+									'click' : function(e) {
+										var qtext = div.retrieve('question');
+										if (qtext) { // only send one if there is one
+											var request = new Request.JSON({
+												'url' : 'release.php',
+												'onComplete' : function (response,errorMsg) {
+													if(response) {
+														MBchat.updateables.poller.pollResponse(response)
+													} else {
+														displayErrorMessage(errorMsg);
+													}
+												}
+											}).get($merge(myRequestOptions,{
+												'lid':MBchat.updateables.poller.getLastId(),
+												'quid':user.uid}));
+										}
+									},
+									'promote': function(e) {
+										var request = new Request.JSON({
+											'url' : 'promote.php',
+>>>>>>> Updates to chat:mbchat.js
 											'onComplete' : function (response,errorMsg) {
 												//Not interested in normal return as message will appear via poll
 												if(!response) {
@@ -422,8 +471,22 @@ return {
 								div.firstChild.addClass('whisperer');
 							} else {
 								div.addEvent('demote', function(e) {
+<<<<<<< HEAD:mbchat.js
 									e.stop();
 	//TODO downgrade self
+=======
+									var request = new Request.JSON({
+										'url' : 'demote.php',
+										'onComplete' : function (response,errorMsg) {
+											if(response) {
+												MBchat.updateables.poller.pollResponse(response)
+											} else {
+												displayErrorMessage(errorMsg);
+											}
+										}
+									}).get($merge(myRequestOptions,{
+										'lid':MBchat.updateables.poller.getLastId()}));
+>>>>>>> Updates to chat:mbchat.js
 								});
 							}
 						} else {
@@ -440,6 +503,15 @@ return {
 							div.firstChild.addClass('whisperer');
 						}
 					} 
+<<<<<<< HEAD:mbchat.js
+=======
+					if (user.uid != me.uid) {
+						span.addEvent('mousedown',function (e) {
+							MBchat.updateables.whispers.whisperWith(user,span,e);
+						});
+						div.firstChild.addClass('whisperer');
+					}
+>>>>>>> Updates to chat:mbchat.js
 					div.inject(onlineList); //Forces onlineList to have children
 					if ((onlineList.getChildren().length % 2) == 0 ) {
 						div.addClass('rowEven');
@@ -529,7 +601,34 @@ return {
 //TODO
 									break;
 								case 'MQ' : // User asks a question
+<<<<<<< HEAD:mbchat.js
 //TODO
+=======
+									var span = userDiv.getElement('span');
+									span.addClass('ask');
+									if (room.type == 'M' && me.mod == 'M') {
+										userDiv.store('question',msg.message);
+										userDiv.addEvents({
+											'mouseenter' : function(e) {
+												var qtext = userDiv.retrieve('question')
+												if (qtext) {
+													var question = new Element('div', {
+														'id' : 'question',
+														'text' : qtext});
+													question.inject(document.body);
+													question.setStyles({'top': e.client.y, 'left':e.client.x});
+												}
+												
+											},
+											'mouseleave' : function(e) {
+												var question = $('question');
+												if (question) {
+													question.destroy();
+												}
+											}
+										});
+									}
+>>>>>>> Updates to chat:mbchat.js
 									break;
 								case 'MR' : //User removes question
 //TODO
@@ -840,7 +939,6 @@ return {
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
-						e.stop();
 						var leaveWhisper = new Request.JSON({
 							url:'leavewhisper.php',
 							onComplete: function(response,errorMsg) {
@@ -903,11 +1001,13 @@ return {
 						}
 						var dropZones = $$('.whisperBox');
 						var dragMan = new Element('div',{'class':'dragBox'});
+						dragMan.setStyles(startPosition);
 						var dragDestroy = function() {
 							this.destroy();
 							$('content').setStyles(contentSize);
 						}
-						dragMan.addEvent('mouseleave', dragDestroy);
+						el.addEvent('mouseup', dragDestroy);
+						dragMan.addEvent('mouseup',dragDestroy);
 						displayUser(user,dragMan);
 						var dragReturn = new Fx.Morph(dragMan, {
 							link: 'cancel',
@@ -919,12 +1019,11 @@ return {
 							}
 						});
 						dragMan.inject(document.body);
-						dragMan.setStyles(startPosition);
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
 							droppables:dropZones,
 							onSnap: function(element) {
-								element.removeEvent('mouseleave',dragDestroy);
+								element.removeEvent('mouseup',dragDestroy);
 							},
 							onDrop: function(element, droppable){
 								dropZones.removeClass('dragOver');
