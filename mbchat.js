@@ -387,43 +387,50 @@ return {
 							if (user.uid != me.uid) {
 								if (user.question) {
 									span.addClass('ask');
-									var question = new Element('div' , {
-										'class': 'question hide',
-										'text' : user.question}).inject(div);
+									div.store('question',user.question);
 									div.addEvents({
-										'mouseover' : function(e) {
-											question.removeClass('hide');
-											var dummy = new Element('div', {
-												'id' : 'onlineDummy',
-												'height' : '30px'});
-											dummy.inject($('onlineList'));
+										'mouseenter' : function(e) {
+											e.stop();
+											var qtext = div.retrieve('question');
+											if (qtext) {
+												var question = new Element('div', {
+													'id' : 'question',
+													'text' : qtext });
+												question.inject(document.body);
+												question.setStyles({'top': e.client.y, 'left':e.client.x});
+											}
+											
 										},
 										'mouseleave' : function(e) {
-											$('onlineDummy').destroy();
-											question.addClass('hide');
+											var question = $('question');
+											if (question) {
+												question.destroy();
+											}
 										}
 									});
 								}
 								// I am a moderator in a moderated room - therefore I need to be able to moderate others
 								div.addEvents({
-									'moderate' : function(e) {
-										e.stop();
-										var request = new request.JSON({
-											'url' : 'release.php',
-											'onComplete' : function (response,errorMsg) {
-												if(response) {
-													MBchat.updateables.poller.pollResponse(response)
-												} else {
-													displayErrorMessage(errorMsg);
+									'click' : function(e) {
+										var qtext = div.retrieve('question');
+										if (qtext) { // only send one if there is one
+											var request = new Request.JSON({
+												'url' : 'release.php',
+												'onComplete' : function (response,errorMsg) {
+													if(response) {
+														MBchat.updateables.poller.pollResponse(response)
+													} else {
+														displayErrorMessage(errorMsg);
+													}
 												}
-											}
-										}).get($merge(myRequestOptions,{
-											'lid':MBchat.updateables.poller.getLastId(),
-											'quid':user.uid}));
+											}).get($merge(myRequestOptions,{
+												'lid':MBchat.updateables.poller.getLastId(),
+												'quid':user.uid}));
+										}
 									},
 									'promote': function(e) {
 										e.stop();
-										var request = new request.JSON({
+										var request = new Request.JSON({
 											'url' : 'promote.php',
 											'onComplete' : function (response,errorMsg) {
 												if(response) {
@@ -441,7 +448,7 @@ return {
 							} else {
 								div.addEvent('demote', function(e) {
 									e.stop();
-									var request = new request.JSON({
+									var request = new Request.JSON({
 										'url' : 'demote.php',
 										'onComplete' : function (response,errorMsg) {
 											if(response) {
@@ -461,7 +468,7 @@ return {
 						}
 					} 
 					if (user.uid != me.uid) {
-						div.addEvent('mousedown',function (e) {
+						span.addEvent('mousedown',function (e) {
 							e=new Event(e).stop();
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
@@ -589,9 +596,27 @@ return {
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
-										var question = new Element('div' , {
-											'class': 'question hide',
-											'text' : msg.message}).inject(userDiv);
+										userDiv.store('question',msg.message);
+										userDiv.addEvents({
+											'mouseenter' : function(e) {
+												e.stop();
+												var qtext = userDiv.retrieve('question')
+												if (qtext) {
+													var question = new Element('div', {
+														'id' : 'question',
+														'text' : qtext});
+													question.inject(document.body);
+													question.setStyles({'top': e.client.y, 'left':e.client.x});
+												}
+												
+											},
+											'mouseleave' : function(e) {
+												var question = $('question');
+												if (question) {
+													question.destroy();
+												}
+											}
+										});
 									}
 									break;
 								case 'MR' :
@@ -600,10 +625,7 @@ return {
 									var span = userDiv.getElement('span');
 									span.removeClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
-										var div = userDiv.getElement('div');  //This is the hidden question
-										if(div) {
-											div.destroy();
-										}
+										userDiv.store('question',null);
 									}
 									break;
 								default :  // ignore anything else
@@ -972,10 +994,10 @@ return {
 						var dropZones = $$('.whisperBox');
 						var dragMan = new Element('div',{'class':'dragBox'});
 						var dragDestroy = function() {
-							this.destroy();
+							dragMan.destroy();
 							$('content').setStyles(contentSize);
 						}
-						dragMan.addEvent('mouseleave', dragDestroy);
+						el.addEvent('mouseup', dragDestroy);
 						displayUser(user,dragMan);
 						var dragReturn = new Fx.Morph(dragMan, {
 							link: 'cancel',

@@ -8,7 +8,7 @@ $quid = $_GET['quid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 dbQuery('START TRANSACTION;');
-$result = dbQuery('SELECT uid, name, title, role, rid, question FROM users WHERE uid = '.dbMakeSafe($quid).';');
+$result = dbQuery('SELECT uid, name, role, rid, question FROM users WHERE uid = '.dbMakeSafe($quid).';');
 if(mysql_num_rows($result) == 0) {
 	dbQuery('ROLLBACK;');
 	die('Release Message - Invalid User id');
@@ -19,7 +19,7 @@ dbQuery('UPDATE users SET question = NULL , time = NOW() WHERE uid = '.dbMakeSaf
 
 dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 				dbMakeSafe($quid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
-				', "ME" ,'.dbMakeSafe($user['rid']).','.dmMakeSafe($user['question']).');');
+				', "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
 
 dbQuery('COMMIT ;');
 include('poll.php');  //Get an immediate reply to messages

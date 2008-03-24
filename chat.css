@@ -272,10 +272,8 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	display: none;
 }
 
-.question {
+#question {
 	position:absolute;
-	top: 20px;
-	left:20px;
 	width:150px;
 	z-index:10;
 	border:1px dotted green;
