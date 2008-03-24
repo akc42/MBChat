@@ -452,10 +452,6 @@ return {
 									},
 									'mouseleave' : function(e) {
 										question.addClass('hide');
-									},
-									'mousedown' : function(e) {
-										e= new Event(e).stop();
-										MBchat.updateables.whispers.whisperWith(user,span,e);
 									}
 								});
 								div.firstChild.addClass('whisperer');
@@ -479,14 +475,6 @@ return {
 								span.addClass('ask');
 							}
 						}
-					} else {
-						if (user.uid != me.uid) {
-							div.addEvent('mousedown',function (e) {
-								e=new Event(e).stop();
-								MBchat.updateables.whispers.whisperWith(user,span,e);
-							});
-							div.firstChild.addClass('whisperer');
-						}
 					} 
 					if (user.uid != me.uid) {
 						span.addEvent('mousedown',function (e) {
@@ -499,6 +487,22 @@ return {
 						div.addClass('rowEven');
 					} else {
 						div.addClass('rowOdd');
+					}
+				};
+				var removeUser = function (userDiv) {
+					userDiv.destroy(); //removes from list
+					var node = onlineList.firstChild;
+					if (node) {
+						var i = 0;
+						do {	
+							node.erase('class');
+							if( i%2 == 0) {
+								node.addClass('rowEven');
+							} else {
+								node.addClass('rowOdd');
+							}
+							i++;
+						} while (node = node.nextSibling);
 					}
 				};
 				request = new Request.JSON({
@@ -547,42 +551,49 @@ return {
 						var lid = msg.lid.toInt();
 						if (lastId < lid) {
 							lastId = lid;
-							if (msg.rid == currentRid) {
-								userDiv = $('U'+msg.user.uid);
-								switch (msg.type) {
-								case 'LO' : //Logout, timeout or room exist are all the same
-								case 'LT' :
-								case 'RX' :
-									if (userDiv) {
-										userDiv.destroy(); //removes from list
-										var node = onlineList.firstChild;
-										if (node) {
-											var i = 0;
-											do {	
-												node.erase('class');
-												if( i%2 == 0) {
-													node.addClass('rowEven');
-												} else {
-													node.addClass('rowOdd');
-												}
-												i++;
-											} while (node = node.nextSibling);
-										}
-									}			 
-									break;
-								case 'LI' : //Login (to room) and room entry are the asme
-								case 'RE' :
+							userDiv = $('U'+msg.user.uid);
+							switch (msg.type) {
+							case 'LO' : 
+							case 'LT' :
+								if (userDiv && msg.rid == currentRid) {
+									removeUser(userDiv)
+								}
+								break;
+							case 'RX' :
+								if (currentRid == 0) {
 									if (!userDiv) {
 										addUser(msg.user);
 									}
-									break;
-								case 'RM' : // becomes moderator
+								} else {
+									if (userDiv) {
+										removeUser(userDiv);
+									} 
+								}			 
+								break;
+							case 'LI' : 
+								if (!userDiv && msg.rid == currentRid) {
+									addUser(msg.user);
+								}	
+								break;
+							case 'RE' :
+								if (currentRid != 0) {
+									if (!userDiv) {
+										addUser(msg.user);
+									}
+								} else {
+									if (userDiv) {
+										removeUser(userDiv);
+									} 
+								}			 
+								break;
+							case 'RM' : // becomes moderator
+//TODO
+								break;
+							case 'RN' : // stops being moderator
 //TODO
 									break;
-								case 'RN' : // stops being moderator
-//TODO
-									break;
-								case 'MQ' : // User asks a question
+							case 'MQ' : // User asks a question
+								if(currentRid == msg.rid) {
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
@@ -607,13 +618,13 @@ return {
 											}
 										});
 									}
-									break;
-								case 'MR' : //User removes question
-//TODO
-									break;
-								default :  // ignore anything else
-									break;
 								}
+								break;
+							case 'MR' : //User removes question
+//TODO
+								break;
+							default :  // ignore anything else
+								break;
 							}
 						}
 					}
@@ -717,6 +728,26 @@ return {
 						if (lastId < lid) {
 							lastId = lid;
 							switch(msg.type) {
+							case 'RE' : 
+								if (room.rid == 0  || msg.rid == room.rid) {
+									if (room.rid == 0) {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' leaves for a Room'));
+									} else {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+									}
+									MBchat.sounds.roomMove();
+								}
+								break;
+							case 'RX' :
+								if (room.rid == 0  || msg.rid == room.rid) {
+									if (room.rid == 0) {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Re-enters the Hall'));
+									} else {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+									}
+									MBchat.sounds.roomMove();
+								}
+								break;
 							case 'WH' :
 								var whisperList;
 								var whisperIdStr;
@@ -774,14 +805,6 @@ return {
 									case 'ME' :
 										this.displayMessage(lastId,msg.time,msg.user,msg.message);
 										MBchat.sounds.messageArrives();
-										break;
-									case 'RE' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
-										MBchat.sounds.roomMove();
-										break;
-									case 'RX' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
-										MBchat.sounds.roomMove();
 										break;
 									case 'LT' :
 										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
@@ -985,7 +1008,6 @@ return {
 							$('content').setStyles(contentSize);
 						}
 						el.addEvent('mouseup', dragDestroy);
-						dragMan.addEvent('mouseup',dragDestroy);
 						displayUser(user,dragMan);
 						var dragReturn = new Fx.Morph(dragMan, {
 							link: 'cancel',
@@ -997,6 +1019,7 @@ return {
 							}
 						});
 						dragMan.inject(document.body);
+						dragMan.addEvent('mouseup',dragDestroy);
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
 							droppables:dropZones,
