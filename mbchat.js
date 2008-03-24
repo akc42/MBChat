@@ -309,7 +309,7 @@ return {
 				MBchat.updateables.online.init();
 				MBchat.updateables.message.init();
 				MBchat.updateables.poller.init(pollOptions);
-				MBchat.updateables.whispers.init(pollOptions.lastid);
+				MBchat.updateables.whispers.init(pollOptions.lastid.toInt());
 				MBchat.updateables.logger.init();
 			},
 			processMessage : function(message) {
@@ -364,7 +364,8 @@ return {
 					},
 					pollResponse : function(response) {
 						response.messages.each(function(item) {
-							lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
+							var lid = item.lid.toInt();
+							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
 							MBchat.updateables.processMessage(item);
 						});
 					},
@@ -460,7 +461,7 @@ return {
 									addUser(user);
 								});
 							}
-							lastId = response.lastid;
+							lastId = response.lastid.toInt();
 							MBchat.updateables.poller.setLastId(lastId);
 						} else {
 							displayErrorMessage(errorMsg);
@@ -484,16 +485,14 @@ return {
 						loadingRid = rid;
 						request.get($merge(myRequestOptions,{'rid':rid }));
 					},
-//					getLastId: function () {
-//						return lastId;
-//					},
 					getCurrentRid: function() {
 						return currentRid;
 					},
 					processMessage: function (msg) {
 						if(!lastId) return;	//not processing messages yet
-						if (lastId < msg.lid) {
-							lastId = msg.lid;
+						var lid = msg.lid.toInt();
+						if (lastId < lid) {
+							lastId = lid;
 							if (msg.rid == currentRid) {
 								userDiv = $('U'+msg.user.uid);
 								switch (msg.type) {
@@ -579,10 +578,10 @@ return {
 								if (response) {
 									room = response.room;
 									response.messages.each(function(msg) {
-										if(!lastId) lastId = msg.lid -1;
+										if(!lastId) lastId = msg.lid.toInt() -1;
 										MBchat.updateables.processMessage(msg);
 									});
-									lastId = response.lastid;
+									lastId = response.lastid.toInt();
 								//Ensure we get all message from here on in
 									MBchat.updateables.poller.setLastId(lastId);
 								//Display room name at head of page
@@ -605,10 +604,10 @@ return {
 							onComplete : function(response,errorMsg) {
 								if (response) {
 									response.messages.each(function(msg) {
-										if(!lastId) lastId = msg.lid -1;
+										if(!lastId) lastId = msg.lid.toInt() -1;
 										MBchat.updateables.processMessage(msg);
 									});
-									lastId = response.lastid;
+									lastId = response.lastid.toInt();
 								//Ensure we get all message from here on in
 									MBchat.updateables.poller.setLastId(lastId);
 									MBchat.updateables.online.show(0);	//Show online list for entrance hall
@@ -637,8 +636,9 @@ return {
 						return room;
 					},
 					processMessage: function (msg) {
-						if (lastId < msg.lid) {
-							lastId = msg.lid;
+						var lid = msg.lid.toInt();
+						if (lastId < lid) {
+							lastId = lid;
 							switch(msg.type) {
 							case 'WH' :
 								var whisperList;
@@ -989,8 +989,9 @@ return {
 						$('content').setStyles(contentSize);
 					},
 					processMessage: function (msg) {
-						if (lastId < msg.lid) {
-							lastId = msg.lid;
+						var lid = msg.lid.toInt();
+						if (lastId < lid) {
+							lastId = lid;
 							switch(msg.type) {
 							case 'WJ' :
 								if ($$('.whisperBox').every(function(whisperBox) {
