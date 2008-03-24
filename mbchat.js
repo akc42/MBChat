@@ -390,8 +390,6 @@ return {
 								'text' : user.question}).inject(div);
 									
 							if (user.uid != me.uid) {
-<<<<<<< HEAD:mbchat.js
-=======
 								if (user.question) {
 									span.addClass('ask');
 									div.store('question',user.question);
@@ -415,15 +413,8 @@ return {
 										}
 									});
 								}
->>>>>>> Updates to chat:mbchat.js
 								// I am a moderator in a moderated room - therefore I need to be able to moderate others
 								div.addEvents({
-<<<<<<< HEAD:mbchat.js
-									'moderate' : function(e) {
-										e.stop();
-										var request = new request.JSON({
-											'url' : 'release.php',
-=======
 									'click' : function(e) {
 										var qtext = div.retrieve('question');
 										if (qtext) { // only send one if there is one
@@ -444,7 +435,6 @@ return {
 									'promote': function(e) {
 										var request = new Request.JSON({
 											'url' : 'promote.php',
->>>>>>> Updates to chat:mbchat.js
 											'onComplete' : function (response,errorMsg) {
 												//Not interested in normal return as message will appear via poll
 												if(!response) {
@@ -471,10 +461,6 @@ return {
 								div.firstChild.addClass('whisperer');
 							} else {
 								div.addEvent('demote', function(e) {
-<<<<<<< HEAD:mbchat.js
-									e.stop();
-	//TODO downgrade self
-=======
 									var request = new Request.JSON({
 										'url' : 'demote.php',
 										'onComplete' : function (response,errorMsg) {
@@ -486,7 +472,6 @@ return {
 										}
 									}).get($merge(myRequestOptions,{
 										'lid':MBchat.updateables.poller.getLastId()}));
->>>>>>> Updates to chat:mbchat.js
 								});
 							}
 						} else {
@@ -503,15 +488,12 @@ return {
 							div.firstChild.addClass('whisperer');
 						}
 					} 
-<<<<<<< HEAD:mbchat.js
-=======
 					if (user.uid != me.uid) {
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
 						div.firstChild.addClass('whisperer');
 					}
->>>>>>> Updates to chat:mbchat.js
 					div.inject(onlineList); //Forces onlineList to have children
 					if ((onlineList.getChildren().length % 2) == 0 ) {
 						div.addClass('rowEven');
@@ -601,9 +583,6 @@ return {
 //TODO
 									break;
 								case 'MQ' : // User asks a question
-<<<<<<< HEAD:mbchat.js
-//TODO
-=======
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
@@ -628,7 +607,6 @@ return {
 											}
 										});
 									}
->>>>>>> Updates to chat:mbchat.js
 									break;
 								case 'MR' : //User removes question
 //TODO
