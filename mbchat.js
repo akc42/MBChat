@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.11';
+	var version = 'v0.9.12';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -149,7 +149,7 @@ return {
 				e.stop();
 				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid);
 			});
-		}
+		}f83eb90b21ec4e2c989713aa9ebd251f2c02a95d
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
@@ -214,7 +214,7 @@ return {
 			
 			if (!music && soundReady) {
 				music = soundManager.getSoundById('music');
-				music.onfinish = function () {
+				music.options.onfinish = function () {
 					playAgain = true;
 				}
 				music.volume = 10;
