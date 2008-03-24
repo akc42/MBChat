@@ -391,7 +391,6 @@ return {
 									div.store('question',user.question);
 									div.addEvents({
 										'mouseenter' : function(e) {
-											e.stop();
 											var qtext = div.retrieve('question');
 											if (qtext) {
 												var question = new Element('div', {
@@ -443,12 +442,17 @@ return {
 										}).get($merge(myRequestOptions,{
 											'lid':MBchat.updateables.poller.getLastId(),
 											'puid':user.uid}));
+									},
+									'mouseover' : function(e) {
+										question.removeClass('hide');
+									},
+									'mouseleave' : function(e) {
+										question.addClass('hide');
 									}
 								});
 								div.firstChild.addClass('whisperer');
 							} else {
 								div.addEvent('demote', function(e) {
-									e.stop();
 									var request = new Request.JSON({
 										'url' : 'demote.php',
 										'onComplete' : function (response,errorMsg) {
@@ -470,7 +474,6 @@ return {
 					} 
 					if (user.uid != me.uid) {
 						span.addEvent('mousedown',function (e) {
-							e=new Event(e).stop();
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
 						div.firstChild.addClass('whisperer');
@@ -480,6 +483,22 @@ return {
 						div.addClass('rowEven');
 					} else {
 						div.addClass('rowOdd');
+					}
+				};
+				var removeUser = function (userDiv) {
+					userDiv.destroy(); //removes from list
+					var node = onlineList.firstChild;
+					if (node) {
+						var i = 0;
+						do {	
+							node.erase('class');
+							if( i%2 == 0) {
+								node.addClass('rowEven');
+							} else {
+								node.addClass('rowOdd');
+							}
+							i++;
+						} while (node = node.nextSibling);
 					}
 				};
 				request = new Request.JSON({
@@ -528,77 +547,99 @@ return {
 						var lid = msg.lid.toInt();
 						if (lastId < lid) {
 							lastId = lid;
-							if (msg.rid == currentRid) {
-								userDiv = $('U'+msg.user.uid);
-								switch (msg.type) {
-								case 'LO' : //Logout, timeout or room exist are all the same
-								case 'LT' :
-								case 'RX' :
+							userDiv = $('U'+msg.user.uid);
+							switch (msg.type) {
+							case 'LO' : 
+							case 'LT' :
+								if (userDiv && msg.rid == currentRid) {
+									removeUser(userDiv)
+								}
+								break;
+							case 'RX' :
+								if (currentRid == 0) {
+									if (!userDiv) {
+										addUser(msg.user);
+									}
+								} else {
 									if (userDiv) {
-										userDiv.destroy(); //removes from list
-										var node = onlineList.firstChild;
-										if (node) {
-											var i = 0;
-											do {	
-												node.erase('class');
-												if( i%2 == 0) {
-													node.addClass('rowEven');
-												} else {
-													node.addClass('rowOdd');
-												}
-												i++;
-											} while (node = node.nextSibling);
-										}
-									}			 
-									break;
-								case 'LI' : //Login (to room) and room entry are the asme
-								case 'RE' :
+										removeUser(userDiv);
+									} 
+								}			 
+								break;
+							case 'LI' : 
+								if (!userDiv && msg.rid == currentRid) {
+									addUser(msg.user);
+								}	
+								break;
+							case 'RE' :
+								if (currentRid != 0) {
 									if (!userDiv) {
 										var user = msg.user;
 										user.question = msg.message;
 										addUser(user);
 									}
-									break;
-								case 'RM' : // becomes moderator
-								case 'RN' : // stops being moderator
-									if (me.uid == msg.user.uid) {
-										if (msg.user.role == 'M') {
-											me.mod == 'M'
-										} else {
-											me.mod == 'N'
-										}
-									}
+								} else {
 									if (userDiv) {
-									// If user exists we remove him from the list and then add him back
-									// As lots of complicated events need to be dealt with
-										userDiv.destroy(); //removes from list
-										var node = onlineList.firstChild;
-										if (node) {
-											var i = 0;
-											do {	
-												node.erase('class');
-												if( i%2 == 0) {
-													node.addClass('rowEven');
-												} else {
-													node.addClass('rowOdd');
-												}
-												i++;
-											} while (node = node.nextSibling);
+										removeUser(userDiv);
+									} 
+								break;
+							case 'MQ' : // User asks a question
+								var span = userDiv.getElement('span');
+								span.addClass('ask');
+								if (room.type == 'M' && me.mod == 'M') {
+									userDiv.store('question',msg.message);
+									userDiv.addEvents({
+										'mouseenter' : function(e) {
+											var qtext = userDiv.retrieve('question')
+											if (qtext) {
+												var question = new Element('div', {
+													'id' : 'question',
+													'text' : qtext});
+												question.inject(document.body);
+												question.setStyles({'top': e.client.y, 'left':e.client.x});
+											}								
+										},
+										'mouseleave' : function(e) {
+											var question = $('question');
+											if (question) {
+												question.destroy();
+											}
 										}
-										var user = msg.user;
-										user.question = msg.message;
-										addUser(user);
-									}			 
-
-									break;
-								case 'MQ' : // User asks a question
+									});
+								}
+								break;
+							case 'MR' :
+							case 'ME' :
+								//A message from a user must mean he no longer has a question outstanding
+								var span = userDiv.getElement('span');
+								span.removeClass('ask');
+								if (room.type == 'M' && me.mod == 'M') {
+									userDiv.store('question',null);
+								}
+								break;
+							case 'RM' : // becomes moderator
+							case 'RN' : // stops being moderator
+								if (me.uid == msg.user.uid) {
+									if (msg.user.role == 'M') {
+										me.mod == 'M'
+									} else {
+										me.mod == 'N'
+									}
+								// Given I am changing from mod to not or visa vera, need to remove and then re-add me
+									if(userDiv) {
+										removeUser(userDiv);
+										adduser(msg.user);
+									}
+								}
+								break;
+							case 'MQ' : // User asks a question
+								if(currentRid == msg.rid) {
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
 										userDiv.store('question',msg.message);
 										userDiv.addEvents({
 											'mouseenter' : function(e) {
-												e.stop();
 												var qtext = userDiv.retrieve('question')
 												if (qtext) {
 													var question = new Element('div', {
@@ -617,19 +658,10 @@ return {
 											}
 										});
 									}
-									break;
-								case 'MR' :
-								case 'ME' :
-								//A message from a user must mean he no longer has a question outstanding
-									var span = userDiv.getElement('span');
-									span.removeClass('ask');
-									if (room.type == 'M' && me.mod == 'M') {
-										userDiv.store('question',null);
-									}
-									break;
-								default :  // ignore anything else
-									break;
 								}
+								break;
+							default :  // ignore anything else
+								break;
 							}
 						}
 					}
@@ -733,6 +765,26 @@ return {
 						if (lastId < lid) {
 							lastId = lid;
 							switch(msg.type) {
+							case 'RE' : 
+								if (room.rid == 0  || msg.rid == room.rid) {
+									if (room.rid == 0) {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' leaves for a Room'));
+									} else {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+									}
+									MBchat.sounds.roomMove();
+								}
+								break;
+							case 'RX' :
+								if (room.rid == 0  || msg.rid == room.rid) {
+									if (room.rid == 0) {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Re-enters the Hall'));
+									} else {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+									}
+									MBchat.sounds.roomMove();
+								}
+								break;
 							case 'WH' :
 								var whisperList;
 								var whisperIdStr;
@@ -790,14 +842,6 @@ return {
 									case 'ME' :
 										this.displayMessage(lastId,msg.time,msg.user,msg.message);
 										MBchat.sounds.messageArrives();
-										break;
-									case 'RE' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
-										MBchat.sounds.roomMove();
-										break;
-									case 'RX' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
-										MBchat.sounds.roomMove();
 										break;
 									case 'LT' :
 										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
@@ -933,7 +977,6 @@ return {
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
-						e.stop();
 						var leaveWhisper = new Request.JSON({
 							url:'leavewhisper.php',
 							onComplete: function(response,errorMsg) {
@@ -996,6 +1039,7 @@ return {
 						}
 						var dropZones = $$('.whisperBox');
 						var dragMan = new Element('div',{'class':'dragBox'});
+						dragMan.setStyles(startPosition);
 						var dragDestroy = function() {
 							dragMan.destroy();
 							$('content').setStyles(contentSize);
@@ -1012,12 +1056,12 @@ return {
 							}
 						});
 						dragMan.inject(document.body);
-						dragMan.setStyles(startPosition);
+						dragMan.addEvent('mouseup',dragDestroy);
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
 							droppables:dropZones,
 							onSnap: function(element) {
-								element.removeEvent('mouseleave',dragDestroy);
+								element.removeEvent('mouseup',dragDestroy);
 							},
 							onDrop: function(element, droppable){
 								dropZones.removeClass('dragOver');
