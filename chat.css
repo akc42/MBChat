@@ -281,6 +281,10 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	font-size:x-small;
 }
 
+div.hasQuestion {
+	cursor:pointer;
+}
+
 #onlineListContainer {
 	position:absolute;
 	right:20px;

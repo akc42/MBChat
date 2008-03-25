@@ -26,7 +26,7 @@ dbQuery('UPDATE users SET role = "M", moderator = '.dbMakeSafe($mod).', time = N
 dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($puid).','.dbMakeSafe($user['name']).', "M" , "RM" ,'.dbMakeSafe($user['rid']).');');
 if ($user['question'] != '' ) {
-	dbQuery('INSERT INTO log (uid name, role, type, rid, message) VALUES ('. 
+	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('. 
 				dbMakeSafe($puid).','.dbMakeSafe($user['name']).
 				', "M" , "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
 }

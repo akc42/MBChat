@@ -1,6 +1,6 @@
 <?php
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['lid']) && isset($_GET['rid'])))
-	die('Hacking attempt - wrong parameters');
+	die('Poll-Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 
 if ($_GET['password'] != sha1("Key".$uid))
