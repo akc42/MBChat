@@ -249,6 +249,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 
 #onlineList>div {
 	padding:2px;
+	position:relative;
 }
 
 #onlineList span.whisperer {
@@ -259,7 +260,9 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	cursor:default;
 }
 
-
+#onlineList span.ask {
+	background-color:yellow;
+}
 
 .rowEven {
 	background-color:#F6F6F6;
@@ -267,6 +270,23 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 
 .rowOdd {
 	background-color:#ECEDF3;
+}
+
+.hide {
+	display: none;
+}
+
+#question {
+	position:absolute;
+	width:150px;
+	z-index:10;
+	border:1px dotted green;
+	padding:2px 5px;
+	font-size:x-small;
+}
+
+div.hasQuestion {
+	cursor:pointer;
 }
 
 #onlineListContainer {
@@ -289,16 +309,14 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	display:block;
 }
 #onlineList {
-/*	position:absolute; 
-	left:0px;
-	right:0px;
-	top:25px;
-	bottom:0px; */
 	overflow:auto;
 }
 div.list {
 	padding:10px 2px;
 }
+
+
+
 
 #userOptions {
 	position:absolute;
@@ -414,8 +432,9 @@ div.whisper {
 	width:230px;
 	height:25px;
 	border:1px solid black;
-	background:transparent;
+	background:white;
 }
+
 
 .whisperSend {
 	position:absolute;

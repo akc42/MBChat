@@ -16,20 +16,17 @@ include_once('db.php');
 dbQuery('START TRANSACTION;');
 $result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant LEFT JOIN users ON users.uid = participant.uid WHERE participant.uid = '
 	.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-if(mysql_num_rows($result) == 0) {
-	dbQuery('ROLLBACK;');
-	die('Message Send - Invalid User or Whisper Id');
-}
+if(mysql_num_rows($result) > 0) {  //only insert into channel if still there
 
+	$row=mysql_fetch_assoc($result);
 
-$row=mysql_fetch_assoc($result);
-mysql_free_result($result);
-
-if ($text != '') {  //only insert non blank text - ignore other
-	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
+	if ($text != '') {  //only insert non blank text - ignore other
+		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "WH" ,'.dbMakeSafe($wid).','.dbMakeSafe($text).');');
+	}
 }
+mysql_free_result($result);
 dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
 
 dbQuery('COMMIT ;');

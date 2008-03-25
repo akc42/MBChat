@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v0.9.8';
+	var version = 'v1.0.2';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -29,7 +29,7 @@ MBchat = function () {
 		autoCancel: true,
 		onComplete : function(response,errorMsg) {
 			if(response) {
-				MBchat.updateables.pollResponse(response)
+				MBchat.updateables.poller.pollResponse(response)
 			} else {
 				displayErrorMessage(errorMsg);
 			}
@@ -40,7 +40,7 @@ MBchat = function () {
 		autoCancel: true,
 		onComplete : function(response,errorMsg) {
 			if(response) {
-				MBchat.updateables.pollResponse(response)
+				MBchat.updateables.poller.pollResponse(response)
 			} else {
 				displayErrorMessage(errorMsg);
 			}
@@ -59,30 +59,6 @@ return {
 		entranceHall = {rid:0, name: entranceHallName, type: 'O'};
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
-		Element.Events.promote = {
-			base: 'mousedown', //we set a base type
-			condition: function(event){ //and a function to perform additional checks.
-				return (event.shift == true); //this means the event is free to fire
-			}
-		}
-		Element.Events.demote = {
-			base: 'mousedown', //we set a base type
-			condition: function(event){ //and a function to perform additional checks.
-				return (event.control == true); //this means the event is free to fire
-			}
-		}
-		Element.Events.moderate = {
-			base: 'mousedown', //we set a base type
-			condition: function(event){ //and a function to perform additional checks.
-				return (event.alt == true); //this means the event is free to fire
-			}
-		}
-		Element.Events.controlclick = {
-			base: 'click', //we set a base type
-			condition: function(event){ //and a function to perform additional checks.
-				return (event.control == true); //this means the event is free to fire
-			}
-		}
 // We need to setup all the entrance hall
 
 		var roomgroups = $$('.rooms');
@@ -137,20 +113,17 @@ return {
 		});
 		exit.addEvent('click', function(e) {
 			e.stop();
-			if (MBchat.updateables.message.getRoom().rid == 0 ) {
-				window.location = '/forum' ; //and go back to the forum
+			if (e.control && me.additional) {
+				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid);
 			} else {
-				MBchat.updateables.message.leaveRoom();
+				if (MBchat.updateables.message.getRoom().rid == 0 ) {
+					MBchat.logout();
+					window.location = '/forum' ; //and go back to the forum
+				} else {
+					MBchat.updateables.message.leaveRoom();
+				}
 			}
 		});
-		if (me.additional) {
-			exit.addEvent('controlclick',function(e) {
-				e.stop();
-				if (MBchat.updateables.message.getRoom().rid == 0 ) {
-					MBchat.updateables.logger.startLog(99); //Only do this from entrance hall
-				}
-			});
-		}
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
@@ -176,7 +149,7 @@ return {
 
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
-			messageReq.get({$merge(myRequestOptions,{
+			messageReq.get($merge(myRequestOptions,{
 				'rid':room.rid,
 				'lid':MBchat.updateables.poller.getLastId(),
 				'text':$('messageText').value}));
@@ -200,6 +173,7 @@ return {
 	sounds: function () {
 		var music = false;
 		var musicEnabled;
+		var soundEnabled;
 		var playAgain = true;
 		var Timer = {counter:30 , start : 30 }; //Units of 10 seconds
 		var countDown = function() {
@@ -209,11 +183,12 @@ return {
 				this.counter += soundDelay -this.start ;
 				this.start = soundDelay;
 				if (this.counter < 0) this.counter = 0;
+				Cookie.write('soundDelay', $('soundDelay').value.toString(),{duration:50});
 			}
 			
 			if (!music && soundReady) {
 				music = soundManager.getSoundById('music');
-				music.onfinish = function () {
+				music.options.onfinish = function () {
 					playAgain = true;
 				}
 				music.volume = 10;
@@ -233,43 +208,94 @@ return {
 		
 		return {
 			init: function () {
+				var sd = Cookie.read('soundDelay')
+				Cookie.write('soundDeley',sd,{duration:50}); //Just write so validity starts again
+				if (sd) {
+					var delayMin = sd.toInt()
+					Timer.start = 6 * delayMin;
+					Timer.counter = Timer.start;
+					$('soundDelay').value = delayMin;
+				}
 				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
 				musicEnabled = $('musicEnabled');
+				var mu = Cookie.read('musicEnabled');
+				Cookie.write('musicEnabled', mu ,{duration:50});
+				if (mu) {
+					if (mu == 'true') {
+						musicEnabled.checked = true;
+					} else {
+						musicEnabled.checked = false;
+					}
+				}
 				musicEnabled.addEvent('click', function(e) {
 					if(!musicEnabled.checked) {
 						soundManager.stop('music');
 						playAgain = true;
+						Cookie.write('musicEnabled', 'false',{duration:50});
+					} else {
+						Cookie.write('musicEnabled', 'true',{duration:50});
 					}
+
 				});
+				soundEnabled = $('soundEnabled');
+				var so = Cookie.read('soundEnabled');
+				Cookie.write('soundEnabled', so,{duration:50});
+				if (so) {
+					if (so == 'true') {
+						soundEnabled.checked = true;
+					} else {
+						soundEnabled.checked = false;
+					}
+				}
+				soundEnabled.addEvent('click', function(e) {
+					if(!soundEnabled.checked) {
+						Cookie.write('soundEnabled', 'false',{duration:50});
+					} else {
+						Cookie.write('soundEnabled', 'true',{duration:50});
+					}
+
+				});
+				
 			},
 			resetTimer: function() {
 				Timer.counter = Timer.start;
 			},
 			roomMove : function() {
-				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('move');
+				if(soundReady && soundEnabled.checked) {
+					if(room.rid == 4) { //special for vamp club
+						soundManager.play('creaky');
+					} else {
+						soundManager.play('move');
+					}
+				}
 			},
 			newWhisper: function() {
-				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('whispers');
+				if(soundReady && soundEnabled.checked) soundManager.play('whispers');
 			},
 			messageArrives:function() {
-				if(soundReady && Timer.counter == 0 && $('soundEnabled').checked) soundManager.play('speak');
+				if(soundReady && Timer.counter == 0 && soundEnabled.checked) soundManager.play('speak');
 			}
 		};
 	}(),
 	updateables : function () {
+		var replaceEmoticons = function(text) {
+			return text.replace(emoticonRegExpStr,function(match,p1) {
+				return emoticonSubstitution.get(p1);
+			});
+		};
+		var replaceHyperLinks = function(text) {
+			return text.replace(hyperlinkRegExp,function(str, p1, p2) {
+				return p1 + '<a href="' + p2 
+					+ '" onclick="window.open(this.href); return false;">' + p2 + '</a>';
+			});
+		};
 		return {
 			init : function (pollOptions) {
 				MBchat.updateables.online.init();
 				MBchat.updateables.message.init();
 				MBchat.updateables.poller.init(pollOptions);
-				MBchat.updateables.whispers.init(pollOptions.lastid);
+				MBchat.updateables.whispers.init(pollOptions.lastid.toInt());
 				MBchat.updateables.logger.init();
-			},
-			pollResponse : function(response) {
-				response.messages.each(function(item) {
-					lastId = (lastId < item.lid)? item.lid : lastId; //This should throw away messages if lastId is null
-					MBchat.updateables.processMessage(item);
-				});
 			},
 			processMessage : function(message) {
 				MBchat.updateables.online.processMessage(message);
@@ -288,7 +314,7 @@ return {
 					autoCancel: true,
 					onComplete : function(response,errorMsg) {
 						if(response) {
-							MBchat.updateables.pollResponse(response)
+							MBchat.updateables.poller.pollResponse(response)
 						} else {
 							displayErrorMessage(errorMsg);
 						}
@@ -321,8 +347,18 @@ return {
 					getLastId: function() {
 						return lastId;
 					},
+
 					start : function () {
 						pollerId = poll.periodical(pollInterval,MBchat.updateables);
+					},
+
+					pollResponse : function(response) {
+						response.messages.each(function(item) {
+							var lid = item.lid.toInt();
+							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
+							MBchat.updateables.processMessage(item);
+						});
+					},
 					stop : function() {
 						$clear(pollerId);
 						lastId = null; //Ensure no more polls come through
@@ -336,69 +372,187 @@ return {
 				var currentRid;
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
-					var span = displayUser(user,div)
+					var span = displayUser(user,div);
 					if (room.type === 'M') {
-						if (me.role === 'M') {
-							var question = new Element('div' , {
-								'class': 'question hide',
-								'text' : user.question}).inject(div);
-									
+						if (me.mod === 'M') {
 							if (user.uid != me.uid) {
+								if (user.question) {
+									span.addClass('ask');
+									div.store('question',user.question);
+								}
 								// I am a moderator in a moderated room - therefore I need to be able to moderate others
 								div.addEvents({
-									'moderate' : function(e) {
-										e.stop();
-										var request = new request.JSON({
-											'url' : 'release.php',
-											'onComplete' : function (response,errorMsg) {
-												//Not interested in normal return as message will appear via poll
-												if(!response) {
-													displayError(errorMsg);
-												}
+									'click' : function(e) {
+										if (e.control) { //Promote to moderator
+											if (user.role != 'M') { //but only if not already one
+												var request = new Request.JSON({
+													'url' : 'promote.php',
+													'onComplete' : function (response,errorMsg) {
+														if(response) {
+															MBchat.updateables.poller.pollResponse(response)
+														} else {
+															displayErrorMessage(errorMsg);
+														}
+													}
+												}).get($merge(myRequestOptions,{
+													'lid':MBchat.updateables.poller.getLastId(),
+													'rid':room.rid,
+													'puid':user.uid}));
 											}
-										}).get($merge(myRequestOptions,{'rid':room.rid,'quid':user.uid, 'ques':user.question}));
+										} else {
+											var qtext = div.retrieve('question');
+											if (qtext) { // only send one if there is one
+												var request = new Request.JSON({
+													'url' : 'release.php',
+													'onComplete' : function (response,errorMsg) {
+														if(response) {
+															MBchat.updateables.poller.pollResponse(response)
+														} else {
+															displayErrorMessage(errorMsg);
+														}
+													}
+												}).get($merge(myRequestOptions,{
+													'lid':MBchat.updateables.poller.getLastId(),
+													'rid':room.rid,
+													'quid':user.uid}));
+											}
+										}
 									},
-									'promote': function(e) {
-										e.stop();
-		//TODO - make moderator
-									},
-									'mouseover' : function(e) {
-										question.removeClass('hide');
+									'mouseenter' : function(e) {
+										var span = div.getElement('span');
+										if (!(span.hasClass('M') || span.hasClass('H') 
+											|| span.hasClass('G') || span.hasClass('S'))) {
+											var question = new Element('div', {'id' : 'question'});
+											var qtext = div.retrieve('question');
+											if (qtext) {
+												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+												qtext = replaceEmoticons(qtext); //Then replace emoticons.
+												question.set('html',
+													'<p><b>Click to Release Question<br/>',
+													'Control Click to Promote</b></p>',
+													'<p>',qtext,'</p>'); 
+												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+											} else {
+												question.set('html','<p><b>Control Click to Promote</b></p>');
+												question.setStyles({'top': e.client.y, 'left':e.client.x });
+											}
+											div.addClass('hasQuestion');
+											question.inject(document.body);
+										}
 									},
 									'mouseleave' : function(e) {
-										question.addClass('hide');
-									},
-									'mousedown' : function(e) {
-										e= new Event(e).stop();
-										MBchat.updateables.whispers.whisperWith(user,span,e);
+										div.removeClass('hasQuestion');
+										var question = $('question');
+										if (question) {
+											question.destroy();
+										}
 									}
 								});
 								div.firstChild.addClass('whisperer');
 							} else {
-								div.addEvent('demote', function(e) {
-									e.stop();
-	//TODO downgrade self
+								div.addEvents({
+									'click': function(e) {
+										e.stop();
+										if(e.control && e.alt) {
+											var request = new Request.JSON({
+												'url' : 'demote.php',
+												'onComplete' : function (response,errorMsg) {
+													if(response) {
+														MBchat.updateables.poller.pollResponse(response)
+													} else {
+														displayErrorMessage(errorMsg);
+													}
+												}
+											}).get($merge(myRequestOptions,{
+												'lid':MBchat.updateables.poller.getLastId(),
+												'rid':room.rid}));
+											// There will be a question block that needs removing here
+											div.removeClass('hasQuestion');
+											var question = $('question');
+											if (question) {
+												question.destroy();
+											}
+										}
+									},
+									'mouseenter' : function(e) {
+										div.addClass('hasQuestion');
+										var question = new Element('div', {'id' : 'question'});
+										question.set('html','<p><b>Control Alt Click to Demote</b></p>');
+										question.setStyles({'top': e.client.y, 'left':e.client.x });
+										
+										question.inject(document.body);
+									},
+									'mouseleave' : function(e) {
+										div.removeClass('hasQuestion');
+										var question = $('question');
+										if (question) {
+											question.destroy();
+										}
+									}
 								});
 							}
 						} else {
-							if (user.question != '') {
+							if (user.question) {
 								span.addClass('ask');
 							}
-						}
-					} else {
-						if (user.uid != me.uid) {
-							div.addEvent('mousedown',function (e) {
-								e=new Event(e).stop();
-								MBchat.updateables.whispers.whisperWith(user,span,e);
-							});
-							div.firstChild.addClass('whisperer');
+							if (me.uid == user.uid) {
+								if (user.question) {
+									div.store('question',user.question);
+								}
+								div.addEvents({
+									'mouseenter' : function(e) {
+										var question = new Element('div', {'id' : 'question'});
+										var qtext = div.retrieve('question');
+										if (qtext) {
+											qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+											qtext = replaceEmoticons(qtext); //Then replace emoticons.
+											question.set('html','<p>',qtext,'</p>'); 
+											question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+											div.addClass('hasQuestion');
+											question.inject(document.body);
+										}
+									},
+									'mouseleave' : function(e) {
+										div.removeClass('hasQuestion');
+										var question = $('question');
+										if (question) {
+											question.destroy();
+										}
+									}
+								});
+							}
+
+
+
 						}
 					} 
+					if (user.uid != me.uid) {
+						span.addEvent('mousedown',function (e) {
+							MBchat.updateables.whispers.whisperWith(user,span,e);
+						});
+						div.firstChild.addClass('whisperer');
+					}
 					div.inject(onlineList); //Forces onlineList to have children
 					if ((onlineList.getChildren().length % 2) == 0 ) {
 						div.addClass('rowEven');
 					} else {
 						div.addClass('rowOdd');
+					}
+				};
+				var removeUser = function (userDiv) {
+					userDiv.destroy(); //removes from list
+					var node = onlineList.firstChild;
+					if (node) {
+						var i = 0;
+						do {	
+							node.erase('class');
+							if( i%2 == 0) {
+								node.addClass('rowEven');
+							} else {
+								node.addClass('rowOdd');
+							}
+							i++;
+						} while (node = node.nextSibling);
 					}
 				};
 				request = new Request.JSON({
@@ -415,7 +569,7 @@ return {
 									addUser(user);
 								});
 							}
-							lastId = response.lastid;
+							lastId = response.lastid.toInt();
 							MBchat.updateables.poller.setLastId(lastId);
 						} else {
 							displayErrorMessage(errorMsg);
@@ -439,60 +593,112 @@ return {
 						loadingRid = rid;
 						request.get($merge(myRequestOptions,{'rid':rid }));
 					},
-//					getLastId: function () {
-//						return lastId;
-//					},
 					getCurrentRid: function() {
 						return currentRid;
 					},
 					processMessage: function (msg) {
 						if(!lastId) return;	//not processing messages yet
-						if (lastId < msg.lid) {
-							lastId = msg.lid;
-							if (msg.rid == currentRid) {
-								userDiv = $('U'+msg.user.uid);
-								switch (msg.type) {
-								case 'LO' : //Logout, timeout or room exist are all the same
-								case 'LT' :
-								case 'RX' :
-									if (userDiv) {
-										userDiv.destroy(); //removes from list
-										var node = onlineList.firstChild;
-										if (node) {
-											var i = 0;
-											do {	
-												node.erase('class');
-												if( i%2 == 0) {
-													node.addClass('rowEven');
-												} else {
-													node.addClass('rowOdd');
-												}
-												i++;
-											} while (node = node.nextSibling);
-										}
-									}			 
-									break;
-								case 'LI' : //Login (to room) and room entry are the asme
-								case 'RE' :
+						var lid = msg.lid.toInt();
+						if (lastId < lid) {
+							lastId = lid;
+							userDiv = $('U'+msg.user.uid);
+							switch (msg.type) {
+							case 'LO' : 
+							case 'LT' :
+								if (userDiv && msg.rid == currentRid) {
+									removeUser(userDiv)
+								}
+								break;
+							case 'RX' :
+								if (currentRid == 0) {
 									if (!userDiv) {
 										addUser(msg.user);
 									}
-									break;
-								case 'RM' : // becomes moderator
-//TODO
-									break;
-								case 'RN' : // stops being moderator
-//TODO
-									break;
-								case 'MQ' : // User asks a question
-//TODO
-									break;
-								case 'MR' : //User removes question
-//TODO
-									break;
-								default :  // ignore anything else
-									break;
+								} else {
+									if (userDiv) {
+										removeUser(userDiv);
+									} 
+								}			 
+								break;
+							case 'LI' : 
+								if (!userDiv && msg.rid == currentRid) {
+									addUser(msg.user);
+								}	
+								break;
+							case 'RE' :
+								if (currentRid != 0) {
+									if (!userDiv) {
+										var user = msg.user;
+										user.question = msg.message;
+										addUser(user);
+									}
+								} else {
+									if (userDiv) {
+										removeUser(userDiv);
+									} 
 								}
+								break;
+							case 'MQ' : // User asks a question
+								var span = userDiv.getElement('span');
+								span.addClass('ask');
+								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
+									userDiv.store('question',msg.message);
+								}
+								break;
+							case 'MR' :
+							case 'ME' :
+								//A message from a user must mean he no longer has a question outstanding
+								var span = userDiv.getElement('span');
+								span.removeClass('ask');
+								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
+									userDiv.store('question',null);
+								}
+								break;
+							case 'RM' : // becomes moderator
+							case 'RN' : // stops being moderator
+								if (me.uid == msg.user.uid) {
+									if (msg.user.role == 'M') {
+										me.mod = 'M'
+									} else {
+										me.mod = 'N'
+									}
+								}
+								// Given user is changing from mod to not or visa vera, need to remove and then re-add
+								if(userDiv) {
+									removeUser(userDiv);
+									addUser(msg.user);
+								}
+								break;
+							case 'MQ' : // User asks a question
+								if(currentRid == msg.rid) {
+									var span = userDiv.getElement('span');
+									span.addClass('ask');
+									if (room.type == 'M' && me.mod == 'M') {
+										userDiv.store('question',msg.message);
+										userDiv.addEvents({
+											'mouseenter' : function(e) {
+												var qtext = userDiv.retrieve('question')
+												if (qtext) {
+													var question = new Element('div', {
+														'id' : 'question',
+														'text' : qtext});
+													question.inject(document.body);
+													question.setStyles({'top': e.client.y, 'left':e.client.x});
+												}
+												
+											},
+											'mouseleave' : function(e) {
+												var question = $('question');
+												if (question) {
+													question.destroy();
+												}
+											}
+										});
+									}
+								}
+								break;
+							default :  // ignore anything else
+								break;
 							}
 						}
 					}
@@ -534,10 +740,10 @@ return {
 								if (response) {
 									room = response.room;
 									response.messages.each(function(msg) {
-										if(!lastId) lastId = msg.lid -1;
+										if(!lastId) lastId = msg.lid.toInt() -1;
 										MBchat.updateables.processMessage(msg);
 									});
-									lastId = response.lastid;
+									lastId = response.lastid.toInt();
 								//Ensure we get all message from here on in
 									MBchat.updateables.poller.setLastId(lastId);
 								//Display room name at head of page
@@ -560,10 +766,10 @@ return {
 							onComplete : function(response,errorMsg) {
 								if (response) {
 									response.messages.each(function(msg) {
-										if(!lastId) lastId = msg.lid -1;
+										if(!lastId) lastId = msg.lid.toInt() -1;
 										MBchat.updateables.processMessage(msg);
 									});
-									lastId = response.lastid;
+									lastId = response.lastid.toInt();
 								//Ensure we get all message from here on in
 									MBchat.updateables.poller.setLastId(lastId);
 									MBchat.updateables.online.show(0);	//Show online list for entrance hall
@@ -592,13 +798,29 @@ return {
 						return room;
 					},
 					processMessage: function (msg) {
-						if (lastId < msg.lid) {
-							lastId = msg.lid;
+						var lid = msg.lid.toInt();
+						if (lastId < lid) {
+							lastId = lid;
 							switch(msg.type) {
-							case 'ME' :
-
-								this.displayMessage(lastId,msg.time,msg.user,msg.message);
-								MBchat.sounds.messageArrives();
+							case 'RE' : 
+								if (room.rid == 0  || msg.rid == room.rid) {
+									if (room.rid == 0) {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' leaves for a Room'));
+									} else {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+									}
+									MBchat.sounds.roomMove();
+								}
+								break;
+							case 'RX' :
+								if (room.rid == 0  || msg.rid == room.rid) {
+									if (room.rid == 0) {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Re-enters the Hall'));
+									} else {
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+									}
+									MBchat.sounds.roomMove();
+								}
 								break;
 							case 'WH' :
 								var whisperList;
@@ -608,62 +830,38 @@ return {
 								if(!whisperBoxes.every(function(whisperBox) {
 									whisperIdStr = whisperBox.get('id');
 									if(msg.rid == whisperIdStr.substr(1).toInt()) {
-										whisperList = whisperBox.getElement('.whisperers');
+										whisperList = whisperBox.getElement('.whisperList');
 										return false;
 									}
 									return true;
 								})) {
 									var whisper = new Element('span',{'class':'whisper'});
-									if (me.uid = msg.user.uid) {
+									var othersAdded = false;
+									if (me.uid == msg.user.uid) {
 										whisper.appendText('(whispers to')
 									} else {
 										whisper.appendText('(whispers to me')
+										othersAdded = true;
+									}
 									//whisperList says who the other whisperers are
-									var othersAdded = false;
 									var whisperers = whisperList.getChildren();
-									whisperers.every(function(whisperer) {
-										var uid = whisperer.get('id').substr(wisperIdStr.length+1).toInt();
-										if (uid != meg.user.uid) { //This is not the whisperer so include
+									whisperers.each(function(whisperer) {
+										var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
+										if (uid != msg.user.uid) { //This is not the whisperer so include
 											if(othersAdded) {
 												whisper.appendText(', ');
 											}else {
 												whisper.appendText(' ');
+												othersAdded = true;
 											}
-											var newwhisperer = whisperer.clone(); //Make a clone to remove Id 
-											newwispererer.inject(whisper);
-											othersAdded = true;
-										});
-									}
-									whisper.append(')' +msg.message) ;
-									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html'));
+											var newWhisperer = whisperer.clone(); //Make a clone to remove Id 
+											newWhisperer.inject(whisper);
+										};
+									});
+									whisper.appendText(') ') ;
+									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html') + msg.message);
 									MBchat.sounds.messageArrives();
 								}
-								break;
-							case 'RE' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'RX' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'LT' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'LI' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'LO' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
-								MBchat.sounds.roomMove();
-								break;
-							case 'RM' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
-								break;
-							case 'RN' :
-								this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
 								break;
 							case 'WJ' :
 								if(msg.user.uid != me.uid) {
@@ -676,6 +874,32 @@ return {
 								}
 								break;
 							default:
+								if (msg.rid == room.rid) {
+									switch(msg.type) {
+									case 'ME' :
+										this.displayMessage(lastId,msg.time,msg.user,msg.message);
+										MBchat.sounds.messageArrives();
+										break;
+									case 'LT' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'LI' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'LO' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+										MBchat.sounds.roomMove();
+										break;
+									case 'RM' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
+										break;
+									case 'RN' :
+										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+										break;
+									}
+								}
 								break;
 							}
 						}
@@ -687,18 +911,6 @@ return {
 								number = '0'+number;
 							return number;
 						};
-						var replaceEmoticons = function(text) {
-							return text.replace(emoticonRegExpStr,function(match,p1) {
-								return emoticonSubstitution.get(p1);
-							});
-						};
-						var replaceHyperLinks = function(text) {
-							return text.replace(hyperlinkRegExp,function(str, p1, p2) {
-								return p1 + '<a href="' + p2 
-									+ '" onclick="window.open(this.href); return false;">' + p2 + '</a>';
-							});
-						};
-
 						var div = new Element('div');
 						if (lid != 0) div.set('id','L'+lid);	//This should be all messages except errors
 						var date = new Date(time.toInt()*1000);
@@ -790,7 +1002,6 @@ return {
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
-						e.stop();
 						var leaveWhisper = new Request.JSON({
 							url:'leavewhisper.php',
 							onComplete: function(response,errorMsg) {
@@ -806,7 +1017,7 @@ return {
 					});
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
-						whisperReq.get({$merge(myRequestOptions,{
+						whisperReq.get($merge(myRequestOptions,{
 							'wid':wid,
 							'rid':room.rid,
 							'lid':MBchat.updateables.poller.getLastId(),
@@ -827,6 +1038,7 @@ return {
 				var removeUser = function(whisperBox,uid) {
 					if (me.uid == uid) {
 						whisperBox.destroy();
+						$('content').setStyles(contentSize);
 					} else {
 						var span = $(whisperBox.get('id')+'U'+uid);
 						if (span) {
@@ -834,6 +1046,7 @@ return {
 						}
 						if (whisperBox.getElement('.whisperList').getChildren().length == 0 ) {
 							whisperBox.destroy();
+							$('content').setStyles(contentSize);
 						}
 					}
 				}
@@ -851,11 +1064,12 @@ return {
 						}
 						var dropZones = $$('.whisperBox');
 						var dragMan = new Element('div',{'class':'dragBox'});
+						dragMan.setStyles(startPosition);
 						var dragDestroy = function() {
-							this.destroy();
+							dragMan.destroy();
 							$('content').setStyles(contentSize);
 						}
-						dragMan.addEvent('mouseleave', dragDestroy);
+						el.addEvent('mouseup', dragDestroy);
 						displayUser(user,dragMan);
 						var dragReturn = new Fx.Morph(dragMan, {
 							link: 'cancel',
@@ -867,12 +1081,12 @@ return {
 							}
 						});
 						dragMan.inject(document.body);
-						dragMan.setStyles(startPosition);
+						dragMan.addEvent('mouseup',dragDestroy);
 						dropZones.include(dropNew);
 						var drag = new Drag.Move(dragMan,{
 							droppables:dropZones,
 							onSnap: function(element) {
-								element.removeEvent('mouseleave',dragDestroy);
+								element.removeEvent('mouseup',dragDestroy);
 							},
 							onDrop: function(element, droppable){
 								dropZones.removeClass('dragOver');
@@ -937,8 +1151,9 @@ return {
 						$('content').setStyles(contentSize);
 					},
 					processMessage: function (msg) {
-						if (lastId < msg.lid) {
-							lastId = msg.lid;
+						var lid = msg.lid.toInt();
+						if (lastId < lid) {
+							lastId = lid;
 							switch(msg.type) {
 							case 'WJ' :
 								if ($$('.whisperBox').every(function(whisperBox) {

@@ -1,6 +1,6 @@
 <?php
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['lid']) && isset($_GET['rid'])))
-	die('Hacking attempt - wrong parameters');
+	die('Poll-Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 
 if ($_GET['password'] != sha1("Key".$uid))
@@ -18,7 +18,12 @@ if (isset($_GET['presence'])) {
 
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE lid > '.dbMakeSafe($lid).' AND ( participant.uid = '.dbMakeSafe($uid);
-$sql .= 'OR rid = '.dbMakeSafe($rid).');';
+$sql .= 'OR rid = '.dbMakeSafe($rid).' OR type IN ("LO","LT"';
+if ($rid == 0 ) {
+	//if I am in entrance hall, I am also interested in someone entering or leaving another room
+	$sql .= ',"RE", "RX" ';
+}
+$sql .= ')) ORDER BY lid;';
 
 
 $result = dbQuery($sql);
