@@ -42,7 +42,7 @@ if ($row['rid'] != $rid ) { //means we have the same person logged in twice in t
 $role = $row['role'];
 $type = $row['type'];
 
-if ($type == 'M' && $role != 'M' && $role != 'H' && $role != 'G' && role != 'S' ) {
+if ($type == 'M' && $role != 'M' && $role != 'H' && $role != 'G' && $role != 'S' ) {
 //we are in a moderated room and not allowed to speak, so we just update the question we want to ask
 	if( $text == '') {
 		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.

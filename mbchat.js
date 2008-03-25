@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.0.1';
+	var version = 'v1.0.2';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -415,7 +415,8 @@ return {
 									},
 									'mouseenter' : function(e) {
 										var span = div.getElement('span');
-										if (!span.hasClass('M')) {
+										if (!(span.hasClass('M') || span.hasClass('H') 
+											|| span.hasClass('G') || span.hasClass('S'))) {
 											var question = new Element('div', {'id' : 'question'});
 											var qtext = div.retrieve('question');
 											if (qtext) {
