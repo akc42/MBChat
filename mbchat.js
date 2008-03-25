@@ -4,6 +4,7 @@ MBchat = function () {
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
 	var room;
+	var privateRoom;
 	var chatBot;
 	var messageListSize;
 	var hyperlinkRegExp;
@@ -46,7 +47,22 @@ MBchat = function () {
 			}
 		}
 	});
-		
+	var privateReq = new Request.JSON({
+		url:'private.php',
+		onComplete:function(response,errorMsg) {
+			if(response) {
+				MBchat.updateables.poller.pollResponse(response)
+			} else {
+				displayErrorMessage(errorMsg);
+			}
+		}
+	});
+	var goPrivate = function() {
+		privateReq.get($merge(myRequestOptions,{
+			'wid': this.getParent().get('id').substr(1).toInt(), 
+			'lid' : MBchat.updateables.poller.getLastId(),
+			'rid' : room.rid}));
+	};
 	var contentSize;
 return {
 	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
@@ -57,6 +73,7 @@ return {
 		me =  user; 
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
 		entranceHall = {rid:0, name: entranceHallName, type: 'O'};
+		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
 // We need to setup all the entrance hall
@@ -114,13 +131,20 @@ return {
 		exit.addEvent('click', function(e) {
 			e.stop();
 			if (e.control && me.additional) {
-				MBchat.updateables.logger.startLog(MBchat.updateables.message.getRoom().rid);
+				MBchat.updateables.logger.startLog(room.rid);
 			} else {
-				if (MBchat.updateables.message.getRoom().rid == 0 ) {
-					MBchat.logout();
-					window.location = '/forum' ; //and go back to the forum
+				if (privateRoom != 0) {
+					privateReq.get($merge(myReqOptions,{
+						'wid':0, 
+						'lid' : MBchat.updateables.poller.getLastId(),
+						'rid' : room.rid })); 
 				} else {
-					MBchat.updateables.message.leaveRoom();
+					if (room.rid == 0 ) {
+						MBchat.logout();
+						window.location = '/forum' ; //and go back to the forum
+					} else {
+						MBchat.updateables.message.leaveRoom();
+					}
 				}
 			}
 		});
@@ -368,164 +392,177 @@ return {
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
 					var span = displayUser(user,div);
-					if (room.type === 'M') {
-						if (me.mod === 'M') {
-							if (user.uid != me.uid) {
-								if (user.question) {
-									span.addClass('ask');
-									div.store('question',user.question);
-								}
-								// I am a moderator in a moderated room - therefore I need to be able to moderate others
-								div.addEvents({
-									'click' : function(e) {
-										if (e.control) { //Promote to moderator
-											if (user.role != 'M') { //but only if not already one
-												var request = new Request.JSON({
-													'url' : 'promote.php',
-													'onComplete' : function (response,errorMsg) {
-														if(response) {
-															MBchat.updateables.poller.pollResponse(response)
-														} else {
-															displayErrorMessage(errorMsg);
-														}
-													}
-												}).get($merge(myRequestOptions,{
-													'lid':MBchat.updateables.poller.getLastId(),
-													'rid':room.rid,
-													'puid':user.uid}));
-											}
-										} else {
-											var qtext = div.retrieve('question');
-											if (qtext) { // only send one if there is one
-												var request = new Request.JSON({
-													'url' : 'release.php',
-													'onComplete' : function (response,errorMsg) {
-														if(response) {
-															MBchat.updateables.poller.pollResponse(response)
-														} else {
-															displayErrorMessage(errorMsg);
-														}
-													}
-												}).get($merge(myRequestOptions,{
-													'lid':MBchat.updateables.poller.getLastId(),
-													'rid':room.rid,
-													'quid':user.uid}));
-											}
-										}
-									},
-									'mouseenter' : function(e) {
-										var span = div.getElement('span');
-										if (!(span.hasClass('M') || span.hasClass('H') 
-											|| span.hasClass('G') || span.hasClass('S'))) {
-											var question = new Element('div', {'id' : 'question'});
-											var qtext = div.retrieve('question');
-											if (qtext) {
-												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
-												qtext = replaceEmoticons(qtext); //Then replace emoticons.
-												question.set('html',
-													'<p><b>Click to Release Question<br/>',
-													'Control Click to Promote</b></p>',
-													'<p>',qtext,'</p>'); 
-												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
-											} else {
-												question.set('html','<p><b>Control Click to Promote</b></p>');
-												question.setStyles({'top': e.client.y, 'left':e.client.x });
-											}
-											div.addClass('hasQuestion');
-											question.inject(document.body);
-										}
-									},
-									'mouseleave' : function(e) {
-										div.removeClass('hasQuestion');
-										var question = $('question');
-										if (question) {
-											question.destroy();
-										}
+					if (user.private && user.private.toInt() != 0  ) { 
+						//This user is in a private room so maybe we don't display him
+						if (user.uid != me.uid) {
+							//Not me, but I might be in a whisper with them
+
+							var whisperBox = $('W'+user.private);
+							if (!whisperBox) {
+								return; //not in any whisper box, so don't display 
+							}
+						}
+						span.addClass('private');  //makes them Italic to show its private
+					} else {
+						if (room.type === 'M') {
+							if (me.mod === 'M') {
+								if (user.uid != me.uid) {
+									if (user.question) {
+										span.addClass('ask');
+										div.store('question',user.question);
 									}
-								});
-								div.firstChild.addClass('whisperer');
-							} else {
-								div.addEvents({
-									'click': function(e) {
-										e.stop();
-										if(e.control && e.alt) {
-											var request = new Request.JSON({
-												'url' : 'demote.php',
-												'onComplete' : function (response,errorMsg) {
-													if(response) {
-														MBchat.updateables.poller.pollResponse(response)
-													} else {
-														displayErrorMessage(errorMsg);
-													}
+									// I am a moderator in a moderated room - therefore I need to be able to moderate others
+									div.addEvents({
+										'click' : function(e) {
+											if (e.control) { //Promote to moderator
+												if (user.role != 'M') { //but only if not already one
+													var request = new Request.JSON({
+														'url' : 'promote.php',
+														'onComplete' : function (response,errorMsg) {
+															if(response) {
+																MBchat.updateables.poller.pollResponse(response)
+															} else {
+																displayErrorMessage(errorMsg);
+															}
+														}
+													}).get($merge(myRequestOptions,{
+														'lid':MBchat.updateables.poller.getLastId(),
+														'rid':room.rid,
+														'puid':user.uid}));
 												}
-											}).get($merge(myRequestOptions,{
-												'lid':MBchat.updateables.poller.getLastId(),
-												'rid':room.rid}));
-											// There will be a question block that needs removing here
+											} else {
+												var qtext = div.retrieve('question');
+												if (qtext) { // only send one if there is one
+													var request = new Request.JSON({
+														'url' : 'release.php',
+														'onComplete' : function (response,errorMsg) {
+															if(response) {
+																MBchat.updateables.poller.pollResponse(response)
+															} else {
+																displayErrorMessage(errorMsg);
+															}
+														}
+													}).get($merge(myRequestOptions,{
+														'lid':MBchat.updateables.poller.getLastId(),
+														'rid':room.rid,
+														'quid':user.uid}));
+												}
+											}
+										},
+										'mouseenter' : function(e) {
+											var span = div.getElement('span');
+											if (!(span.hasClass('M') || span.hasClass('H') 
+												|| span.hasClass('G') || span.hasClass('S'))) {
+												var question = new Element('div', {'id' : 'question'});
+												var qtext = div.retrieve('question');
+												if (qtext) {
+													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+													qtext = replaceEmoticons(qtext); //Then replace emoticons.
+													question.set('html',
+														'<p><b>Click to Release Question<br/>',
+														'Control Click to Promote</b></p>',
+														'<p>',qtext,'</p>'); 
+													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+												} else {
+													question.set('html','<p><b>Control Click to Promote</b></p>');
+													question.setStyles({'top': e.client.y, 'left':e.client.x });
+												}
+												div.addClass('hasQuestion');
+												question.inject(document.body);
+											}
+										},
+										'mouseleave' : function(e) {
 											div.removeClass('hasQuestion');
 											var question = $('question');
 											if (question) {
 												question.destroy();
 											}
 										}
-									},
-									'mouseenter' : function(e) {
-										div.addClass('hasQuestion');
-										var question = new Element('div', {'id' : 'question'});
-										question.set('html','<p><b>Control Alt Click to Demote</b></p>');
-										question.setStyles({'top': e.client.y, 'left':e.client.x });
-										
-										question.inject(document.body);
-									},
-									'mouseleave' : function(e) {
-										div.removeClass('hasQuestion');
-										var question = $('question');
-										if (question) {
-											question.destroy();
-										}
-									}
-								});
-							}
-						} else {
-							if (user.question) {
-								span.addClass('ask');
-							}
-							if (me.uid == user.uid) {
-								if (user.question) {
-									div.store('question',user.question);
-								}
-								div.addEvents({
-									'mouseenter' : function(e) {
-										var question = new Element('div', {'id' : 'question'});
-										var qtext = div.retrieve('question');
-										if (qtext) {
-											qtext = replaceHyperLinks (qtext);  //replace Hperlinks
-											qtext = replaceEmoticons(qtext); //Then replace emoticons.
-											question.set('html','<p>',qtext,'</p>'); 
-											question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+									});
+									div.firstChild.addClass('whisperer');
+								} else {
+									div.addEvents({
+										'click': function(e) {
+											e.stop();
+											if(e.control && e.alt) {
+												var request = new Request.JSON({
+													'url' : 'demote.php',
+													'onComplete' : function (response,errorMsg) {
+														if(response) {
+															MBchat.updateables.poller.pollResponse(response)
+														} else {
+															displayErrorMessage(errorMsg);
+														}
+													}
+												}).get($merge(myRequestOptions,{
+													'lid':MBchat.updateables.poller.getLastId(),
+													'rid':room.rid}));
+												// There will be a question block that needs removing here
+												div.removeClass('hasQuestion');
+												var question = $('question');
+												if (question) {
+													question.destroy();
+												}
+											}
+										},
+										'mouseenter' : function(e) {
 											div.addClass('hasQuestion');
+											var question = new Element('div', {'id' : 'question'});
+											question.set('html','<p><b>Control Alt Click to Demote</b></p>');
+											question.setStyles({'top': e.client.y, 'left':e.client.x });
+											
 											question.inject(document.body);
+										},
+										'mouseleave' : function(e) {
+											div.removeClass('hasQuestion');
+											var question = $('question');
+											if (question) {
+												question.destroy();
+											}
 										}
-									},
-									'mouseleave' : function(e) {
-										div.removeClass('hasQuestion');
-										var question = $('question');
-										if (question) {
-											question.destroy();
-										}
+									});
+								}
+							} else {
+								if (user.question) {
+									span.addClass('ask');
+								}
+								if (me.uid == user.uid) {
+									if (user.question) {
+										div.store('question',user.question);
 									}
-								});
+									div.addEvents({
+										'mouseenter' : function(e) {
+											var question = new Element('div', {'id' : 'question'});
+											var qtext = div.retrieve('question');
+											if (qtext) {
+												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+												qtext = replaceEmoticons(qtext); //Then replace emoticons.
+												question.set('html','<p>',qtext,'</p>'); 
+												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+												div.addClass('hasQuestion');
+												question.inject(document.body);
+											}
+										},
+										'mouseleave' : function(e) {
+											div.removeClass('hasQuestion');
+											var question = $('question');
+											if (question) {
+												question.destroy();
+											}
+										}
+									});
+								}
+	
+	
+	
 							}
-
-
-
+						} 
+						if (user.uid != me.uid) {
+							span.addEvent('mousedown',function (e) {
+								MBchat.updateables.whispers.whisperWith(user,span,e);
+							});
+							div.firstChild.addClass('whisperer');
 						}
-					} 
-					if (user.uid != me.uid) {
-						span.addEvent('mousedown',function (e) {
-							MBchat.updateables.whispers.whisperWith(user,span,e);
-						});
-						div.firstChild.addClass('whisperer');
 					}
 					div.inject(onlineList); //Forces onlineList to have children
 					if ((onlineList.getChildren().length % 2) == 0 ) {
@@ -692,6 +729,68 @@ return {
 									}
 								}
 								break;
+							case 'PE' :
+								if(userDiv) { //only relevent if we have this user
+									var whisperBox = $('W' + msg.rid);
+									if (msg.user.uid != me.uid) {
+										//Not me, but I might be in a whisper with them
+										if (!whisperBox) {
+											MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+											MBchat.sounds.roomMove();
+										} else {
+											removeUser(userDiv);
+											var user = msg.user;
+											user.private = msg.rid;
+											addUser(user);
+										}
+									} else {
+										if (room.rid == 0) {
+											//I'm in entrance hall so have to make it look like a room
+											messageList.removeClass('whisper');
+											messageList.addClass('chat');
+											$('inputContainer').set('styles',{ 'display':'block'});
+											$('emoticonContainer').set('styles',{ 'display':'block'});
+											$('entranceHall').set('styles',{'display':'none'});	
+											var exit = $('exit');
+											exit.addClass('exit-r');
+											exit.removeClass('exit-f');
+										}
+										privateRoom = msg.rid.toInt();
+										removeUser(userDiv);
+										var user = msg.user;
+										user.private = msg.rid;
+										addUser(user);
+										$('messageText').focus();
+										MBchat.sounds.resetTimer();
+										whisperBox.addClass('hide');
+										$('content').setStyles(contentSize);
+										MBchat.sounds.moveRoom();
+									}
+								}
+								break;
+							case 'PX' :
+								if (msg.user.uid == me.uid) {
+									$('messageText').focus();
+									if (room.rid == 0) {
+										//need to restore entrance hall
+										messageList.removeClass('chat');
+										messageList.addClass('whisper');
+										$('inputContainer').set('styles',{ 'display':'none'});
+										$('emoticonContainer').set('styles',{ 'display':'none'});
+										$('entranceHall').set('styles',{'display':'block'});
+										var exit = $('exit');	
+										exit.addClass('exit-f');
+										exit.removeClass('exit-r');
+									}
+									MBchat.sounds.resetTimer();
+								//need to make a whisper box with my whisperers in it.
+									$('W'+privateRoom).removeClass('hide');
+									$('content').setStyles(contentSize);
+									MBchat.sounds.moveRoom();
+								}
+								removeUser(userDiv)
+								addUser(msg.user);
+								break;
 							default :  // ignore anything else
 								break;
 							}
@@ -745,6 +844,18 @@ return {
 									var el = new Element('h1')
 										.set('text', room.name )
 										.inject('roomNameContainer');
+									if (room.type == 'M' && 
+										(me.mod == 'M' || me.role == 'H' || 
+										me.role == 'G' || me.role == 'S' )) { //Can't go to private room here
+										var whisperBoxes = $$('.whisperBox');
+										whisperBoxes.each ( function (whisperBox) {
+											var privateBox = whisperBox.getElement('.private');
+											privateBox.removeClass('private');
+											privateBox.addClass('nonprivate');
+											privateBox.removeEvent('click',goPrivate);
+										});
+									}
+										
 									MBchat.updateables.online.show(room.rid);	//Show online list for room	
 								} else {
 									displayErrorMessage(errorMsg);
@@ -773,6 +884,20 @@ return {
 								}
 							}
 						}).get($merge(myRequestOptions,{'rid' : room.rid}));
+						//we might have been in a room that stopped me going to private room
+						if (room.type == 'M' && 
+							(me.mod == 'M' || me.role == 'H' || 
+							me.role == 'G' || me.role == 'S' )) { //Can't go to private room here	
+							var whisperBoxes = $$('.whisperBox');
+							whisperBoxes.each ( function (whisperBox) {
+								var privateBox = whisperBox.getElement('.nonprivate');
+								if (privateBox) {
+									privateBox.removeClass('nonprivate');
+									privateBox.addClass('private');
+									privateBox.addEvent('click',goPrivate);
+								}
+							});
+						}
 						room = entranceHall;   //Set up to be in the entrance hall 
 						messageList.removeClass('chat');
 						messageList.empty();
@@ -788,9 +913,6 @@ return {
 						exit.addClass('exit-f');
 						exit.removeClass('exit-r');
 						MBchat.sounds.resetTimer();
-					},
-					getRoom: function () {
-						return room;
 					},
 					processMessage: function (msg) {
 						var lid = msg.lid.toInt();
@@ -892,6 +1014,8 @@ return {
 										break;
 									case 'RN' :
 										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+										break;
+									default:
 										break;
 									}
 								}
@@ -1008,8 +1132,16 @@ return {
 								}
 							}
 						});
-						leaveWhisper.get($merge(myRequestOptions,{'wid': this.getParent().get('id').substr(1).toInt()}));
+						leaveWhisper.get($merge(myRequestOptions,{'wid': wid}));
 					});
+					var privateBox = whisper.getElement('.private');
+					//can't go private if a key character in a modded room
+					if (room.type == 'M' && (me.mod == 'M' || me.role == 'H' || me.role == 'G' || me.role =='S')) {
+						privateBox.removeClass('private');
+						privateBox.addClass('nonprivate');
+					} else {
+						privateBox.addEvent('click', goPrivate);
+					}
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
 						whisperReq.get($merge(myRequestOptions,{
@@ -1052,7 +1184,7 @@ return {
 					whisperWith : function (user,el,event) {
 						var startPosition = el.getCoordinates();
 						var dropNew;
-						if (MBchat.updateables.message.getRoom().rid == 0 ) {
+						if (room.rid == 0 ) {
 							dropNew = $('chatList');
 						} else {
 							dropNew = $('inputContainer');
