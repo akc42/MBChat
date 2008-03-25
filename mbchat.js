@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.0.0';
+	var version = 'v1.0.1';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -367,7 +367,7 @@ return {
 				var currentRid;
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
-					var span = displayUser(user,div)
+					var span = displayUser(user,div);
 					if (room.type === 'M') {
 						if (me.mod === 'M') {
 							if (user.uid != me.uid) {
@@ -489,6 +489,35 @@ return {
 							if (user.question) {
 								span.addClass('ask');
 							}
+							if (me.uid == user.uid) {
+								if (user.question) {
+									div.store('question',user.question);
+								}
+								div.addEvents({
+									'mouseenter' : function(e) {
+										var question = new Element('div', {'id' : 'question'});
+										var qtext = div.retrieve('question');
+										if (qtext) {
+											qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+											qtext = replaceEmoticons(qtext); //Then replace emoticons.
+											question.set('html','<p>',qtext,'</p>'); 
+											question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+											div.addClass('hasQuestion');
+											question.inject(document.body);
+										}
+									},
+									'mouseleave' : function(e) {
+										div.removeClass('hasQuestion');
+										var question = $('question');
+										if (question) {
+											question.destroy();
+										}
+									}
+								});
+							}
+
+
+
 						}
 					} 
 					if (user.uid != me.uid) {
@@ -606,7 +635,7 @@ return {
 							case 'MQ' : // User asks a question
 								var span = userDiv.getElement('span');
 								span.addClass('ask');
-								if (room.type == 'M' && me.mod == 'M') {
+								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
 									userDiv.store('question',msg.message);
 								}
 								break;
@@ -615,7 +644,7 @@ return {
 								//A message from a user must mean he no longer has a question outstanding
 								var span = userDiv.getElement('span');
 								span.removeClass('ask');
-								if (room.type == 'M' && me.mod == 'M') {
+								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
 									userDiv.store('question',null);
 								}
 								break;
