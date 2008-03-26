@@ -365,6 +365,22 @@ return {
 				var lastId;
 				var loadingRid;
 				var currentRid;
+				var labelList = function() {
+					var node = onlineList.firstChild;
+					if (node) {
+						var i = 0;
+						do {	
+							node.removeClass('rowEven');
+							node.removeClass('rowOdd');
+							if( i%2 == 0) {
+								node.addClass('rowEven');
+							} else {
+								node.addClass('rowOdd');
+							}
+							i++;
+						} while (node = node.nextSibling);
+					}
+				};
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
 					var span = displayUser(user,div);
@@ -523,28 +539,22 @@ return {
 						});
 						div.firstChild.addClass('whisperer');
 					}
-					div.inject(onlineList); //Forces onlineList to have children
-					if ((onlineList.getChildren().length % 2) == 0 ) {
-						div.addClass('rowEven');
+					var qtext = div.retrieve('question');
+					if (qtext) {
+						div.inject(onlineList,'top')
 					} else {
-						div.addClass('rowOdd');
+						div.inject(onlineList,'bottom'); 
 					}
+					labelList();
 				};
-				var removeUser = function (userDiv) {
-					userDiv.destroy(); //removes from list
-					var node = onlineList.firstChild;
-					if (node) {
-						var i = 0;
-						do {	
-							node.erase('class');
-							if( i%2 == 0) {
-								node.addClass('rowEven');
-							} else {
-								node.addClass('rowOdd');
-							}
-							i++;
-						} while (node = node.nextSibling);
+				var removeUser = function (div) {
+					//remove any question it might have
+					var question = $('Q'+div.get('id').substr(1));
+					if (question) {
+						question.destroy();
 					}
+					div.destroy(); //removes from list
+					labelList();
 				};
 				request = new Request.JSON({
 					url: 'online.php',
