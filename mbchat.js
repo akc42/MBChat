@@ -399,9 +399,26 @@ return {
 				var lastId;
 				var loadingRid;
 				var currentRid;
+				var labelList = function() {
+					var node = onlineList.firstChild;
+					if (node) {
+						var i = 0;
+						do {	
+							node.removeClass('rowEven');
+							node.removeClass('rowOdd');
+							if( i%2 == 0) {
+								node.addClass('rowEven');
+							} else {
+								node.addClass('rowOdd');
+							}
+							i++;
+						} while (node = node.nextSibling);
+					}
+				};
 				var addUser = function (user) {
 					var div = new Element('div', {'id': 'U'+user.uid});
 					var span = displayUser(user,div);
+
 					if (user.private && user.private.toInt() != 0  ) { 
 						//This user is in a private room so maybe we don't display him
 						if (user.uid != me.uid) {
@@ -420,6 +437,7 @@ return {
 									if (user.question) {
 										span.addClass('ask');
 										div.store('question',user.question);
+										div.addClass('hasQuestion');
 									}
 									// I am a moderator in a moderated room - therefore I need to be able to moderate others
 									div.addEvents({
@@ -434,12 +452,11 @@ return {
 															} else {
 																displayErrorMessage(errorMsg);
 															}
-														}
-													}).get($merge(myRequestOptions,{
-														'lid':MBchat.updateables.poller.getLastId(),
-														'rid':room.rid,
-														'puid':user.uid}));
-												}
+														}).get($merge(myRequestOptions,{
+															'lid':MBchat.updateables.poller.getLastId(),
+															'rid':room.rid,
+															'puid':user.uid}));
+													}
 											} else {
 												var qtext = div.retrieve('question');
 												if (qtext) { // only send one if there is one
@@ -463,7 +480,7 @@ return {
 											var span = div.getElement('span');
 											if (!(span.hasClass('M') || span.hasClass('H') 
 												|| span.hasClass('G') || span.hasClass('S'))) {
-												var question = new Element('div', {'id' : 'question'});
+												var question = new Element('div', {'id' : 'Q'+user.uid});
 												var qtext = div.retrieve('question');
 												if (qtext) {
 													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
@@ -477,58 +494,34 @@ return {
 													question.set('html','<p><b>Control Click to Promote</b></p>');
 													question.setStyles({'top': e.client.y, 'left':e.client.x });
 												}
-												div.addClass('hasQuestion');
 												question.inject(document.body);
 											}
 										},
 										'mouseleave' : function(e) {
 											div.removeClass('hasQuestion');
-											var question = $('question');
+											var question = $('Q'+user.uid);
 											if (question) {
 												question.destroy();
 											}
 										}
 									});
-									div.firstChild.addClass('whisperer');
+									div.firstChild.addClass('whisperer'); //Adds cursor pointer
 								} else {
-									div.addEvents({
-										'click': function(e) {
-											e.stop();
-											if(e.control && e.alt) {
-												var request = new Request.JSON({
-													'url' : 'demote.php',
-													'onComplete' : function (response,errorMsg) {
-														if(response) {
-															MBchat.updateables.poller.pollResponse(response)
-														} else {
-															displayErrorMessage(errorMsg);
-														}
+									div.addEvent('click', function(e) {
+										e.stop();
+										if(e.control && e.alt) {
+											var request = new Request.JSON({
+												'url' : 'demote.php',
+												'onComplete' : function (response,errorMsg) {
+													if(response) {
+														MBchat.updateables.poller.pollResponse(response)
+													} else {
+														displayErrorMessage(errorMsg);
 													}
-												}).get($merge(myRequestOptions,{
-													'lid':MBchat.updateables.poller.getLastId(),
-													'rid':room.rid}));
-												// There will be a question block that needs removing here
-												div.removeClass('hasQuestion');
-												var question = $('question');
-												if (question) {
-													question.destroy();
 												}
-											}
-										},
-										'mouseenter' : function(e) {
-											div.addClass('hasQuestion');
-											var question = new Element('div', {'id' : 'question'});
-											question.set('html','<p><b>Control Alt Click to Demote</b></p>');
-											question.setStyles({'top': e.client.y, 'left':e.client.x });
-											
-											question.inject(document.body);
-										},
-										'mouseleave' : function(e) {
-											div.removeClass('hasQuestion');
-											var question = $('question');
-											if (question) {
-												question.destroy();
-											}
+											}).get($merge(myRequestOptions,{
+												'lid':MBchat.updateables.poller.getLastId(),
+												'rid':room.rid}));
 										}
 									});
 								}
@@ -539,63 +532,59 @@ return {
 								if (me.uid == user.uid) {
 									if (user.question) {
 										div.store('question',user.question);
+										div.addClass('hasQuestion');
 									}
 									div.addEvents({
 										'mouseenter' : function(e) {
-											var question = new Element('div', {'id' : 'question'});
-											var qtext = div.retrieve('question');
-											if (qtext) {
-												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
-												qtext = replaceEmoticons(qtext); //Then replace emoticons.
-												question.set('html','<p>',qtext,'</p>'); 
-												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
-												div.addClass('hasQuestion');
-												question.inject(document.body);
+											var span = div.getElement('span');
+											if (!(span.hasClass('M') || span.hasClass('H') 
+												|| span.hasClass('G') || span.hasClass('S'))) {
+												var question = new Element('div', 
+													{'id' :  'Q'+div.get('id').substr(1)});
+												var qtext = div.retrieve('question');
+												if (qtext) {
+													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+													qtext = replaceEmoticons(qtext); //Then replace emoticons.
+													question.set('html','<p>',qtext,'</p>'); 
+													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+													div.addClass('hasQuestion');
+													question.inject(document.body);
+												}
 											}
 										},
 										'mouseleave' : function(e) {
-											div.removeClass('hasQuestion');
-											var question = $('question');
+											var question = $( 'Q'+div.get('id').substr(1));
 											if (question) {
 												question.destroy();
 											}
 										}
 									});
-								}
-	
-	
-	
+								} 
 							}
 						} 
-						if (user.uid != me.uid) {
-							span.addEvent('mousedown',function (e) {
-								MBchat.updateables.whispers.whisperWith(user,span,e);
-							});
-							div.firstChild.addClass('whisperer');
-						}
 					}
-					div.inject(onlineList); //Forces onlineList to have children
-					if ((onlineList.getChildren().length % 2) == 0 ) {
-						div.addClass('rowEven');
+					if (user.uid != me.uid) {
+						span.addEvent('mousedown',function (e) {
+							MBchat.updateables.whispers.whisperWith(user,span,e);
+						});
+						div.firstChild.addClass('whisperer');
+					}
+					var qtext = div.retrieve('question');
+					if (qtext) {
+						div.inject(onlineList,'top')
 					} else {
-						div.addClass('rowOdd');
+						div.inject(onlineList,'bottom'); 
 					}
+					labelList();
 				};
-				var removeUser = function (userDiv) {
-					userDiv.destroy(); //removes from list
-					var node = onlineList.firstChild;
-					if (node) {
-						var i = 0;
-						do {	
-							node.erase('class');
-							if( i%2 == 0) {
-								node.addClass('rowEven');
-							} else {
-								node.addClass('rowOdd');
-							}
-							i++;
-						} while (node = node.nextSibling);
+				var removeUser = function (div) {
+					//remove any question it might have
+					var question = $('Q'+div.get('id').substr(1));
+					if (question) {
+						question.destroy();
 					}
+					div.destroy(); //removes from list
+					labelList();
 				};
 				request = new Request.JSON({
 					url: 'online.php',
@@ -684,7 +673,10 @@ return {
 								var span = userDiv.getElement('span');
 								span.addClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									userDiv.store('question',msg.message);
+									var user = msg.user;
+									user.question = msg.message;
+									removeUser(userDiv);
+									addUser(user);
 								}
 								break;
 							case 'MR' :
@@ -693,7 +685,8 @@ return {
 								var span = userDiv.getElement('span');
 								span.removeClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									userDiv.store('question',null);
+									removeUser(userDiv);
+									addUser(msg.user); //there will be no question
 								}
 								break;
 							case 'RM' : // becomes moderator
@@ -716,26 +709,10 @@ return {
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
-										userDiv.store('question',msg.message);
-										userDiv.addEvents({
-											'mouseenter' : function(e) {
-												var qtext = userDiv.retrieve('question')
-												if (qtext) {
-													var question = new Element('div', {
-														'id' : 'question',
-														'text' : qtext});
-													question.inject(document.body);
-													question.setStyles({'top': e.client.y, 'left':e.client.x});
-												}
-												
-											},
-											'mouseleave' : function(e) {
-												var question = $('question');
-												if (question) {
-													question.destroy();
-												}
-											}
-										});
+										var user = msg.user
+										user.question = msg.message;
+										removeUser(userDiv);
+										addUser(user);
 									}
 								}
 								break;
@@ -815,10 +792,6 @@ return {
 				var messageList; 
 				var mlScroller;
 				var lastId;
-				var insertEmoticons = function (msg) {
-//TODO
-					return msg;
-				};
 				var chatBotMessage = function (msg) {
 					return '<span class="chatBotMessage">'+msg+'</spam>';
 				};
@@ -1091,6 +1064,7 @@ return {
 			whispers : function () {
 				var lastId = null;
 				var channels = null;
+				var activeWb = null;
 				var addUser = function (user,whisperBox) {
 					var widStr = whisperBox.get('id');
 					var whisperList = whisperBox.getElement('.whisperList');
@@ -1174,13 +1148,28 @@ return {
 						whisper.getElement('.whisperInput').value = '';
 						MBchat.sounds.resetTimer();
 					});
+					whisper.addClass('wBactive');
 					whisper.inject(document.body);
+					activeWb = whisper;
 					var position = whisper.getCoordinates();
 					position.top = position.top + (Math.random()-0.5) * 50;
-					position.left = position.left + (Math.random()-0.5) * 50;
+					position.left = position.left + (Math.random()-0.5) * 150;
 					whisper.setStyles(position);
-
-					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
+					whisper.getElement('.whisperInput').focus();
+					var drag = new Drag(whisper,{
+						handle:whisper.getElement('.dragHandle'),
+						snap:0,
+						onStart: function(el) {
+							if (activeWb) {
+								activeWb.removeClass('wBactive');
+							}
+							activeWb = el;
+							el.addClass('wBactive');
+						},
+						onComplete: function(el) {
+							el.getElement('.whisperInput').focus();
+						}
+					});
 					$('content').setStyles(contentSize);
 					return whisper;
 				}
@@ -1248,8 +1237,13 @@ return {
 											var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
 											if (whisperers.length == 1) { //we only want to worry about this if only other person
 												if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
-													whisperBox.getElement('.whisperInput').focus();
 													this.start(whisperBox.getCoordinates());
+													if(activeWb) {
+														activeWb.removeClass('wBactive');
+													}
+													activeWb = whisperBox;
+													whisperBox.addClass('wBactive');
+													whisperBox.getElement('.whisperInput').focus();
 													return false;
 												}
 											}
@@ -1262,7 +1256,6 @@ return {
 													if(response) {
 														var whisper = createWhisperBox(response.wid,response.user);
 														dragReturn.start(whisper.getCoordinates()); //move towards it
-														whisper.getElement('.whisperInput').focus(); //and focus on it
 													} else {
 														displayErrorMessage(errorMsg);
 													}

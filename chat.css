@@ -283,6 +283,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	border:1px dotted green;
 	padding:2px 5px;
 	font-size:x-small;
+	background:white;
 }
 
 div.hasQuestion {
@@ -341,9 +342,9 @@ div.chat {
 
 div.whisper {
 	height:100px;
-	margin:20px 230px 20px 20px;	
+	margin:20px 230px 20px 20px;
 }
-	
+
 
 #chatList {
 	overflow:auto;
@@ -383,10 +384,11 @@ div.whisper {
 	right:50px;
 	padding: 0px;
 	position:absolute;
-	background:transparent;
+	background:white;
 	width:300px;
 	height:81px;
 	border:1px solid red;
+	z-index:2;
 }
 
 .private {
@@ -397,8 +399,8 @@ div.whisper {
 	width:21px;
 	height:21px;
 	cursor:pointer;
-	opacity:0.7;
 }
+
 .nonprivate {
 	background-color:#ffed72;
 	position:absolute;
@@ -406,7 +408,10 @@ div.whisper {
 	left:0px;
 	width:21px;
 	height:21px;
-	opacity:0.7;
+}
+
+div.wBactive {
+	z-index:10;
 }
 
 .dragHandle {
@@ -419,7 +424,6 @@ div.whisper {
 	left:21px;
 	height:21px;
 	width:258px;
-	opacity:0.7;
 	cursor:move;
 }
 
@@ -430,16 +434,14 @@ div.whisper {
 	position:absolute;
 	top:0px;
 	left:279px;
-	opacity:0.7;
 }
 
 .whisperList {
 	position:absolute;
 	top:21px;
 	left:2px;
-	width:296px;;
+	width:296px;
 	height:30px;
-	background:transparent;
 	opacity:1.0;
 	float:left;
 	overflow:auto;
@@ -462,7 +464,6 @@ div.whisper {
 	right:2px;
 	width: 55px;
 	height:25px;
-	background:transparent;
 }
 
 span.whisper {
