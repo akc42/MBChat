@@ -338,9 +338,9 @@ div.chat {
 
 div.whisper {
 	height:100px;
-	margin:20px 230px 20px 20px;	
+	margin:20px 230px 20px 20px;
 }
-	
+
 
 #chatList {
 	overflow:auto;
@@ -380,12 +380,17 @@ div.whisper {
 	right:50px;
 	padding: 0px;
 	position:absolute;
-	background:transparent;
+	background:white;
 	width:300px;
 	height:81px;
 	border:1px solid red;
+	z-index:2;
 }
 
+div.wBactive {
+	z-index:10;
+}
+	
 .dragHandle {
 	background-color:#ffed72;
 	color:black;
@@ -396,7 +401,6 @@ div.whisper {
 	left:0px;
 	height:21px;
 	width:279px;
-	opacity:0.7;
 	cursor:move;
 }
 
@@ -407,16 +411,14 @@ div.whisper {
 	position:absolute;
 	top:0px;
 	right:0px;
-	opacity:0.7;
 }
 
 .whisperList {
 	position:absolute;
 	top:21px;
 	left:2px;
-	width:296px;;
+	width:296px;
 	height:30px;
-	background:transparent;
 	opacity:1.0;
 	float:left;
 	overflow:auto;
@@ -439,7 +441,6 @@ div.whisper {
 	right:2px;
 	width: 55px;
 	height:25px;
-	background:transparent;
 }
 
 span.whisper {

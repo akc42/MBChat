@@ -939,6 +939,7 @@ return {
 			whispers : function () {
 				var lastId = null;
 				var channels = null;
+				var activeWb = null;
 				var addUser = function (user,whisperBox) {
 					var widStr = whisperBox.get('id');
 					var whisperList = whisperBox.getElement('.whisperList');
@@ -1014,13 +1015,28 @@ return {
 						whisper.getElement('.whisperInput').value = '';
 						MBchat.sounds.resetTimer();
 					});
+					whisper.addClass('wBactive');
 					whisper.inject(document.body);
+					activeWb = whisper;
 					var position = whisper.getCoordinates();
 					position.top = position.top + (Math.random()-0.5) * 50;
-					position.left = position.left + (Math.random()-0.5) * 50;
+					position.left = position.left + (Math.random()-0.5) * 150;
 					whisper.setStyles(position);
-
-					var drag = new Drag(whisper,{'handle':whisper.getElement('.dragHandle')});
+					whisper.getElement('.whisperInput').focus();
+					var drag = new Drag(whisper,{
+						handle:whisper.getElement('.dragHandle'),
+						snap:0,
+						onStart: function(el) {
+							if (activeWb) {
+								activeWb.removeClass('wBactive');
+							}
+							activeWb = el;
+							el.addClass('wBactive');
+						},
+						onComplete: function(el) {
+							el.getElement('.whisperInput').focus();
+						}
+					});
 					$('content').setStyles(contentSize);
 					return whisper;
 				}
@@ -1046,7 +1062,7 @@ return {
 					whisperWith : function (user,el,event) {
 						var startPosition = el.getCoordinates();
 						var dropNew;
-						if (MBchat.updateables.message.getRoom().rid == 0 ) {
+						if (room.rid == 0 ) {
 							dropNew = $('chatList');
 						} else {
 							dropNew = $('inputContainer');
@@ -1088,8 +1104,13 @@ return {
 											var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
 											if (whisperers.length == 1) { //we only want to worry about this if only other person
 												if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
-													whisperBox.getElement('.whisperInput').focus();
 													this.start(whisperBox.getCoordinates());
+													if(activeWb) {
+														activeWb.removeClass('wBactive');
+													}
+													activeWb = whisperBox;
+													whisperBox.addClass('wBactive');
+													whisperBox.getElement('.whisperInput').focus();
 													return false;
 												}
 											}
@@ -1102,7 +1123,6 @@ return {
 													if(response) {
 														var whisper = createWhisperBox(response.wid,response.user);
 														dragReturn.start(whisper.getCoordinates()); //move towards it
-														whisper.getElement('.whisperInput').focus(); //and focus on it
 													} else {
 														displayErrorMessage(errorMsg);
 													}
