@@ -374,6 +374,7 @@ return {
 								if (user.question) {
 									span.addClass('ask');
 									div.store('question',user.question);
+									div.addClass('hasQuestion');
 								}
 								// I am a moderator in a moderated room - therefore I need to be able to moderate others
 								div.addEvents({
@@ -417,7 +418,7 @@ return {
 										var span = div.getElement('span');
 										if (!(span.hasClass('M') || span.hasClass('H') 
 											|| span.hasClass('G') || span.hasClass('S'))) {
-											var question = new Element('div', {'id' : 'question'});
+											var question = new Element('div', {'id' :  'Q'+div.get('id').substr(1)});
 											var qtext = div.retrieve('question');
 											if (qtext) {
 												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
@@ -431,13 +432,11 @@ return {
 												question.set('html','<p><b>Control Click to Promote</b></p>');
 												question.setStyles({'top': e.client.y, 'left':e.client.x });
 											}
-											div.addClass('hasQuestion');
 											question.inject(document.body);
 										}
 									},
 									'mouseleave' : function(e) {
-										div.removeClass('hasQuestion');
-										var question = $('question');
+										var question = $( 'Q'+div.get('id').substr(1));
 										if (question) {
 											question.destroy();
 										}
@@ -463,23 +462,21 @@ return {
 												'rid':room.rid}));
 											// There will be a question block that needs removing here
 											div.removeClass('hasQuestion');
-											var question = $('question');
+											var question = $( 'Q'+div.get('id').substr(1));
 											if (question) {
 												question.destroy();
 											}
 										}
 									},
 									'mouseenter' : function(e) {
-										div.addClass('hasQuestion');
-										var question = new Element('div', {'id' : 'question'});
+										var question = new Element('div', {'id' :  'Q'+div.get('id').substr(1)});
 										question.set('html','<p><b>Control Alt Click to Demote</b></p>');
 										question.setStyles({'top': e.client.y, 'left':e.client.x });
 										
 										question.inject(document.body);
 									},
 									'mouseleave' : function(e) {
-										div.removeClass('hasQuestion');
-										var question = $('question');
+										var question = $( 'Q'+div.get('id').substr(1));
 										if (question) {
 											question.destroy();
 										}
@@ -493,23 +490,22 @@ return {
 							if (me.uid == user.uid) {
 								if (user.question) {
 									div.store('question',user.question);
+									div.addClass('hasQuestion');
 								}
 								div.addEvents({
 									'mouseenter' : function(e) {
-										var question = new Element('div', {'id' : 'question'});
+										var question = new Element('div', {'id' : 'Q'+div.get('id').substr(1)});
 										var qtext = div.retrieve('question');
 										if (qtext) {
 											qtext = replaceHyperLinks (qtext);  //replace Hperlinks
 											qtext = replaceEmoticons(qtext); //Then replace emoticons.
 											question.set('html','<p>',qtext,'</p>'); 
 											question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
-											div.addClass('hasQuestion');
 											question.inject(document.body);
 										}
 									},
 									'mouseleave' : function(e) {
-										div.removeClass('hasQuestion');
-										var question = $('question');
+										var question = $('Q'+div.get('id').substr(1));
 										if (question) {
 											question.destroy();
 										}
@@ -638,6 +634,7 @@ return {
 								span.addClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
 									userDiv.store('question',msg.message);
+									userDiv.addClass('hasQuestion');
 								}
 								break;
 							case 'MR' :
@@ -647,6 +644,7 @@ return {
 								span.removeClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
 									userDiv.store('question',null);
+									userDiv.removeClass('hasQuestion');
 								}
 								break;
 							case 'RM' : // becomes moderator
@@ -670,12 +668,13 @@ return {
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
 										userDiv.store('question',msg.message);
+										userDiv.addClass('hasQuestion');
 										userDiv.addEvents({
 											'mouseenter' : function(e) {
 												var qtext = userDiv.retrieve('question')
 												if (qtext) {
 													var question = new Element('div', {
-														'id' : 'question',
+														'id' : 'Q'+userDiv.get('id').substr(1),
 														'text' : qtext});
 													question.inject(document.body);
 													question.setStyles({'top': e.client.y, 'left':e.client.x});
@@ -683,7 +682,7 @@ return {
 												
 											},
 											'mouseleave' : function(e) {
-												var question = $('question');
+												var question = $('Q'+userDiv.get('id').substr(1));
 												if (question) {
 													question.destroy();
 												}
