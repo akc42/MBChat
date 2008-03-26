@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.0.2';
+	var version = 'v1.1.0';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -49,6 +49,7 @@ MBchat = function () {
 	});
 	var privateReq = new Request.JSON({
 		url:'private.php',
+		autoCancel:true,
 		onComplete:function(response,errorMsg) {
 			if(response) {
 				MBchat.updateables.poller.pollResponse(response)
@@ -134,8 +135,8 @@ return {
 				MBchat.updateables.logger.startLog(room.rid);
 			} else {
 				if (privateRoom != 0) {
-					privateReq.get($merge(myReqOptions,{
-						'wid':0, 
+					privateReq.get($merge(myRequestOptions,{
+						'wid':  0, 
 						'lid' : MBchat.updateables.poller.getLastId(),
 						'rid' : room.rid })); 
 				} else {
@@ -173,10 +174,19 @@ return {
 
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
-			messageReq.get($merge(myRequestOptions,{
-				'rid':room.rid,
-				'lid':MBchat.updateables.poller.getLastId(),
-				'text':$('messageText').value}));
+			if (privateRoom == 0 ) {
+				messageReq.get($merge(myRequestOptions,{
+					'rid':room.rid,
+					'lid':MBchat.updateables.poller.getLastId(),
+					'text':$('messageText').value}));
+			} else {
+				whisperReq.get($merge(myRequestOptions,{
+					'wid':privateRoom,
+					'rid':room.rid,
+					'lid':MBchat.updateables.poller.getLastId(),
+					'text':$('messageText').value}));
+			}
+
 			$('messageText').value = '';
 			MBchat.sounds.resetTimer();
 		});
@@ -402,7 +412,7 @@ return {
 								return; //not in any whisper box, so don't display 
 							}
 						}
-						span.addClass('private');  //makes them Italic to show its private
+						span.addClass('priv');  //makes them Italic to show its private
 					} else {
 						if (room.type === 'M') {
 							if (me.mod === 'M') {
@@ -745,6 +755,7 @@ return {
 										}
 									} else {
 										if (room.rid == 0) {
+											var messageList=$('chatList');
 											//I'm in entrance hall so have to make it look like a room
 											messageList.removeClass('whisper');
 											messageList.addClass('chat');
@@ -762,9 +773,9 @@ return {
 										addUser(user);
 										$('messageText').focus();
 										MBchat.sounds.resetTimer();
-										whisperBox.addClass('hide');
+										whisperBox.setStyle('display','none');
 										$('content').setStyles(contentSize);
-										MBchat.sounds.moveRoom();
+										MBchat.sounds.roomMove();
 									}
 								}
 								break;
@@ -772,6 +783,7 @@ return {
 								if (msg.user.uid == me.uid) {
 									$('messageText').focus();
 									if (room.rid == 0) {
+										var messageList=$('chatList');
 										//need to restore entrance hall
 										messageList.removeClass('chat');
 										messageList.addClass('whisper');
@@ -784,9 +796,9 @@ return {
 									}
 									MBchat.sounds.resetTimer();
 								//need to make a whisper box with my whisperers in it.
-									$('W'+privateRoom).removeClass('hide');
+									$('W'+privateRoom).setStyle('display','block');
 									$('content').setStyles(contentSize);
-									MBchat.sounds.moveRoom();
+									MBchat.sounds.RoomMove();
 								}
 								removeUser(userDiv)
 								addUser(msg.user);
@@ -920,23 +932,27 @@ return {
 							lastId = lid;
 							switch(msg.type) {
 							case 'RE' : 
-								if (room.rid == 0  || msg.rid == room.rid) {
-									if (room.rid == 0) {
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' leaves for a Room'));
-									} else {
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+								if (privateRoom == 0) {
+									if (room.rid == 0  || msg.rid == room.rid) {
+										if (room.rid == 0) {
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' leaves for a Room'));
+										} else {
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+										}
+										MBchat.sounds.roomMove();
 									}
-									MBchat.sounds.roomMove();
 								}
 								break;
 							case 'RX' :
-								if (room.rid == 0  || msg.rid == room.rid) {
-									if (room.rid == 0) {
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Re-enters the Hall'));
-									} else {
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+								if (privateRoom == 0) {
+									if (room.rid == 0  || msg.rid == room.rid) {
+										if (room.rid == 0) {
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Re-enters the Hall'));
+										} else {
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+										}
+										MBchat.sounds.roomMove();
 									}
-									MBchat.sounds.roomMove();
 								}
 								break;
 							case 'WH' :
@@ -952,31 +968,35 @@ return {
 									}
 									return true;
 								})) {
-									var whisper = new Element('span',{'class':'whisper'});
-									var othersAdded = false;
-									if (me.uid == msg.user.uid) {
-										whisper.appendText('(whispers to')
+									if (privateRoom == 0) {
+										var whisper = new Element('span',{'class':'whisper'});
+										var othersAdded = false;
+										if (me.uid == msg.user.uid) {
+											whisper.appendText('(whispers to')
+										} else {
+											whisper.appendText('(whispers to me')
+											othersAdded = true;
+										}
+										//whisperList says who the other whisperers are
+										var whisperers = whisperList.getChildren();
+										whisperers.each(function(whisperer) {
+											var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
+											if (uid != msg.user.uid) { //This is not the whisperer so include
+												if(othersAdded) {
+													whisper.appendText(', ');
+												}else {
+													whisper.appendText(' ');
+													othersAdded = true;
+												}
+												var newWhisperer = whisperer.clone(); //Make a clone to remove Id 
+												newWhisperer.inject(whisper);
+											};
+										});
+										whisper.appendText(') ') ;
+										this.displayMessage(lastId,msg.time,msg.user,whisper.get('html') + msg.message);
 									} else {
-										whisper.appendText('(whispers to me')
-										othersAdded = true;
+										this.displayMessage(lastId,msg.time,msg.user,'(private) ' + msg.message);
 									}
-									//whisperList says who the other whisperers are
-									var whisperers = whisperList.getChildren();
-									whisperers.each(function(whisperer) {
-										var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
-										if (uid != msg.user.uid) { //This is not the whisperer so include
-											if(othersAdded) {
-												whisper.appendText(', ');
-											}else {
-												whisper.appendText(' ');
-												othersAdded = true;
-											}
-											var newWhisperer = whisperer.clone(); //Make a clone to remove Id 
-											newWhisperer.inject(whisper);
-										};
-									});
-									whisper.appendText(') ') ;
-									this.displayMessage(lastId,msg.time,msg.user,whisper.get('html') + msg.message);
 									MBchat.sounds.messageArrives();
 								}
 								break;
@@ -991,32 +1011,34 @@ return {
 								}
 								break;
 							default:
-								if (msg.rid == room.rid) {
-									switch(msg.type) {
-									case 'ME' :
-										this.displayMessage(lastId,msg.time,msg.user,msg.message);
-										MBchat.sounds.messageArrives();
-										break;
-									case 'LT' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-										MBchat.sounds.roomMove();
-										break;
-									case 'LI' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
-										MBchat.sounds.roomMove();
-										break;
-									case 'LO' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
-										MBchat.sounds.roomMove();
-										break;
-									case 'RM' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
-										break;
-									case 'RN' :
-										this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
-										break;
-									default:
-										break;
+								if(privateRoom == 0) {
+									if (msg.rid == room.rid) {
+										switch(msg.type) {
+										case 'ME' :
+											this.displayMessage(lastId,msg.time,msg.user,msg.message);
+											MBchat.sounds.messageArrives();
+											break;
+										case 'LT' :
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+											MBchat.sounds.roomMove();
+											break;
+										case 'LI' :
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+											MBchat.sounds.roomMove();
+											break;
+										case 'LO' :
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+											MBchat.sounds.roomMove();
+											break;
+										case 'RM' :
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
+											break;
+										case 'RN' :
+											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+											break;
+										default:
+											break;
+										}
 									}
 								}
 								break;
@@ -1218,7 +1240,7 @@ return {
 							onDrop: function(element, droppable){
 								dropZones.removeClass('dragOver');
 								if(droppable) {
-									if(droppable == dropNew) {
+									if(droppable == dropNew && privateRoom == 0) {
 										//See if we are already in a whisper with this user
 										var whisperBoxes = $$('.whisperBox');
 										if (whisperBoxes.every(function(whisperBox,i) {
@@ -1249,6 +1271,9 @@ return {
 											getNewWhisperReq.get($merge(myRequestOptions,{'wuid':user.uid}));
 										}
 									} else {
+										if (droppable == dropNew) {
+											droppable = $('W'+privateRoom);
+										}
 										//See if already in whisper with this user
 										if (addUser (user,droppable) ) {
 											var addUserToWhisperReq = new Request.JSON({
@@ -1259,7 +1284,9 @@ return {
 													}
 												}
 											});
-											addUserToWhisperReq.get($merge(myRequestOptions,{'wuid':user.uid,'wid':droppable.get('id').substr(1).toInt()}));
+											addUserToWhisperReq.get($merge(myRequestOptions,{
+												'wuid':user.uid,
+												'wid':droppable.get('id').substr(1).toInt()}));
 										}
 										dragReturn.start(droppable.getCoordinates());
 									}

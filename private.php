@@ -1,5 +1,5 @@
 <?php
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['wid']) && isset($_GET['rid')))
+if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['wid']) && isset($_GET['rid'])))
 	die('Private - Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 
@@ -14,22 +14,30 @@ include_once('db.php');
 
 
 dbQuery('START TRANSACTION ;');
-$result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant 
+if ($wid != 0 ) {
+	$result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant 
 				JOIN users ON users.uid = participant.uid WHERE participant.uid = '.
 				dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 
-if(mysql_num_rows($result) != 0) { 
+	if(mysql_num_rows($result) == 0) {
+		dbQuery('ROLLBACK ;');
+		die('Private - invalid wid');
+	} 
 	$row=mysql_fetch_assoc($result);
-	if ($wid != 0) {
-		dbQuery('INSERT INTO log (uid, name, role, type, rid ) VALUES ('.
+	dbQuery('INSERT INTO log (uid, name, role, type, rid ) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "PE" ,'.dbMakeSafe($wid).');');
-	} else {
-		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+} else {
+
+	$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
+	if(mysql_num_rows($result) == 0) {
+		dbQuery('ROLLBACK ;');
+		die('Private - invalid uid');
+	} 
+	$row=mysql_fetch_assoc($result);
+	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-			', "PX" ,'dbMakeSafe($rid).');');
-	}	
-	
+			', "PX" ,'.dbMakeSafe($rid).');');	
 }
 mysql_free_result($result);
 dbQuery('UPDATE users SET time = NOW() , private = '.dbMakeSafe($wid).' WHERE uid = '.dbMakeSafe($uid).';');
