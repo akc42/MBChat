@@ -279,6 +279,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	border:1px dotted green;
 	padding:2px 5px;
 	font-size:x-small;
+	background:white;
 }
 
 div.hasQuestion {
