@@ -643,8 +643,10 @@ return {
 								var span = userDiv.getElement('span');
 								span.addClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									userDiv.store('question',msg.message);
-									userDiv.addClass('hasQuestion');
+									var user = msg.user;
+									user.question = msg.message;
+									removeUser(userDiv);
+									addUser(user);
 								}
 								break;
 							case 'MR' :
@@ -653,8 +655,8 @@ return {
 								var span = userDiv.getElement('span');
 								span.removeClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									userDiv.store('question',null);
-									userDiv.removeClass('hasQuestion');
+									removeUser(userDiv);
+									addUser(msg.user); //there will be no question
 								}
 								break;
 							case 'RM' : // becomes moderator
@@ -677,27 +679,10 @@ return {
 									var span = userDiv.getElement('span');
 									span.addClass('ask');
 									if (room.type == 'M' && me.mod == 'M') {
-										userDiv.store('question',msg.message);
-										userDiv.addClass('hasQuestion');
-										userDiv.addEvents({
-											'mouseenter' : function(e) {
-												var qtext = userDiv.retrieve('question')
-												if (qtext) {
-													var question = new Element('div', {
-														'id' : 'Q'+userDiv.get('id').substr(1),
-														'text' : qtext});
-													question.inject(document.body);
-													question.setStyles({'top': e.client.y, 'left':e.client.x});
-												}
-												
-											},
-											'mouseleave' : function(e) {
-												var question = $('Q'+userDiv.get('id').substr(1));
-												if (question) {
-													question.destroy();
-												}
-											}
-										});
+										var user = msg.user
+										user.question = msg.message;
+										removeUser(userDiv);
+										addUser(user);
 									}
 								}
 								break;
