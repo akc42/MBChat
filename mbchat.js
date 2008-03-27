@@ -18,12 +18,15 @@ MBchat = function () {
 	var displayErrorMessage = function(txt) {
 		var msg;
 		if (txt) {
-			msg = '<span class="errorMessage">'+txt+'</spam>';
+			msg = '<span class="errorMessage">'+txt+'</span>';
 		} else {
 			msg = '<span class="errorMessage">Server Error</span>';
 		}
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
+	};
+	var chatBotMessage = function (msg) {
+		return '<span class="chatBotMessage">'+msg+'</span>';
 	};
 	var messageReq = new Request.JSON({
 		url: 'message.php',
@@ -452,11 +455,12 @@ return {
 															} else {
 																displayErrorMessage(errorMsg);
 															}
-														}).get($merge(myRequestOptions,{
-															'lid':MBchat.updateables.poller.getLastId(),
-															'rid':room.rid,
-															'puid':user.uid}));
-													}
+														}
+													}).get($merge(myRequestOptions,{
+														'lid':MBchat.updateables.poller.getLastId(),
+														'rid':room.rid,
+														'puid':user.uid}));
+												}
 											} else {
 												var qtext = div.retrieve('question');
 												if (qtext) { // only send one if there is one
@@ -724,11 +728,7 @@ return {
 										if (!whisperBox) {
 											MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
 											MBchat.sounds.roomMove();
-										} else {
 											removeUser(userDiv);
-											var user = msg.user;
-											user.private = msg.rid;
-											addUser(user);
 										}
 									} else {
 										if (room.rid == 0) {
@@ -743,11 +743,27 @@ return {
 											exit.addClass('exit-r');
 											exit.removeClass('exit-f');
 										}
+										$('roomNameContainer').empty();
+										var el = new Element('h1',{'class':'privateRoom'})
+											.set('text', 'Private Room')
+											.inject('roomNameContainer');
+										//remove P markers from all whisper boxes
+										var privateMarkers= $$('.private');
+										privateMarkers.addClass('nonprivate');
+										privateMarkers.removeClass('private');
 										privateRoom = msg.rid.toInt();
-										removeUser(userDiv);
-										var user = msg.user;
-										user.private = msg.rid;
-										addUser(user);
+										var fellowWhisperers = 	
+											whisperBox.getElement('.whisperList').getChildren();
+										var users = $('onlineList').getChildren();
+										users.each( function(user) {
+											if (fellowWhisperers.some(function(item){
+												return this.get('id').substr(1) 
+												== item.get('id').substr(whisperBox.get('id').length+1);
+											},user)) {
+												user.addClass('priv');
+											}
+										});
+										userDiv.addClass('priv');
 										$('messageText').focus();
 										MBchat.sounds.resetTimer();
 										whisperBox.setStyle('display','none');
@@ -758,6 +774,15 @@ return {
 								break;
 							case 'PX' :
 								if (msg.user.uid == me.uid) {
+									$('roomNameContainer').empty();
+									var el = new Element('h1')
+										.set('text', room.name)
+										.inject('roomNameContainer');
+									//Put private markers back on all whisper boxes
+									var privateMarkers= $$('.nonprivate');
+									privateMarkers.addClass('private');
+									privateMarkers.removeClass('nonprivate');
+									$('onlineList').getChildren().removeClass('priv');
 									$('messageText').focus();
 									if (room.rid == 0) {
 										var messageList=$('chatList');
@@ -775,10 +800,12 @@ return {
 								//need to make a whisper box with my whisperers in it.
 									$('W'+privateRoom).setStyle('display','block');
 									$('content').setStyles(contentSize);
-									MBchat.sounds.RoomMove();
+									privateRoom = 0;
+								} else {
+									MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+									addUser(msg.user);
 								}
-								removeUser(userDiv)
-								addUser(msg.user);
+								MBchat.sounds.roomMove();	
 								break;
 							default :  // ignore anything else
 								break;
@@ -792,9 +819,6 @@ return {
 				var messageList; 
 				var mlScroller;
 				var lastId;
-				var chatBotMessage = function (msg) {
-					return '<span class="chatBotMessage">'+msg+'</spam>';
-				};
 				return {
 					init: function () {
 						messageList = $('chatList');
@@ -1195,7 +1219,7 @@ return {
 					whisperWith : function (user,el,event) {
 						var startPosition = el.getCoordinates();
 						var dropNew;
-						if (room.rid == 0 ) {
+						if (room.rid == 0 && privateRoom == 0 ) {
 							dropNew = $('chatList');
 						} else {
 							dropNew = $('inputContainer');
@@ -1265,7 +1289,11 @@ return {
 										}
 									} else {
 										if (droppable == dropNew) {
-											droppable = $('W'+privateRoom);
+											droppable = $('W'+privateRoom); //This was a private room drop
+											$('U'+user.uid).addClass('priv'); //Show in room on online list
+											dragReturn.start($('chatList').getCoordinates());
+										} else {
+											dragReturn.start(droppable.getCoordinates());
 										}
 										//See if already in whisper with this user
 										if (addUser (user,droppable) ) {
@@ -1281,7 +1309,6 @@ return {
 												'wuid':user.uid,
 												'wid':droppable.get('id').substr(1).toInt()}));
 										}
-										dragReturn.start(droppable.getCoordinates());
 									}
 								} else {
 									dragReturn.start(startPosition);  // should make dragman return on online list
