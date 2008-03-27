@@ -662,7 +662,7 @@ return {
 										if (privateRoom == 0 ) {  
 											removeUser(userDiv);
 										} else  {
-											if (!userDiv.has('priv')) {
+											if (!userDiv.hasClass('priv')) {
 												removeUser(userDiv);  //Only remove if not in the private room with this person
 											}
 										}
@@ -690,7 +690,7 @@ return {
 										if (privateRoom == 0 ) {  
 											removeUser(userDiv);
 										} else  {
-											if (!userDiv.has('priv')) {
+											if (!userDiv.hasClass('priv')) {
 												removeUser(userDiv);  //Only remove if not in the private room with this person
 											}
 										}
