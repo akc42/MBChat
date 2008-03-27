@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.1.0';
+	var version = 'v1.1.1';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -419,7 +419,9 @@ return {
 					}
 				};
 				var addUser = function (user) {
-					var div = new Element('div', {'id': 'U'+user.uid});
+					var div =$('U'+user.uid);  // Does this already exist?
+					if(div) div.destroy();  //So remove him, because we need to recreate from scratch
+					div = new Element('div', {'id': 'U'+user.uid}); 
 					var span = displayUser(user,div);
 
 					if (user.private && user.private.toInt() != 0  ) { 
@@ -429,7 +431,7 @@ return {
 
 							var whisperBox = $('W'+user.private);
 							if (!whisperBox) {
-								return; //not in any whisper box, so don't display 
+								return null; //not in any whisper box, so don't display 
 							}
 						}
 						span.addClass('priv');  //makes them Italic to show its private
@@ -580,6 +582,7 @@ return {
 						div.inject(onlineList,'bottom'); 
 					}
 					labelList();
+					return div;
 				};
 				var removeUser = function (div) {
 					//remove any question it might have
@@ -637,6 +640,7 @@ return {
 						if (lastId < lid) {
 							lastId = lid;
 							userDiv = $('U'+msg.user.uid);
+							var whisperer;
 							switch (msg.type) {
 							case 'LO' : 
 							case 'LT' :
@@ -647,17 +651,27 @@ return {
 							case 'RX' :
 								if (currentRid == 0) {
 									if (!userDiv) {
-										addUser(msg.user);
+										userDiv = addUser(msg.user);
+										if (privateRoom != 0) {
+											whisperer = $('W'+privateRoom+'U'+msg.user.uid);  //Are we in a whisper
+											if (whisperer) userDiv.addClass('priv');
+										}
 									}
 								} else {
 									if (userDiv) {
-										removeUser(userDiv);
+										if (privateRoom == 0 ) {  
+											removeUser(userDiv);
+										} else  {
+											if (!userDiv.has('priv')) {
+												removeUser(userDiv);  //Only remove if not in the private room with this person
+											}
+										}
 									} 
 								}			 
 								break;
 							case 'LI' : 
 								if (!userDiv && msg.rid == currentRid) {
-									addUser(msg.user);
+									addUser(msg.user); //Can't be in a whisper so don't look
 								}	
 								break;
 							case 'RE' :
@@ -665,23 +679,32 @@ return {
 									if (!userDiv) {
 										var user = msg.user;
 										user.question = msg.message;
-										addUser(user);
+										userDiv = addUser(user);
+										if (privateRoom != 0) {
+											whisperer = $('W'+privateRoom+'U'+user.uid);  //Are we in a whisper
+											if (whisperer) userDiv.addClass('priv');
+										}
 									}
 								} else {
 									if (userDiv) {
-										removeUser(userDiv);
+										if (privateRoom == 0 ) {  
+											removeUser(userDiv);
+										} else  {
+											if (!userDiv.has('priv')) {
+												removeUser(userDiv);  //Only remove if not in the private room with this person
+											}
+										}
 									} 
 								}
 								break;
 							case 'MQ' : // User asks a question
-								var span = userDiv.getElement('span');
-								span.addClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
 									var user = msg.user;
 									user.question = msg.message;
-									removeUser(userDiv);
-									addUser(user);
+									userDiv = addUser(user);
 								}
+								var span = userDiv.getElement('span');
+								span.addClass('ask');
 								break;
 							case 'MR' :
 							case 'ME' :
@@ -689,7 +712,6 @@ return {
 								var span = userDiv.getElement('span');
 								span.removeClass('ask');
 								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									removeUser(userDiv);
 									addUser(msg.user); //there will be no question
 								}
 								break;
@@ -703,32 +725,19 @@ return {
 									}
 								}
 								// Given user is changing from mod to not or visa vera, need to remove and then re-add
-								if(userDiv) {
-									removeUser(userDiv);
-									addUser(msg.user);
-								}
-								break;
-							case 'MQ' : // User asks a question
-								if(currentRid == msg.rid) {
-									var span = userDiv.getElement('span');
-									span.addClass('ask');
-									if (room.type == 'M' && me.mod == 'M') {
-										var user = msg.user
-										user.question = msg.message;
-										removeUser(userDiv);
-										addUser(user);
-									}
-								}
+								addUser(msg.user);
 								break;
 							case 'PE' :
+								var whisperBox = $('W' + msg.rid);
 								if(userDiv) { //only relevent if we have this user
-									var whisperBox = $('W' + msg.rid);
 									if (msg.user.uid != me.uid) {
 										//Not me, but I might be in a whisper with them
 										if (!whisperBox) {
 											MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
 											MBchat.sounds.roomMove();
 											removeUser(userDiv);
+										} else {
+											userDiv.addClass('priv');
 										}
 									} else {
 										if (room.rid == 0) {
@@ -770,6 +779,11 @@ return {
 										$('content').setStyles(contentSize);
 										MBchat.sounds.roomMove();
 									}
+								} else {
+									// Add user to list if in a whisper (otherwise doesn't)
+									var user = msg.user;
+									user.private = msg.rid;
+									addUser(user);
 								}
 								break;
 							case 'PX' :
@@ -782,7 +796,7 @@ return {
 									var privateMarkers= $$('.nonprivate');
 									privateMarkers.addClass('private');
 									privateMarkers.removeClass('nonprivate');
-									$('onlineList').getChildren().removeClass('priv');
+									MBchat.updateables.online.show(room.rid); //reshow the online list from scratch
 									$('messageText').focus();
 									if (room.rid == 0) {
 										var messageList=$('chatList');
@@ -806,6 +820,18 @@ return {
 									addUser(msg.user);
 								}
 								MBchat.sounds.roomMove();	
+								break;
+							case 'WJ' :
+								if(privateRoom == msg.rid) { //only interested in people joining my private room
+									userDiv = addUser(msg.user);
+									userDiv.addClass('priv');
+								}
+								break;
+							case 'WL' :
+								if(privateRoom == msg.rid) { //only interested in people leaving my private room
+									userDiv.removeClass('priv');
+//TODO might need system that records with this user was only there because of the whisper and remove him completely
+								}
 								break;
 							default :  // ignore anything else
 								break;
