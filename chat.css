@@ -264,6 +264,10 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	background-color:yellow;
 }
 
+#onlineList div.priv span {
+	font-style:italic;
+}
+
 .rowEven {
 	background-color:#F6F6F6;
 }
@@ -283,6 +287,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	border:1px dotted green;
 	padding:2px 5px;
 	font-size:x-small;
+	background:white;
 }
 
 div.hasQuestion {
@@ -341,9 +346,9 @@ div.chat {
 
 div.whisper {
 	height:100px;
-	margin:20px 230px 20px 20px;	
+	margin:20px 230px 20px 20px;
 }
-	
+
 
 #chatList {
 	overflow:auto;
@@ -383,10 +388,38 @@ div.whisper {
 	right:50px;
 	padding: 0px;
 	position:absolute;
-	background:transparent;
+	background:white;
 	width:300px;
 	height:81px;
 	border:1px solid red;
+	z-index:2;
+}
+
+.private {
+	background: green url(private.gif) no-repeat;
+	position:absolute;
+	top:0px;
+	left:0px;
+	width:21px;
+	height:21px;
+	cursor:pointer;
+}
+
+.nonprivate {
+	background-color:#ffed72;
+	position:absolute;
+	top:0px;
+	left:0px;
+	width:21px;
+	height:21px;
+}
+
+#roomNameContainer h1.privateRoom {
+	color:red;
+}
+
+div.wBactive {
+	z-index:10;
 }
 
 .dragHandle {
@@ -396,10 +429,9 @@ div.whisper {
 	text-align:center;
 	position:absolute;
 	top:0px;
-	left:0px;
+	left:21px;
 	height:21px;
-	width:279px;
-	opacity:0.7;
+	width:258px;
 	cursor:move;
 }
 
@@ -409,17 +441,15 @@ div.whisper {
 	width:21px;
 	position:absolute;
 	top:0px;
-	right:0px;
-	opacity:0.7;
+	left:279px;
 }
 
 .whisperList {
 	position:absolute;
 	top:21px;
 	left:2px;
-	width:296px;;
+	width:296px;
 	height:30px;
-	background:transparent;
 	opacity:1.0;
 	float:left;
 	overflow:auto;
@@ -442,7 +472,6 @@ div.whisper {
 	right:2px;
 	width: 55px;
 	height:25px;
-	background:transparent;
 }
 
 span.whisper {

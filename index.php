@@ -244,7 +244,7 @@ soundManager.onload = function() {
 </div>
 
 <div id="whisperBoxTemplate">
-	<div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
+	<div class="private"></div><div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
 	<div class="whisperList"></div>
 	<form action="/"
 	 	enctype="application/x-www-form-urlencoded" autocomplete="off" >
