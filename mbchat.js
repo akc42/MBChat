@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.2.0';
+	var version = 'v1.2.1';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -146,7 +146,7 @@ return {
 						MBchat.updateables.logger.returnToEntranceHall(e);
 					} else {
 						if (e.control && me.additional) {
-							MBchat.updateables.logger.startLog(room.rid);
+							MBchat.updateables.logger.startLog(99);
 						} else {
 							MBchat.logout();
 							window.location = '/forum' ; //and go back to the forum
@@ -1481,6 +1481,8 @@ return {
 					case 'WH':
 						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,'(whispers to :' +msg.rid+')'+msg.message,true);
 						break;
+					case 'LH':
+						message('Reads Log');
 					default:
 					// Do nothing with these
 						break;

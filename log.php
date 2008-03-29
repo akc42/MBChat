@@ -8,12 +8,26 @@ $rid = $_GET['rid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
+dbQuery('START TRANSACTION;');
+$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
+if(mysql_num_rows($result) == 0) {
+	dbQuery('ROLLBACK;');
+	die('Log - Invalid User id');
+}
+$user = mysql_fetch_assoc($result);
+mysql_free_result($result);
+
+dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
+
+dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+				dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
+				', "LH" ,'.dbMakeSafe($rid).');');
 
 
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text  FROM log';
 $sql .= ' WHERE UNIX_TIMESTAMP(time) > '.dbMakeSafe($_GET['start']).' AND UNIX_TIMESTAMP(time) < '.dbMakeSafe($_GET['end']).' AND rid ';
-if ($rid == 0) {
-	$sql .= '> 99 ORDER BY rid,lid ;';
+if ($rid == 99) {
+	$sql .= '> 98 ORDER BY rid,lid ;';
 } else {
 	$sql .= '= '.dbMakeSafe($rid).' ORDER BY lid ;';
 }
@@ -41,6 +55,7 @@ if(mysql_num_rows($result) != 0) {
 	}		
 };
 mysql_free_result($result);
+dbQuery('COMMIT ;');
 
 echo ']}';
 ?>
