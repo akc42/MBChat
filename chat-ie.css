@@ -15,7 +15,12 @@ div.chat {
 	height:expression(document.body.clientHeight-315);
 }
 
-#chatList {
+div.logging {
+	height:expression(document.body.clientHeight-240);
+	width:expression(document.body.clientWidth - 40);
+}
+
+div.chat, div.whisper {
 	width:expression(document.body.clientWidth-250);
 }
 

@@ -345,9 +345,18 @@ div.chat {
 }
 
 div.whisper {
-	height:100px;
+	height:150px;
 	margin:20px 230px 20px 20px;
 }
+
+div.logging {
+	left:20px;
+	top:50px;
+	right:20px;
+	bottom:50px;
+	position:absolute;
+}
+
 
 
 #chatList {
@@ -510,9 +519,78 @@ span.whisper {
 	margin-bottom:2px;
 }
 
+#logControls {
+	position:absolute;
+	top:5px;
+	left:115px;
+	height:46px;
+}
+
+#startTimeBlock, #endTimeBlock {
+	float:left;
+	margin:0px 5px;
+}
+
+#startTextLog, #endTextLog  {
+	height:16px;
+	color:white;
+	font-weight:bold;
+	text-align:center;
+	margin-left:10px;
+	padding-left:30px;
+}
 
 
+#minusStartLog, #minusEndLog {
+	float:left;
+	height:20px;
+	width:21px;
+	background: url(timeminus.gif) no-repeat center;
+	margin-left:10px;
+}
 
+#timeShowStartLog, #timeShowEndLog {
+	float:left;
+	border:1px solid #800000;
+	height:20px;
+	background: white;
+	padding:2px;
+	vertical-align:middle;
+	margin-left:10px;
+	padding:1px 3px;
+}
 
+#plusStartLog, #plusEndLog {
+	float:left;
+	height:20px;
+	width:21px;
+	background: url(timeplus.gif) no-repeat center;
+	margin-left:10px;
+}
+
+#printLog {
+	float:left;
+	height:44px;
+	width: 50px; 
+	background: #a87aad url(printer.jpg) no-repeat; 
+	margin-left:40px;
+}
+
+#printScreen {
+	position:relative;
+	width:100%;
+	background:white;
+	border-top:2px solid black;
+}
+
+#exitPrint {
+	position:absolute;
+	top:0px;
+	left:0px;
+	height:44px;
+	width: 50px; 
+	overflow:hidden;
+	background: #a87aad url(exit.gif) no-repeat; 
+}
 
 

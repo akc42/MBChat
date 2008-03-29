@@ -10,6 +10,7 @@ MBchat = function () {
 	var hyperlinkRegExp;
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
+	var logOptions;
 	var displayUser = function(user,container) {
 		var el = new Element('span',{'class' : user.role, 'text' : user.name });
 		el.inject(container);
@@ -69,7 +70,7 @@ MBchat = function () {
 	};
 	var contentSize;
 return {
-	init : function(user,pollOptions,chatBotName, entranceHallName, msgLstSz) {
+	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
 		var span = $('version');
 		span.set('text', version);
 		
@@ -80,6 +81,7 @@ return {
 		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
+		logOptions = logOptionParameters;
 // We need to setup all the entrance hall
 
 		var roomgroups = $$('.rooms');
@@ -113,14 +115,12 @@ return {
 				});
 				room.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
-					MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
-				});
-				if (me.role == 'A' || me.role == 'L' || room.hasClass('committee') ) {
-					room.addEvent('controlclick', function(e) {
-						e.stop();
+					if(e.control && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
 						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt());
-					});
-				};
+					} else {
+						MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
+					}
+				});
 			});
 		});
 
@@ -134,21 +134,26 @@ return {
 		});
 		exit.addEvent('click', function(e) {
 			e.stop();
-			if (e.control && me.additional) {
-				MBchat.updateables.logger.startLog(room.rid);
+			if (privateRoom != 0) {
+				privateReq.get($merge(myRequestOptions,{
+					'wid':  0, 
+					'lid' : MBchat.updateables.poller.getLastId(),
+					'rid' : room.rid })); 
 			} else {
-				if (privateRoom != 0) {
-					privateReq.get($merge(myRequestOptions,{
-						'wid':  0, 
-						'lid' : MBchat.updateables.poller.getLastId(),
-						'rid' : room.rid })); 
-				} else {
-					if (room.rid == 0 ) {
-						MBchat.logout();
-						window.location = '/forum' ; //and go back to the forum
+				if (room.rid == 0 ) {
+					if (this.hasClass('exit-r')) {
+						// just exiting from loging
+						MBchat.updateables.logger.returnToEntranceHall(e);
 					} else {
-						MBchat.updateables.message.leaveRoom();
+						if (e.control && me.additional) {
+							MBchat.updateables.logger.startLog(room.rid);
+						} else {
+							MBchat.logout();
+							window.location = '/forum' ; //and go back to the forum
+						}
 					}
+				} else {
+					MBchat.updateables.message.leaveRoom();
 				}
 			}
 		});
@@ -198,7 +203,7 @@ return {
 			contentSize = $('content').getCoordinates();
 		});
 
-		room = {rid:0, name: 'Entrance Hall', type : 'O'};   //Set up to be in the entrance hall
+		room = entranceHall;   //Set up to be in the entrance hall
 		MBchat.updateables.init(pollOptions);
 		MBchat.sounds.init();		//start sound system
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
@@ -345,6 +350,7 @@ return {
 				var pollInterval;
 				var pollerId;
 				var lastId = null;
+				var fullPoll=true;
 
 				var pollRequest = new Request.JSON({
 					url: 'poll.php',
@@ -364,8 +370,13 @@ return {
 						if (presenceCounter > presenceInterval) {
 							presenceCounter = 0;
 							$extend(pollRequestOptions,{'presence': true });
+							if (!fullPoll) {
+								$extend(pollRequestOptions,{'noresponse': true }); //Tell poll not to reply
+							}
+							pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
+						} else {
+							if (fullPoll) pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
 						}
-						pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
 					}
 				};
 				return {
@@ -386,19 +397,18 @@ return {
 					},
 
 					start : function () {
-						pollerId = poll.periodical(pollInterval,MBchat.updateables);
+						fullPoll=true;
 					},
 
 					pollResponse : function(response) {
 						response.messages.each(function(item) {
 							var lid = item.lid.toInt();
 							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
-							MBchat.updateables.processMessage(item);
+							if ( fullPoll) MBchat.updateables.processMessage(item);
 						});
 					},
 					stop : function() {
-						$clear(pollerId);
-						lastId = null; //Ensure no more polls come through
+						fullPoll=false;
 					}
 				};
 			}(),
@@ -1407,39 +1417,166 @@ return {
 				var logControls;
 				var printScreen;
 				var printLog;
-				var function = timeCount() {
-//TODO - 'this' is a time 
-				}
-				var returnToEntranceHall = function() {
-					logControls.addClass('hide');
-					printLog.empty();
-					messageList.empty();
-//TODO
-					messageList.removeClass('chat');
-					messageList.addClass('whisper');
-					$('exit').removeClass('hide');
-					MBchat.updateables.poller.start();
-					MBchat.updateables.online.show(0);	//Show online list for entrance hall
-				}
+				var messageList;
+				var timeShowStartLog;
+				var timeShowEndLog;
+				var aSecond = 1000;
+				var aMinute = 60*aSecond;
+				var anHour = 60*aMinute;
+				var startTimeOffset = anHour;
+				var endTime;
+				var timeChange;
+				var intervalCounter;
+
+				var timeShow = function() {
+					timeShowEndLog.set('text',endTime.toLocaleString());
+					timeShowStartLog.set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString());
+				};
+				var intervalCounter;
+				var getInterval = function() {
+					var i = intervalCounter;
+					intervalCounter++;
+					if(i < logOptions.secondstep) return aSecond;
+					if(i < logOptions.minutestep) return aMinute;
+					return anHour;
+				};
+
+				var lastId = 0;
+				var fetchLogDelay;
+				var fetchLog = function() {
+					lastId++;
+					MBchat.updateables.message.displayMessage(lastId,new Date().getTime()/1000,chatBot,chatBotMessage('testing'));
+//TODO go fetch log and display it
+				};
 				return {
 					init: function() {
 						logControls = $('logControls');
 						printScreen = $('printScreen');
 						printLog = $('printLog');
+						messageList = $('chatList');
+						timeShowStartLog = $('timeShowStartLog');
+						timeShowEndLog = $('timeShowEndLog');
+						$('exitPrint').addEvent('click', MBchat.updateables.logger.returnToEntranceHall);
+						logOptions.minutestep += logOptions.secondstep;  //Operationally this is better, so set it up
 					},
 					startLog: function (rid) {
-						MBchat.updateables.poller.stop();
+						MBchat.updateables.poller.stop(); //presence polls still happen
 						messageList.removeClass('whisper');
+						messageList.removeClass('chat');
+						messageList.addClass('logging');
 						messageList.empty();
-						messageList.addClass('chat');
+						$('inputContainer').addClass('hide');
+						$('emoticonContainer').addClass('hide');
 						$('roomNameContainer').empty();
-						$('entranceHall').set('styles',{'display':'none'});	
-						var exit = $('exit');
-						exit.removeClass('exit-r');
-						exit.addClass('exit-f');
-						exit.addClass('hide');
-						logControls.removeClass(hide);
-//TODO
+						$('entranceHall').addClass('hide');
+						var exit = $('exit');	
+						exit.removeClass('exit-f');
+						exit.addClass('exit-r');
+						$('soundOptions').addClass('hide');
+						$('onlineListContainer').addClass('hide');
+						logControls.removeClass('hide');
+						endTime = new Date();
+						timeShow();
+						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
+
+						$('minusStartLog').addEvents({
+							'mousedown' : function (e) {
+								var incrementer = function() {
+									startTimeOffset += getInterval();
+									timeShow();
+								};
+
+								$clear(fetchLogDelay);
+								intervalCounter=0;
+
+								incrementer(); //do first one
+								intervalCounterId = incrementer.periodical(logOptions.spinrate);
+							},
+							'mouseup' : function (e) {
+								$clear(intervalCounterId);
+								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
+							}
+						});
+						$('plusStartLog').addEvents({
+							'mousedown' : function (e) {
+								var decrementer = function() {
+									if (startTimeOffset > 0) {
+										startTimeOffset -= getInterval();
+									}
+									if (startTimeOffset < 0) startTimeOffset = 0;
+									timeShow();
+								};
+
+								$clear(fetchLogDelay);
+								intervalCounter=0;
+
+								decrementer(); //do first one
+								intervalCounterId = decrementer.periodical(logOptions.spinrate);
+							},
+							'mouseup' : function (e) {
+								$clear(intervalCounterId);
+								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
+							}
+						});
+						$('minusEndLog').addEvents({
+							'mousedown' : function (e) {
+								var decrementer = function() {
+									var oSTO = startTimeOffset;
+									if (startTimeOffset > 0) {
+										startTimeOffset -= getInterval();
+									}
+									if (startTimeOffset < 0) startTimeOffset = 0;
+									endTime = new Date(endTime.getTime()-oSTO+startTimeOffset);
+									timeShow();
+								};
+
+								$clear(fetchLogDelay);
+								intervalCounter=0;
+
+								decrementer(); //do first one
+								intervalCounterId = decrementer.periodical(logOptions.spinrate);
+							},
+							'mouseup' : function (e) {
+								$clear(intervalCounterId);
+								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
+							}
+						});
+						$('plusEndLog').addEvents({
+							'mousedown' : function (e) {
+								var incrementer = function() {
+									var oSTO = startTimeOffset;
+									var maxOffset = new Date().getTime() - endTime.getTime() + oSTO;
+									startTimeOffset += getInterval();
+									if (startTimeOffset > maxOffset) startTimeOffset = maxOffset;
+									endTime = new Date(endTime.getTime() - oSTO + startTimeOffset);
+									timeShow();
+								};
+								
+								$clear(fetchLogDelay);
+								intervalCounter=0;
+
+								incrementer(); //do first one
+								intervalCounterId = incrementer.periodical(logOptions.spinrate);
+							},
+							'mouseup' : function (e) {
+								$clear(intervalCounterId);
+								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
+							}
+						});
+
+
+					},
+					returnToEntranceHall : function(e) {
+						e.stop();
+						logControls.addClass('hide');
+						printScreen.addClass('hide');
+						messageList.removeClass('logging');
+						printLog.empty();
+						$('entranceHall').removeClass('hide');	
+						$('soundOptions').removeClass('hide');
+						$('onlineListContainer').removeClass('hide');
+						MBchat.updateables.poller.start();
+						MBchat.updateables.message.leaveRoom();	//go To Entrance Hall
 					}
 				};
 			}()

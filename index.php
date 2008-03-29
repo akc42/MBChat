@@ -42,6 +42,10 @@ define('MBCHAT_PURGE_MESSAGE_INTERVAL',7); //No of days messages kept for
 define('MBCHAT_CHATBOT_NAME','Hephaestus');
 define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in chat list
 
+define('MBCHAT_FETCHLOG_DELAY',	3000);		//Milliseconds of no activity on time section before fetching log
+define('MBCHAT_LOG_SPIN_RATE',	500);		//Milliseconds between each step in the timer for log time 
+define('MBCHAT_LOG_SECOND_STEPS', 2);		//No of spin steps where clock varies by a second
+define('MBCHAT_LOG_MINUTE_STEPS', 4);		//No of spin steps where clock varies by a minute (before going to hour)
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
@@ -91,6 +95,10 @@ window.addEvent('domready', function() {
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
 				lastid: <?php echo $lid ; ?>},
+				{fetchdelay: <?php echo MBCHAT_FETCHLOG_DELAY ; ?>,
+				spinrate: <?php echo MBCHAT_LOG_SPIN_RATE ;?>,
+				secondstep:<?php echo MBCHAT_LOG_SECOND_STEPS ;?>,
+				minutestep:<?php echo MBCHAT_LOG_MINUTE_STEPS ;?> },
 				'<?php echo MBCHAT_CHATBOT_NAME ; ?>',
 				'<?php echo MBCHAT_ENTRANCE_HALL ?>',
 				<?php echo MBCHAT_MAX_MESSAGES ?>);
@@ -162,23 +170,18 @@ soundManager.onload = function() {
 </table>
 
 <div id="content">
-<div id="logControls" class="hide">
-	<div id="exitLog"></div>
-	<div id="timeSelectLog">
-		<div id="timeSelectStartLog">
-			<div id="startTextLog>Start:</div>
-			<div id="minusStartLog"></div><div id="timeShowStartLog"></div><div id="plusStartLog"></div>
-			<div id="startSelectedLog"></div>
-		</div>
-		<div id="timeSelectEndLog">
-			<div id="endTextLog>End:</div>
-			<div id="minusEndLog"></div><div id="timeShowEndLog"></div><div id="plusEndLog"></div>
-			<div id="endSelectedLog"></div>
-		</div>
-	</div>
-	<div id="fetchLog"></div>
-</div>
 <div id="exit" class="exit-f"></div>
+<div id="logControls" class="hide">
+	<div id="startTimeBlock">
+		<div id="startTextLog">Log Start Time</div>
+		<div id="minusStartLog"></div><div id="timeShowStartLog"></div><div id="plusStartLog"></div>
+	</div>
+	<div id="endTimeBlock">
+		<div id="endTextLog">Log End Time</div>
+		<div id="minusEndLog"></div><div id="timeShowEndLog"></div><div id="plusEndLog"></div>
+ 	</div>
+	<div id="printLog"></div>
+</div>
 
 <div id="entranceHall">
 	<div  class="rooms">
@@ -268,19 +271,22 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 <div id="userOptions">
 	<input id="autoScroll" type="checkbox" checked="checked" />
 	<label for="autoScroll">Autoscroll</label>
-	<input id="musicEnabled" type="checkbox" />
-	<label for="musicEnabled">Enable Music</label><br/>
-	<input id="soundEnabled" type="checkbox" checked="checked"/>
-	<label for="soundEnabled">Enable Sound</label><br/>
-	<input id="soundDelay" type="text" size="1" value="5" />
-	<label for="soundDelay">Minutes 'till sound</label>
+	<span id="soundOptions">
+		<input id="musicEnabled" type="checkbox" />
+		<label for="musicEnabled">Enable Music</label><br/>
+		<input id="soundEnabled" type="checkbox" checked="checked"/>
+		<label for="soundEnabled">Enable Sound</label><br/>
+		<input id="soundDelay" type="text" size="1" value="5" />
+		<label for="soundDelay">Minutes 'till sound</label>
+	</span>
 </div>
 
 <div id="copyright">MBchat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
 <div id="printScreen" class="hide">
+	<div id="exitPrint"></div>
 	<h1>Melinda&quot;s Backups Chat History Log</h1>
 	<h2></h2> <!-- Room Name to go in here -->
-	<h3></h3> <!-- Dates to go in here ->
+	<h3></h3> <!-- Dates to go in here -->
 	<div id="printLog"><div>
 </div>
 </body>

@@ -12,37 +12,41 @@ define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 dbQuery('START TRANSACTION;');
-$result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
-if(mysql_num_rows($result) == 0) {
-	dbQuery('ROLLBACK;');
-	die('Leave Room - Invalid Room id');
+if ($rid != 0) {
+	$result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
+	if(mysql_num_rows($result) == 0) {
+		dbQuery('ROLLBACK;');
+		die('Leave Room - Invalid Room id');
+	}
+	$room = mysql_fetch_assoc($result);
+	mysql_free_result($result);
+
+
+	$result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
+	if(mysql_num_rows($result) == 0) {
+		dbQuery('ROLLBACK;');
+		die('Leave Room - Invalid User id');
+	}
+	$user = mysql_fetch_assoc($result);
+	mysql_free_result($result);
+	
+	if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
+	//This is a moderated room, and this person is not normal - so swap them out of moderated room role
+		$role = $user['moderator'];
+		$mod = $user['role'];
+	} else {
+		$role = $user['role'];
+		$mod = $user['moderator'];
+	}
+	
+	dbQuery('UPDATE users SET rid = 0, time = NOW(), role = '.dbMakeSafe($role)
+				.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
+	
+	
+	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+					dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
+					', "RX" ,'.dbMakeSafe($rid).');');
 }
-$room = mysql_fetch_assoc($result);
-mysql_free_result($result);
-$result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if(mysql_num_rows($result) == 0) {
-	dbQuery('ROLLBACK;');
-	die('Leave Room - Invalid User id');
-}
-$user = mysql_fetch_assoc($result);
-mysql_free_result($result);
-
-if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
-//This is a moderated room, and this person is not normal - so swap them out of moderated room role
-	$role = $user['moderator'];
-	$mod = $user['role'];
-} else {
-	$role = $user['role'];
-	$mod = $user['moderator'];
-}
-
-dbQuery('UPDATE users SET rid = 0, time = NOW(), role = '.dbMakeSafe($role)
-			.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
-
-
-dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-				', "RX" ,'.dbMakeSafe($rid).');');
 //should only return the whispers
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = '.dbMakeSafe($uid) ;
@@ -71,8 +75,11 @@ $result = dbQuery('SELECT max(lid) AS lid FROM log;');
 $row = mysql_fetch_assoc($result);
 mysql_free_result($result);
 
-dbQuery('COMMIT ;');
+if ($rid == 0) {
+	dbQuery('ROLLBACK ;');
+} else {
+	dbQuery('COMMIT ;');
+}
 
 echo '{"messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$row['lid'].'}';
-
 ?>
