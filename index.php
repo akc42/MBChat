@@ -91,7 +91,7 @@ window.addEvent('domready', function() {
 				name: '<?php echo $name ; ?>',
 				 role: '<?php echo $role; ?>',
 				password : '<?php echo sha1("Key".$uid); ?>',
-				mod: '<?php echo $mod ; if (isset($_GET['super']) && $role == 'A' ) { echo ', additional : true';} ?>'  }, 
+				mod: <?php echo '"'.$mod.'"' ; if (isset($_GET['super']) && $role == 'A' ) { echo ', additional : true';} ?>  }, 
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
 				lastid: <?php echo $lid ; ?>},

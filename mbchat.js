@@ -1423,15 +1423,15 @@ return {
 				var aSecond = 1000;
 				var aMinute = 60*aSecond;
 				var anHour = 60*aMinute;
-				var startTimeOffset = anHour;
+				var startTimeOffset;
 				var endTime;
 				var timeChange;
-				var intervalCounter;
 
 				var timeShow = function() {
 					timeShowEndLog.set('text',endTime.toLocaleString());
 					timeShowStartLog.set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString());
 				};
+				var intervalCounterId = null;
 				var intervalCounter;
 				var getInterval = function() {
 					var i = intervalCounter;
@@ -1440,13 +1440,72 @@ return {
 					if(i < logOptions.minutestep) return aMinute;
 					return anHour;
 				};
-
-				var lastId = 0;
+				var logRid;
+				var processMessage = function (msg) {
+					var message = function (txt) {
+						MBchat.updateables.message.displayMessage(msg.lid,msg.time,chatBot,chatBotMessage(msg.user.name + ' ' + txt));
+					}
+					switch (msg.type) {
+					case 'LI':
+						message('Logs In');
+						break;
+					case 'LO':
+						message('Logs Out');
+						break;
+					case 'LT':
+						message('Logs Out (timeout)');
+						break;
+					case 'RE':
+						message('Enters Room');
+						break;
+					case 'RX':
+						message('Leaves Room');
+						break;
+					case 'RM':
+						message('Becomes Moderator');
+						break;
+					case 'RN':
+						message('Steps Down from being Moderator');
+						break;
+					case 'WJ':
+						message('Joins whisper no: ' + msg.rid);
+						break;
+					case 'WL':
+						message('Leaves whisper no: ' + msg.rid);
+						break;
+					case 'ME':
+						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,msg.message);
+						break;
+					case 'WH':
+						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,'(whispers to :' +msg.rid+')'+msg.message);
+						break;
+					default:
+					// Do nothing with these
+						break;
+					}
+				}
+				var request = new Request.JSON({
+					url: 'log.php',
+					autoCancel: true,
+					onComplete : function(response,errorMsg) {
+						messageList.removeClass('loading');
+						if(response) {
+							response.messages.each(function(item) {
+								processMessage(item);
+							});
+						} else {
+							displayErrorMessage(errorMsg);
+						}
+					}
+				});
 				var fetchLogDelay;
 				var fetchLog = function() {
-					lastId++;
-					MBchat.updateables.message.displayMessage(lastId,new Date().getTime()/1000,chatBot,chatBotMessage('testing'));
-//TODO go fetch log and display it
+					messageList.empty();
+					messageList.addClass('loading');
+					request.get($merge(myRequestOptions,{
+						'rid' : logRid,
+						'start' : new Date(endTime.getTime()-startTimeOffset).getTime()/1000,
+						'end': endTime.getTime()/1000 }));
 				};
 				return {
 					init: function() {
@@ -1460,6 +1519,7 @@ return {
 						logOptions.minutestep += logOptions.secondstep;  //Operationally this is better, so set it up
 					},
 					startLog: function (rid) {
+						logRid = rid;
 						MBchat.updateables.poller.stop(); //presence polls still happen
 						messageList.removeClass('whisper');
 						messageList.removeClass('chat');
@@ -1476,6 +1536,7 @@ return {
 						$('onlineListContainer').addClass('hide');
 						logControls.removeClass('hide');
 						endTime = new Date();
+						startTimeOffset = anHour;
 						timeShow();
 						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 
@@ -1487,6 +1548,7 @@ return {
 								};
 
 								$clear(fetchLogDelay);
+								if(intervalCounterId) $clear(intervalCounterId);
 								intervalCounter=0;
 
 								incrementer(); //do first one
@@ -1494,6 +1556,7 @@ return {
 							},
 							'mouseup' : function (e) {
 								$clear(intervalCounterId);
+								$clear(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
@@ -1508,6 +1571,7 @@ return {
 								};
 
 								$clear(fetchLogDelay);
+								if(intervalCounterId) $clear(intervalCounterId);
 								intervalCounter=0;
 
 								decrementer(); //do first one
@@ -1515,6 +1579,7 @@ return {
 							},
 							'mouseup' : function (e) {
 								$clear(intervalCounterId);
+								$clear(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
@@ -1531,6 +1596,7 @@ return {
 								};
 
 								$clear(fetchLogDelay);
+								if(intervalCounterId) $clear(intervalCounterId);
 								intervalCounter=0;
 
 								decrementer(); //do first one
@@ -1538,6 +1604,7 @@ return {
 							},
 							'mouseup' : function (e) {
 								$clear(intervalCounterId);
+								$clear(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
@@ -1553,6 +1620,7 @@ return {
 								};
 								
 								$clear(fetchLogDelay);
+								if(intervalCounterId) $clear(intervalCounterId);
 								intervalCounter=0;
 
 								incrementer(); //do first one
@@ -1560,6 +1628,7 @@ return {
 							},
 							'mouseup' : function (e) {
 								$clear(intervalCounterId);
+								$clear(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
