@@ -1083,7 +1083,7 @@ return {
 							}
 						}
 					},
-					displayMessage: function(lid,time,user,msgText) {
+					displayMessage: function(lid,time,user,msgText,noLimit) {
 						var addLeadingZeros = function(number) {
 							number = number.toString();
 							if(number.length < 2)
@@ -1113,8 +1113,10 @@ return {
 						msgText = replaceEmoticons(msgText); //Then replace emoticons.
 						var span = new Element('span',{'html': msgText }) ;
 						span.inject(div);
-						while (messageList.getChildren().length >= messageListSize) {
-							messageList.getFirst().destroy();
+						if(!noLimit) {
+							while (messageList.getChildren().length >= messageListSize) {
+								messageList.getFirst().destroy();
+							}
 						}	
 						if((!messageList.getLast()) || (messageList.getLast().get('class') == 'rowOdd') ) {
 							div.addClass('rowEven');
@@ -1443,7 +1445,7 @@ return {
 				var logRid;
 				var processMessage = function (msg) {
 					var message = function (txt) {
-						MBchat.updateables.message.displayMessage(msg.lid,msg.time,chatBot,chatBotMessage(msg.user.name + ' ' + txt));
+						MBchat.updateables.message.displayMessage(msg.lid,msg.time,chatBot,chatBotMessage(msg.user.name + ' ' + txt),true);
 					}
 					switch (msg.type) {
 					case 'LI':
@@ -1474,10 +1476,10 @@ return {
 						message('Leaves whisper no: ' + msg.rid);
 						break;
 					case 'ME':
-						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,msg.message);
+						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,msg.message,true);
 						break;
 					case 'WH':
-						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,'(whispers to :' +msg.rid+')'+msg.message);
+						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,'(whispers to :' +msg.rid+')'+msg.message,true);
 						break;
 					default:
 					// Do nothing with these
