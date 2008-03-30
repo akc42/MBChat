@@ -582,6 +582,7 @@ span.whisper {
 	width:100%;
 	background:white;
 	border-top:2px solid black;
+	overflow:auto;
 }
 
 #printScreen h1,#printScreen h2, #printScreen h3 {
@@ -589,7 +590,6 @@ span.whisper {
 }
 
 #printContent {
-	overflow:scroll;
 	background:white;
 }
 

@@ -1516,10 +1516,13 @@ return {
 						logControls = $('logControls');
 						messageList = $('chatList');
 						printScreen = $('printScreen');
+						printContent = $('printContent');
 						printLog = $('printLog');
 						printLog.addEvent('click',function(e) {
-							var content = messageList.get('html');
-							$('printContent').set('html', content);
+							var content = messageList.getChildren();
+							content.each(function(item) {
+								item.inject(printContent);
+							});
 							$('content').addClass('hide');
 							$('header').addClass('hide');
 							printScreen.removeClass('hide');
