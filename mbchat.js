@@ -1521,15 +1521,16 @@ return {
 						pcScroller = new Fx.Scroll(printContent,{'link':'cancel'});
 						printLog = $('printLog');
 						printLog.addEvent('click',function(e) {
+							$('content').addClass('hide');
+							$('header').addClass('hide');
+							printScreen.removeClass('hide');
+							printContent.empty();
 							var content = messageList.getChildren();
 							content.each(function(item) {
 								item.inject(printContent);
 								pcScroller.toBottom();
 							});
 							pcScroller.toTop();
-							$('content').addClass('hide');
-							$('header').addClass('hide');
-							printScreen.removeClass('hide');
 							printScreen.getElement('h3').set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString()+' to '+endTime.toLocaleString());
 						});
 						timeShowStartLog = $('timeShowStartLog');
