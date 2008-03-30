@@ -97,7 +97,6 @@ body, td, th
 	background-color:#4A7DB5;
 	background-image:none;
 	color:#000;
-	overflow:auto;
 }
 
 #copyright {
@@ -580,8 +579,6 @@ span.whisper {
 	position:relative;
 	width:100%;
 	background:white;
-	border-top:2px solid black;
-	overflow:auto;
 }
 
 #printScreen h1,#printScreen h2, #printScreen h3 {
@@ -589,15 +586,13 @@ span.whisper {
 }
 
 #printContent {
+	border-top:2px solid black;
+	position:absolute;
+	top:200px;
 	background:white;
+	bottom:0px;
 	overflow:auto;
 }
 
-#exitPrint {
-	height:44px;
-	width: 100px; 
-	overflow:hidden;
-	background: #a87aad url(exit.gif) no-repeat; 
-}
 
 

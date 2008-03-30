@@ -8,12 +8,6 @@
 error_reporting(E_ALL);
 // Path to the chat directory:
 
-function message($txt) {
-	echo '"C">Hephaestus</span><span>'.$row['name'].' '.$txt.'</span></div>\n';
-}
-function umessage($txt) {
-	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span></div>\n';
-}
 
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid']) && isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end'])))
 	die('Log - Hacking attempt - wrong parameters');
@@ -24,21 +18,6 @@ $rid = $_GET['rid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-dbQuery('START TRANSACTION;');
-$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if(mysql_num_rows($result) == 0) {
-	dbQuery('ROLLBACK;');
-	die('Log - Invalid User id');
-}
-$user = mysql_fetch_assoc($result);
-mysql_free_result($result);
-
-dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
-
-dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
-				', "LH" ,'.dbMakeSafe($rid).');');
-
 
 $sql = 'SELECT UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text  FROM log';
 $sql .= ' WHERE UNIX_TIMESTAMP(time) > '.dbMakeSafe($_GET['start']).' AND UNIX_TIMESTAMP(time) < '.dbMakeSafe($_GET['end']).' AND rid ';
@@ -61,12 +40,23 @@ if(mysql_num_rows($result) != 0) {
 	<![endif]-->
 </head>
 <body>
-<a id="exitPrint" href="/chat">&nbsp;</a>
+<a id="exitPrint" href="/chat"><img src="exit.gif"/></a>
 <h1>Melinda&#8217;s Backups Chat History Log</h1>
-<h2></h2> <!-- Room Name to go in here -->
-<h3></h3> <!-- Dates to go in here -->
+<h2><?php echo $_GET['room']; ?></h2> 
+<h3><?php echo date("D h:i:s a",$_GET['start']).' to '.date("D h:i:s a",$_GET['end']) ; ?></h3> 
 <div id="printContent">
 <?php
+function message($txt) {
+global $row;
+	echo '"C">Hephaestus</span><span>'.$row['name'].' '.$txt.'</span></div>';
+	echo "\n";
+}
+function umessage($txt) {
+global $row;
+	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span></div>';
+	echo "\n";
+}
+
 	while($row=mysql_fetch_assoc($result)) {
 
 		echo '<div><span class="time">'.date("h:i:s a",$row['utime']).'</span><span class=';
@@ -106,6 +96,7 @@ if(mysql_num_rows($result) != 0) {
 			break;
 		case 'LH':
 			message('Reads Log');
+			break;
 		default:
 		// Do nothing with these
 			break;
@@ -113,7 +104,6 @@ if(mysql_num_rows($result) != 0) {
 	}		
 };
 mysql_free_result($result);
-dbQuery('COMMIT ;');
 ?>
 </div>
 

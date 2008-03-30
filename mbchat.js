@@ -1424,6 +1424,8 @@ return {
 				var aSecond = 1000;
 				var aMinute = 60*aSecond;
 				var anHour = 60*aMinute;
+				var aWeek = 24*7*anHour;
+				var earliest;
 				var startTimeOffset;
 				var endTime;
 				var timeChange;
@@ -1524,12 +1526,14 @@ return {
 						});
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
-						$('exitPrint').addEvent('click', MBchat.updateables.logger.returnToEntranceHall);
 						logOptions.minutestep += logOptions.secondstep;  //Operationally this is better, so set it up
 						$('minusStartLog').addEvents({
 							'mousedown' : function (e) {
 								var incrementer = function() {
 									startTimeOffset += getInterval();
+									if (endTime.getTime()-startTimeOffset < earliest) {
+										startTimeOffset = endTime.getTime()- earliest;
+									}
 									timeShow();
 								};
 
@@ -1639,6 +1643,7 @@ return {
 						logControls.removeClass('hide');
 						endTime = new Date();
 						startTimeOffset = anHour;
+						earliest = endTime.getTime() - aWeek;
 						timeShow();
 						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 
