@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.2.1';
+	var version = 'v1.2.2';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -1521,29 +1521,6 @@ return {
 						timeShowEndLog = $('timeShowEndLog');
 						$('exitPrint').addEvent('click', MBchat.updateables.logger.returnToEntranceHall);
 						logOptions.minutestep += logOptions.secondstep;  //Operationally this is better, so set it up
-					},
-					startLog: function (rid) {
-						logRid = rid;
-						MBchat.updateables.poller.stop(); //presence polls still happen
-						messageList.removeClass('whisper');
-						messageList.removeClass('chat');
-						messageList.addClass('logging');
-						messageList.empty();
-						$('inputContainer').addClass('hide');
-						$('emoticonContainer').addClass('hide');
-						$('roomNameContainer').empty();
-						$('entranceHall').addClass('hide');
-						var exit = $('exit');	
-						exit.removeClass('exit-f');
-						exit.addClass('exit-r');
-						$('soundOptions').addClass('hide');
-						$('onlineListContainer').addClass('hide');
-						logControls.removeClass('hide');
-						endTime = new Date();
-						startTimeOffset = anHour;
-						timeShow();
-						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
-
 						$('minusStartLog').addEvents({
 							'mousedown' : function (e) {
 								var incrementer = function() {
@@ -1637,6 +1614,29 @@ return {
 							}
 						});
 
+
+					},
+					startLog: function (rid) {
+						logRid = rid;
+						MBchat.updateables.poller.stop(); //presence polls still happen
+						messageList.removeClass('whisper');
+						messageList.removeClass('chat');
+						messageList.addClass('logging');
+						messageList.empty();
+						$('inputContainer').addClass('hide');
+						$('emoticonContainer').addClass('hide');
+						$('roomNameContainer').empty();
+						$('entranceHall').addClass('hide');
+						var exit = $('exit');	
+						exit.removeClass('exit-f');
+						exit.addClass('exit-r');
+						$('soundOptions').addClass('hide');
+						$('onlineListContainer').addClass('hide');
+						logControls.removeClass('hide');
+						endTime = new Date();
+						startTimeOffset = anHour;
+						timeShow();
+						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 
 					},
 					returnToEntranceHall : function(e) {
