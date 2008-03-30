@@ -1419,6 +1419,7 @@ return {
 				var logControls;
 				var printScreen;
 				var printLog;
+				var printContent;
 				var messageList;
 				var timeShowStartLog;
 				var timeShowEndLog;
@@ -1511,16 +1512,15 @@ return {
 						'start' : new Date(endTime.getTime()-startTimeOffset).getTime()/1000,
 						'end': endTime.getTime()/1000 }));
 				};
-				var pcScroller;
 				return {
 					init: function() {
 						logControls = $('logControls');
 						messageList = $('chatList');
 						printScreen = $('printScreen');
 						printContent = $('printContent');
-						pcScroller = new Fx.Scroll(printContent,{'link':'cancel'});
 						printLog = $('printLog');
 						printLog.addEvent('click',function(e) {
+							var h = document.body.clientHeight;
 							$('content').addClass('hide');
 							$('header').addClass('hide');
 							printScreen.removeClass('hide');
@@ -1528,10 +1528,9 @@ return {
 							var content = messageList.getChildren();
 							content.each(function(item) {
 								item.inject(printContent);
-								pcScroller.toBottom();
 							});
-							pcScroller.toTop();
 							printScreen.getElement('h3').set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString()+' to '+endTime.toLocaleString());
+							document.body.clientHeight = h;
 						});
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
