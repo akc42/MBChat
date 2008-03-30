@@ -589,7 +589,7 @@ span.whisper {
 }
 
 #printContent {
-	overflow:auto;
+	overflow:scroll;
 	background:white;
 }
 
