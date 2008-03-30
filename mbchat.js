@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.0';
+	var version = 'v1.3.1';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -1511,18 +1511,22 @@ return {
 						'start' : new Date(endTime.getTime()-startTimeOffset).getTime()/1000,
 						'end': endTime.getTime()/1000 }));
 				};
+				var pcScroller;
 				return {
 					init: function() {
 						logControls = $('logControls');
 						messageList = $('chatList');
 						printScreen = $('printScreen');
 						printContent = $('printContent');
+						pcScroller = new Fx.Scroll(printContent,{'link':'cancel'});
 						printLog = $('printLog');
 						printLog.addEvent('click',function(e) {
 							var content = messageList.getChildren();
 							content.each(function(item) {
 								item.inject(printContent);
+								pcScroller.toBottom();
 							});
+							pcScroller.toTop();
 							$('content').addClass('hide');
 							$('header').addClass('hide');
 							printScreen.removeClass('hide');
