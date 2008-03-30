@@ -591,6 +591,7 @@ span.whisper {
 
 #printContent {
 	background:white;
+	overflow:auto;
 }
 
 #exitPrint {

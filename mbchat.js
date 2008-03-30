@@ -1656,7 +1656,7 @@ return {
 						messageList.removeClass('logging');
 						$('header').removeClass('hide');
 						$('content').removeClass('hide');
-						printLog.empty();
+						printContent.empty();
 						$('entranceHall').removeClass('hide');	
 						$('soundOptions').removeClass('hide');
 						$('onlineListContainer').removeClass('hide');
