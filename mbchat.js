@@ -1417,9 +1417,7 @@ return {
 			}(),
 			logger : function () {
 				var logControls;
-				var printScreen;
 				var printLog;
-				var printContent;
 				var messageList;
 				var timeShowStartLog;
 				var timeShowEndLog;
@@ -1444,6 +1442,7 @@ return {
 					return anHour;
 				};
 				var logRid;
+				var printQuery;
 				var processMessage = function (msg) {
 					var message = function (txt) {
 						MBchat.updateables.message.displayMessage(msg.lid,msg.time,chatBot,chatBotMessage(msg.user.name + ' ' + txt),true);
@@ -1516,21 +1515,12 @@ return {
 					init: function() {
 						logControls = $('logControls');
 						messageList = $('chatList');
-						printScreen = $('printScreen');
-						printContent = $('printContent');
 						printLog = $('printLog');
 						printLog.addEvent('click',function(e) {
-							var h = document.body.clientHeight;
-							$('content').addClass('hide');
-							$('header').addClass('hide');
-							printScreen.removeClass('hide');
-							printContent.empty();
-							var content = messageList.getChildren();
-							content.each(function(item) {
-								item.inject(printContent);
-							});
-							printScreen.getElement('h3').set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString()+' to '+endTime.toLocaleString());
-							document.body.clientHeight = h;
+							printQuery += '&start='+ new Date(endTime.getTime()-startTimeOffset).getTime()/1000;
+							printQuery += '&end='+endTime.getTime()/1000;
+							MBchat.logout();
+							window.location = 'print.php?' + printQuery ; //and go back to the forum
 						});
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
@@ -1636,7 +1626,7 @@ return {
 						messageList.removeClass('chat');
 						messageList.addClass('logging');
 						messageList.empty();
-						printScreen.getElement('h2').set('text',roomName);
+						printQuery = 'user='+me.uid+'&password='+me.password+'&rid='+rid+'&room='+roomName ;
 						$('inputContainer').addClass('hide');
 						$('emoticonContainer').addClass('hide');
 						$('roomNameContainer').empty();
@@ -1656,11 +1646,9 @@ return {
 					returnToEntranceHall : function(e) {
 						e.stop();
 						logControls.addClass('hide');
-						printScreen.addClass('hide');
 						messageList.removeClass('logging');
 						$('header').removeClass('hide');
 						$('content').removeClass('hide');
-						printContent.empty();
 						$('entranceHall').removeClass('hide');	
 						$('soundOptions').removeClass('hide');
 						$('onlineListContainer').removeClass('hide');
