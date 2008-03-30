@@ -11,15 +11,11 @@
  * 
  */
 
-html {
-	overflow:hidden;
-}
 
 body {
 	padding:0px;
 	margin:0px;
 	background-color: #efefef;
-	overflow:auto;
 	width:100%;
 }
 
@@ -585,14 +581,6 @@ span.whisper {
 	text-align:center;
 }
 
-#printContent {
-	border-top:2px solid black;
-	position:absolute;
-	top:200px;
-	background:white;
-	bottom:0px;
-	overflow:auto;
-}
 
 
 

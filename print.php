@@ -44,22 +44,22 @@ if(mysql_num_rows($result) != 0) {
 <h1>Melinda&#8217;s Backups Chat History Log</h1>
 <h2><?php echo $_GET['room']; ?></h2> 
 <h3><?php echo date("D h:i:s a",$_GET['start']).' to '.date("D h:i:s a",$_GET['end']) ; ?></h3> 
-<div id="printContent">
+
 <?php
 function message($txt) {
 global $row;
-	echo '"C">Hephaestus</span><span>'.$row['name'].' '.$txt.'</span></div>';
+	echo '"C">Hephaestus</span><span>'.$row['name'].' '.$txt.'</span><br/>';
 	echo "\n";
 }
 function umessage($txt) {
 global $row;
-	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span></div>';
+	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span><br/>';
 	echo "\n";
 }
 
 	while($row=mysql_fetch_assoc($result)) {
 
-		echo '<div><span class="time">'.date("h:i:s a",$row['utime']).'</span><span class=';
+		echo '<span class="time">'.date("h:i:s a",$row['utime']).'</span><span class=';
 		switch ($row['type']) {
 		case "LI" :
 			message('Logs In');
@@ -105,7 +105,7 @@ global $row;
 };
 mysql_free_result($result);
 ?>
-</div>
+
 
 </body>
 
