@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.2.2';
+	var version = 'v1.3.0';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -116,7 +116,7 @@ return {
 				room.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
 					if(e.control) {
-						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt());
+						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt(),room.get('text'));
 					} else {
 						MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
 					}
@@ -1514,9 +1514,17 @@ return {
 				return {
 					init: function() {
 						logControls = $('logControls');
+						messageList = $('chatList');
 						printScreen = $('printScreen');
 						printLog = $('printLog');
-						messageList = $('chatList');
+						printLog.addEvent('click',function(e) {
+							var content = messageList.get('html');
+							$('printContent').set('html', content);
+							$('content').addClass('hide');
+							$('header').addClass('hide');
+							printScreen.removeClass('hide');
+							printScreen.getElement('h3').set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString()+' to '+endTime.toLocaleString());
+						});
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
 						$('exitPrint').addEvent('click', MBchat.updateables.logger.returnToEntranceHall);
@@ -1613,16 +1621,15 @@ return {
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
-
-
 					},
-					startLog: function (rid) {
+					startLog: function (rid,roomName) {
 						logRid = rid;
 						MBchat.updateables.poller.stop(); //presence polls still happen
 						messageList.removeClass('whisper');
 						messageList.removeClass('chat');
 						messageList.addClass('logging');
 						messageList.empty();
+						printScreen.getElement('h2').set('text',roomName);
 						$('inputContainer').addClass('hide');
 						$('emoticonContainer').addClass('hide');
 						$('roomNameContainer').empty();
@@ -1644,6 +1651,8 @@ return {
 						logControls.addClass('hide');
 						printScreen.addClass('hide');
 						messageList.removeClass('logging');
+						$('header').removeClass('hide');
+						$('content').removeClass('hide');
 						printLog.empty();
 						$('entranceHall').removeClass('hide');	
 						$('soundOptions').removeClass('hide');

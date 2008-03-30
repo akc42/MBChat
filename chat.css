@@ -574,6 +574,7 @@ span.whisper {
 	width: 50px; 
 	background: #a87aad url(printer.jpg) no-repeat; 
 	margin-left:40px;
+	cursor:pointer;
 }
 
 #printScreen {
@@ -583,12 +584,18 @@ span.whisper {
 	border-top:2px solid black;
 }
 
+#printScreen h1,#printScreen h2, #printScreen h3 {
+	text-align:center;
+}
+
+#printContent {
+	overflow:auto;
+	background:white;
+}
+
 #exitPrint {
-	position:absolute;
-	top:0px;
-	left:0px;
 	height:44px;
-	width: 50px; 
+	width: 100px; 
 	overflow:hidden;
 	background: #a87aad url(exit.gif) no-repeat; 
 }

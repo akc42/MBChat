@@ -282,12 +282,13 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 </div>
 
 <div id="copyright">MBchat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+</div>
 <div id="printScreen" class="hide">
 	<div id="exitPrint"></div>
-	<h1>Melinda&quot;s Backups Chat History Log</h1>
+	<h1>Melinda&#8217;s Backups Chat History Log</h1>
 	<h2></h2> <!-- Room Name to go in here -->
 	<h3></h3> <!-- Dates to go in here -->
-	<div id="printLog"><div>
+	<div id="printContent"><div>
 </div>
 </body>
 
