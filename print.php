@@ -34,10 +34,7 @@ if(mysql_num_rows($result) != 0) {
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>Melinda's Backups Chat</title>
-	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
-	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
-	<![endif]-->
+	<link rel="stylesheet" type="text/css" href="chat-pr.css" title="mbstyle"/>
 </head>
 <body>
 <a id="exitPrint" href="/chat"><img src="exit.gif"/></a>

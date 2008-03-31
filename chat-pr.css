@@ -1,0 +1,93 @@
+/*
+ * Date:	03.09.2007
+ *
+ * File:	css/SMF Default Theme - Core.css
+ * Project:	AJAX_CHAT
+ *
+ * Author:	Sebastian Tschan
+ * Website:	https://blueimp.net
+ *
+ * License:	GPL
+ * 
+ */
+
+
+body {
+	padding:0px;
+	margin:0px;
+	background-color: #efefef;
+	width:100%;
+	color: #000000;
+	font-size: small;
+	font-family: tahoma, sans-serif;
+}
+
+
+.exit-r {	
+	background: #a87aad url(exit.gif) no-repeat; 
+}
+
+/* these are the classes related to user types */
+/* admin/leadership team */
+span.A , span.L {
+	color:#036972;   
+}
+/* melinda - head of our club */
+span.H {
+	color:#6A00FF;
+}
+/* guests - such as Janet, Kelley or Chaz (life Members) or Special is ordinary members promoted */
+span.G, span.S {
+	color:#0000CD;
+}
+/* moderator */
+span.M {
+	color:#843B00
+}
+/* baby backups */
+span.B {	
+	color:#008000;
+}
+/* regular members */
+span.R {
+	color:#414141;
+}
+/* chatbot */
+
+
+span.C {
+	font-style:italic;
+	font-weight: bold;
+	color:#476C8E;
+}
+
+span.chatBotMessage {
+	font-style:italic;
+	color:#444;
+}
+
+span.errorMessage {
+	font-style:italic;
+	color:red;
+}
+
+span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
+	padding:0 2px;
+}
+
+
+.rowEven {
+	background-color:#F6F6F6;
+}
+
+.rowOdd {
+	background-color:#ECEDF3;
+}
+
+h1,h2, h3 {
+	text-align:center;
+}
+
+
+
+
