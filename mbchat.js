@@ -115,7 +115,7 @@ return {
 				});
 				room.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
-					if(e.control) {
+					if(e.control && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
 						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt(),room.get('text'));
 					} else {
 						MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
