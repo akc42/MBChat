@@ -1320,12 +1320,13 @@ return {
 											var getNewWhisperReq = new Request.JSON({
 												url:'newwhisper.php',
 												onComplete: function(response,errorMsg) {
-													if(response) {
+													if(response && response.wid != 0) {
 														var whisper = createWhisperBox(response.wid,response.user);
 														dragReturn.start(whisper.getCoordinates()); //move towards it
 													} else {
-														displayErrorMessage(errorMsg);
-													}
+														//logged out before we started whisper
+														dragReturn.start($('onlineList').getCoordinates());
+													} 
 												}
 											});
 											getNewWhisperReq.get($merge(myRequestOptions,{'wuid':user.uid}));

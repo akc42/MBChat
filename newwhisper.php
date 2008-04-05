@@ -9,7 +9,7 @@ $wuid = $_GET['wuid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-
+$wid = 0;
 $result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).' OR uid = '.dbMakeSafe($wuid).';');
 if(mysql_num_rows($result) == 2) {
 	$user = mysql_fetch_assoc($result);
