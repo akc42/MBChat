@@ -11,11 +11,11 @@ define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-dbQuery('START TRANSACTION;');
+
+
 if ($rid != 0) {
 	$result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
 	if(mysql_num_rows($result) == 0) {
-		dbQuery('ROLLBACK;');
 		die('Leave Room - Invalid Room id');
 	}
 	$room = mysql_fetch_assoc($result);
@@ -24,7 +24,6 @@ if ($rid != 0) {
 
 	$result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
 	if(mysql_num_rows($result) == 0) {
-		dbQuery('ROLLBACK;');
 		die('Leave Room - Invalid User id');
 	}
 	$user = mysql_fetch_assoc($result);
@@ -74,12 +73,6 @@ mysql_free_result($result);
 $result = dbQuery('SELECT max(lid) AS lid FROM log;');
 $row = mysql_fetch_assoc($result);
 mysql_free_result($result);
-
-if ($rid == 0) {
-	dbQuery('ROLLBACK ;');
-} else {
-	dbQuery('COMMIT ;');
-}
 
 echo '{"messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$row['lid'].'}';
 ?>

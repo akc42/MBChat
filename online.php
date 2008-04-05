@@ -11,7 +11,6 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 
 
-dbQuery('START TRANSACTION;');
 $result = dbQuery('SELECT uid, name, role, question,private FROM users WHERE rid = '.dbMakeSafe($rid).' ;');
 $users = array();
 if(mysql_num_rows($result) != 0) {
@@ -23,7 +22,6 @@ mysql_free_result($result);
 $result = dbQuery('SELECT max(lid) AS lid FROM log;');
 $row = mysql_fetch_assoc($result);
 mysql_free_result($result);
-dbQuery('ROLLBACK;');
 
 echo '{"lastid":'.$row['lid'].', "online":'.json_encode($users).'}';
 ?> 
