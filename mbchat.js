@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.4';
+	var version = 'v1.3.5';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -1522,6 +1522,7 @@ return {
 						printLog.addEvent('click',function(e) {
 							printQuery += '&start='+ new Date(endTime.getTime()-startTimeOffset).getTime()/1000;
 							printQuery += '&end='+endTime.getTime()/1000;
+							printQuery += '&tzo='+endTime.getTimezoneOffset()*60;
 							MBchat.logout();
 							window.location = 'print.php?' + printQuery ; //and go back to the forum
 						});

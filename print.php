@@ -9,12 +9,17 @@ error_reporting(E_ALL);
 // Path to the chat directory:
 
 
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid']) && isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end'])))
+if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid']) 
+	&& isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end']) && isset($_GET['tzo'])))
 	die('Log - Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
 if ($_GET['password'] != sha1("Key".$uid))
 	die('Log - Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
 $rid = $_GET['rid'];
+
+$now = new DateTime();
+$dtz = new DateTimeZone(date_default_timezone_get());
+$tzo = $_GET['tzo']+$dtz->getOffset($now);
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
@@ -40,7 +45,7 @@ if(mysql_num_rows($result) != 0) {
 <a id="exitPrint" href="/chat"><img src="exit.gif"/></a>
 <h1>Melinda&#8217;s Backups Chat History Log</h1>
 <h2><?php echo $_GET['room']; ?></h2> 
-<h3><?php echo date("D h:i:s a",$_GET['start']).' to '.date("D h:i:s a",$_GET['end']) ; ?></h3> 
+<h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3> 
 
 <?php
 function message($txt) {
@@ -56,7 +61,7 @@ global $row;
 
 	while($row=mysql_fetch_assoc($result)) {
 
-		echo '<span class="time">'.date("h:i:s a",$row['utime']).'</span><span class=';
+		echo '<span class="time">'.date("h:i:s a",$row['utime']-$tzo).'</span><span class=';
 		switch ($row['type']) {
 		case "LI" :
 			message('Logs In');
