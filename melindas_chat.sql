@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 30, 2008 at 09:25 PM
+-- Generation Time: Apr 06, 2008 at 06:43 PM
 -- Server version: 5.0.51
 -- PHP Version: 5.2.5-3
 
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `log` (
   `text` text,
   PRIMARY KEY  (`lid`),
   KEY `time` (`time`)
-) ENGINE=MyISAM DEFAULT CHARSET=ascii AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=ascii AUTO_INCREMENT=88 ;
 
 --
 -- Dumping data for table `log`
@@ -125,6 +125,25 @@ INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES
 (8, 'The Africa Room', 'C', 16),
 (9, 'The News Room', 'C', 17),
 (10, 'The Spiders Lair', 'C', 18);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `scholarship`
+--
+
+CREATE TABLE IF NOT EXISTS `scholarship` (
+  `no` tinyint(4) NOT NULL default '1',
+  `amount` int(11) NOT NULL,
+  PRIMARY KEY  (`no`)
+) ENGINE=MyISAM DEFAULT CHARSET=ascii;
+
+--
+-- Dumping data for table `scholarship`
+--
+
+INSERT INTO `scholarship` (`no`, `amount`) VALUES
+(1, 0);
 
 -- --------------------------------------------------------
 
