@@ -13,16 +13,6 @@ define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-//use this to also get the scholarship amount
-
-$amount = 0;
-$result dbQuery('SELECT amount, no FROM scholarship WHERE no = 1 ;');
-if (mysql_num_rows($result) != 0) {
-	$row = mysql_fetch_assoc($result);
-	$amount = $row['amount'];
-}	
-mysql_free_result($result);
-
 
 // We want to show colours if Melinda or our Special Guests are in chat
 
@@ -42,6 +32,6 @@ if (mysql_num_rows($result) != 0) {
 
 mysql_free_result($result);
 
-echo '{ "chatters" : '.$total.' , "best" : "'.$best.'" , "amount" : '.$amount.' }' ;
+echo '{ "chatters" : '.$total.' , "best" : "'.$best.'" }' ;
 
 ?>
