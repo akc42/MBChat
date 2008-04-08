@@ -129,25 +129,6 @@ INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `scholarship`
---
-
-CREATE TABLE IF NOT EXISTS `scholarship` (
-  `no` tinyint(4) NOT NULL default '1',
-  `amount` int(11) NOT NULL,
-  PRIMARY KEY  (`no`)
-) ENGINE=MyISAM DEFAULT CHARSET=ascii;
-
---
--- Dumping data for table `scholarship`
---
-
-INSERT INTO `scholarship` (`no`, `amount`) VALUES
-(1, 0);
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `users`
 --
 
