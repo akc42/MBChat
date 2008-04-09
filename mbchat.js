@@ -1425,7 +1425,9 @@ return {
 				var aSecond = 1000;
 				var aMinute = 60*aSecond;
 				var anHour = 60*aMinute;
-				var aWeek = 24*7*anHour;
+				var sixHours = 6*anHour;
+				var aDay = 24*anHour;
+				var aWeek = 7*aDay;
 				var earliest;
 				var startTimeOffset;
 				var endTime;
@@ -1442,7 +1444,9 @@ return {
 					intervalCounter++;
 					if(i < logOptions.secondstep) return aSecond;
 					if(i < logOptions.minutestep) return aMinute;
-					return anHour;
+					if(i < logOptions.hourstep) return anHour;
+					if(i < logOptions.sixhourstep) return sixHours;
+					return aDay;
 				};
 				var logRid;
 				var printQuery;
@@ -1529,6 +1533,8 @@ return {
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
 						logOptions.minutestep += logOptions.secondstep;  //Operationally this is better, so set it up
+						logOptions.hourstep += logOptions.minutestep;
+						logOptions.sixhourstep += logOptions.hourstep;
 						$('minusStartLog').addEvents({
 							'mousedown' : function (e) {
 								var incrementer = function() {

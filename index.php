@@ -46,6 +46,8 @@ define('MBCHAT_FETCHLOG_DELAY',	3000);		//Milliseconds of no activity on time se
 define('MBCHAT_LOG_SPIN_RATE',	500);		//Milliseconds between each step in the timer for log time 
 define('MBCHAT_LOG_SECOND_STEPS', 2);		//No of spin steps where clock varies by a second
 define('MBCHAT_LOG_MINUTE_STEPS', 4);		//No of spin steps where clock varies by a minute (before going to hour)
+define('MBCHAT_LOG_HOUR_STEPS',	12);		//No of spin steps where clock varies by an hour (before going to 6 hour steps)
+define('MBCHAT_LOG_6HOUR_STEPS', 6);		//No of spin steps where clock varies by 6 hours (before going to day steps)
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
@@ -93,9 +95,11 @@ window.addEvent('domready', function() {
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
 				lastid: <?php echo $lid ; ?>},
 				{fetchdelay: <?php echo MBCHAT_FETCHLOG_DELAY ; ?>,
-				spinrate: <?php echo MBCHAT_LOG_SPIN_RATE ;?>,
-				secondstep:<?php echo MBCHAT_LOG_SECOND_STEPS ;?>,
-				minutestep:<?php echo MBCHAT_LOG_MINUTE_STEPS ;?> },
+				spinrate: <?php echo MBCHAT_LOG_SPIN_RATE ; ?>,
+				secondstep:<?php echo MBCHAT_LOG_SECOND_STEPS ; ?>,
+				minutestep:<?php echo MBCHAT_LOG_MINUTE_STEPS ; ?>,
+				hourstep:<?php echo MBCHAT_LOG_HOUR_STEPS ; ?>,
+				sixhourstep:<?php echo MBCHAT_LOG_6HOUR_STEPS ; ?> },
 				'<?php echo MBCHAT_CHATBOT_NAME ; ?>',
 				'<?php echo MBCHAT_ENTRANCE_HALL ?>',
 				<?php echo MBCHAT_MAX_MESSAGES ?>);
