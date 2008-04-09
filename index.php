@@ -187,16 +187,14 @@ soundManager.onload = function() {
 <div id="entranceHall">
 	<div  class="rooms">
 	<h3>Main Rooms</h3>
-		<ul>
-			<li><a id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room" href="#">Members Lounge</a></li>
+		<div id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room">Members Lounge</div>
 <?php if($role != 'B') { ?>
-			<li><a id="R<?php echo MBCHAT_BLUE_ROOM; ?>" class="room" href="#">Blue Room</a></li>
+		<div id="R<?php echo MBCHAT_BLUE_ROOM; ?>" class="room">Blue Room</div>
 <?php } else { ?>
-			<li><a id="R<?php echo MBCHAT_GREEN_ROOM; ?>" class="room" href="#">Green Room</a></li>
+		<div id="R<?php echo MBCHAT_GREEN_ROOM; ?>" class="room">Green Room</div>
 <?php }; ?>
-			<li><a id="R<?php echo MBCHAT_VAMP_CLUB; ?>" class="room" href="#">Vamp Club</a></li>
-			<li><a id="R<?php echo MBCHAT_AUDITORIUM; ?>" class="room" href="#">Auditorium</a></li>
-		</ul>
+		<div id="R<?php echo MBCHAT_VAMP_CLUB; ?>" class="room">Vamp Club</div>
+		<div id="R<?php echo MBCHAT_AUDITORIUM; ?>" class="room">Auditorium</div>
 		<div style="clear:both"></div>
 	</div>
 	<?php 
@@ -210,12 +208,11 @@ soundManager.onload = function() {
 				if( ($i % 4) == 0 ) {
 		?><div class="rooms"> 
 	<h3>Committee Rooms</h3>
-		<ul>
 		<?php		};
 				$i++; ?>
-	<li><a id="R<?php echo $row['rid'];?>" class="room committee" href="#"><?php echo $row['name']; ?></a></li>
+	<div id="R<?php echo $row['rid'];?>" class="room committee"><?php echo $row['name']; ?></div>
 		<?php		if( ($i % 4) == 0 ) {
-				?></ul>
+				?>
 		<div style="clear:both"></div>
 	</div>
 <?php 

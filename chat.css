@@ -108,7 +108,7 @@ body, td, th
 
 #entranceHall {
 	margin-top:50px;
-	margin-left:70px;
+	margin-left:50px;
 	width:600px;
 	text-align:center;
 	background-color: #4A7DB5;
@@ -125,16 +125,13 @@ body, td, th
 	position: relative;
 	padding: 10px 0;
 	display: block;
-}
-
-.rooms li {
-	display:block;
-	float: left;
+	width:540px;
 }
 
 .room {
 	display: block;
 	position:relative;
+	float: left;
 	cursor: pointer;
 	height: 85px;
 	width: 105px;
