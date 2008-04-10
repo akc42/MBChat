@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.5';
+	var version = 'v1.3.6';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
