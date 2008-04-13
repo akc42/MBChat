@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.8';
+	var version = 'v1.3.9';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -120,7 +120,7 @@ return {
 				door.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
 					if(e.control && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
-						MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),room.get('text'));
+						MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
 					} else {
 						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
 					}
