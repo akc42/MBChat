@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.7';
+	var version = 'v1.3.8';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -381,9 +381,7 @@ return {
 						} else {
 							if (fullPoll) pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
 						}
-					} else {
-						displayErrorMessage('Debug - Invalid Room');
-					}
+					} 
 				};
 				return {
 					init : function (pollOptions) {
