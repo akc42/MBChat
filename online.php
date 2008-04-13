@@ -23,5 +23,5 @@ $result = dbQuery('SELECT max(lid) AS lid FROM log;');
 $row = mysql_fetch_assoc($result);
 mysql_free_result($result);
 
-echo '{"rid":'.$rid.', "lastid":'.$row['lid'].', "online":'.json_encode($users).'}';
+echo '{ "lastid":'.$row['lid'].', "online":'.json_encode($users).'}';
 ?> 

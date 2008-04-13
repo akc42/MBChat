@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.18';
+	var version = 'v1.3.19';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -27,10 +27,10 @@ MBchat = function () {
 	var getWhisperers = 0;
 	var requestInProgress = false;
 	var ServerReq = new Class({
-		initialize: function(url,process) {
+		initialize: function(url,process,cancel) {
 			this.request = new Request.JSON({
 				url:url,
-				link:'chain',
+				link:((cancel)?'cancel':'chain'),
 				onComplete: function(response,errorMessage) {
 					requestInProgress = false;
 					if(response) {
@@ -609,20 +609,19 @@ return {
 				onlineReq = new ServerReq('online.php',function(response) {
 					onlineList.removeClass('loading');
 					onlineList.addClass(room.type);
-					if (response.rid == loadingRid) {
-						currentRid = response.rid;
-						loadingRid = -1;
-						var users = response.online;
-						if (users.length > 0 ) {
-							users.each(function(user) {
-								user.uid = user.uid.toInt();
-								addUser(user);
-							});
-						}
-						lastId = response.lastid.toInt();
-						MBchat.updateables.poller.setLastId(lastId);
+					currentRid = loadingRid;
+					loadingRid = -1;
+					onlineList.empty();
+					var users = response.online;
+					if (users.length > 0 ) {
+						users.each(function(user) {
+							user.uid = user.uid.toInt();
+							addUser(user);
+						});
 					}
-				});
+					lastId = response.lastid.toInt();
+					MBchat.updateables.poller.setLastId(lastId);
+				},true);
 				return {
 					init: function () {
 						onlineList = $('onlineList');		//Actual Display List
