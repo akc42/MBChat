@@ -1,9 +1,22 @@
 MBchat = function () {
-	var version = 'v1.3.15';
+	var version = 'v1.3.18';
 	var me;
 	var myRequestOptions;
-	var entranceHall;  //Entrance Hall Object
+	var Room = new Class({
+		initialize: function(rid,name,type) {
+			this.rid = rid || 0;
+			this.name = name || 'Entrance Hall';
+			this.type = type || 'O';
+		},
+		set: function(room) {
+			this.rid = room.rid;
+			this.name = room.name;
+			this.type = room.type;
+		} 
+	});
 	var room;
+	var entranceHall;
+	var setRoom
 	var privateRoom;
 	var chatBot;
 	var messageListSize;
@@ -17,7 +30,7 @@ MBchat = function () {
 		initialize: function(url,process) {
 			this.request = new Request.JSON({
 				url:url,
-				autoCancel:true,
+				link:'chain',
 				onComplete: function(response,errorMessage) {
 					requestInProgress = false;
 					if(response) {
@@ -69,13 +82,14 @@ return {
 // Save key data about me
 		me =  user; 
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
-		entranceHall = {rid:0, name: entranceHallName, type: 'O'};
 		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
 		logOptions = logOptionParameters;
 // We need to setup all the entrance hall
-
+		entranceHall = new Room(0,entranceHallName,'O');
+		room = new Room();
+		room.set(entranceHall);
 		var roomgroups = $$('.rooms');
 		var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
 		roomgroups.each( function (roomgroup,i) {
@@ -102,12 +116,12 @@ return {
 					}
 				});
 				door.addEvent('mouseleave', function(e){
+					var obj = {};
+					rooms.each(function(other, j){
+						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
+					});
+					fx.start(obj);
 					if(room.rid == 0 ) {
-						var obj = {};
-						rooms.each(function(other, j){
-							obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
-						});
-						fx.start(obj);
 						MBchat.updateables.online.show(0);  //get entrance hall list
 					}
 				});
@@ -201,7 +215,6 @@ return {
 			contentSize = $('content').getCoordinates();
 		});
 
-		room = entranceHall;   //Set up to be in the entrance hall
 		MBchat.updateables.init(pollOptions);
 		MBchat.sounds.init();		//start sound system
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
@@ -351,23 +364,15 @@ return {
 				var fullPoll=true;
 				var wid;
 
-				var pollRequest = new Request.JSON({
-					url: 'poll.php',
-					autoCancel: true,
-					onComplete : function(response,errorMsg) {
-						if(response) {
-							if(response.whisperers) {
-								MBchat.updateables.whispers.updateWhisperers(wid,response.whisperers);
-							}
-							MBchat.updateables.poller.pollResponse(response.messages)
-						} else {
-							displayErrorMessage(errorMsg);
-						}
+				var pollRequest = new ServerReq('poll.php',function(response) {
+					if(response.whisperers) {
+						MBchat.updateables.whispers.updateWhisperers(wid,response.whisperers);
 					}
+					MBchat.updateables.poller.pollResponse(response.messages)
 				});
 				var poll = function () {
-					if (!requestInProgress) {
-						var pollRequestOptions = {'lid':lastId, 'rid': this.online.getCurrentRid() };
+//					if (!requestInProgress) {
+						var pollRequestOptions = {'lid':lastId, 'rid': room.rid };
 						if(getWhisperers != 0) {
 							$extend(pollRequestOptions,{'getw':getWhisperers});
 							wid = getWhisperers;
@@ -381,14 +386,14 @@ return {
 								$extend(pollRequestOptions,{'noresponse': true }); //Tell poll not to reply
 							}
 							getWhisperers = 0;
-							pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
+							pollRequest.transmit(pollRequestOptions);  //go get data
 						} else {
 							if (fullPoll) {
 								getWhisperers = 0;
-								pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
+								pollRequest.transmit(pollRequestOptions);  //go get data
 							}
 						}
-					} 
+//					} 
 				};
 				return {
 					init : function (pollOptions) {
@@ -604,17 +609,19 @@ return {
 				onlineReq = new ServerReq('online.php',function(response) {
 					onlineList.removeClass('loading');
 					onlineList.addClass(room.type);
-					currentRid = loadingRid;
-					loadingRid = -1;
-					var users = response.online;
-					if (users.length > 0 ) {
-						users.each(function(user) {
-							user.uid = user.uid.toInt();
-							addUser(user);
-						});
+					if (response.rid == loadingRid) {
+						currentRid = response.rid;
+						loadingRid = -1;
+						var users = response.online;
+						if (users.length > 0 ) {
+							users.each(function(user) {
+								user.uid = user.uid.toInt();
+								addUser(user);
+							});
+						}
+						lastId = response.lastid.toInt();
+						MBchat.updateables.poller.setLastId(lastId);
 					}
-					lastId = response.lastid.toInt();
-					MBchat.updateables.poller.setLastId(lastId);
 				});
 				return {
 					init: function () {
@@ -862,12 +869,10 @@ return {
 						var exit = $('exit');
 						exit.addClass('exit-r');
 						exit.removeClass('exit-f');
-						room.rid = rid; //set upi room first so random calls afterwards don't screw me
-						room.name = 'Loading';
-						room.type = 'I';
+						room = new Room(rid,'Loading','I'); //set upi room first so random calls afterwards don't screw me
 						var request = new ServerReq('room.php',function(response) {
-							room = response.room;
-							room.rid = room.rid.toInt();
+							response.room.rid = response.room.rid.toInt();
+							room.set(response.room);
 							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
 								item.rid = item.rid.toInt();
@@ -901,7 +906,6 @@ return {
 					},
 					leaveRoom: function () {
 						lastId = null;
-						room = entranceHall;   //Set up to be in the entrance hall 
 						var request = new ServerReq ('exit.php',function(response) {
 							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
@@ -929,7 +933,7 @@ return {
 								}
 							});
 						}
-						room = entranceHall;   //Set up to be in the entrance hall 
+						room.set (entranceHall);;   //Set up to be in the entrance hall 
 						messageList.removeClass('chat');
 						messageList.empty();
 						messageList.addClass('whisper');
