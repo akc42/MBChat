@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.9';
+	var version = 'v1.3.11';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -11,6 +11,28 @@ MBchat = function () {
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
 	var logOptions;
+	var getWhisperers = 0;
+	var requestInProgress = false;
+	var ServerReq = new Class({
+		initialize: function(url,process) {
+			this.request = new Request.JSON({
+				url:url,
+				autoCancel:true,
+				onComplete: function(response,errorMessage) {
+					requestInProgress = false;
+					if(response) {
+						process(response);
+					} else {
+						displayErrorMessage(errorMsg);
+					}
+				}
+			});
+		},
+		transmit: function (options) {
+			requestInProgress = true;
+			this.request.get($merge(myRequestOptions,options));
+		}		
+	});
 	var displayUser = function(user,container) {
 		var el = new Element('span',{'class' : user.role, 'text' : user.name });
 		el.inject(container);
@@ -29,44 +51,14 @@ MBchat = function () {
 	var chatBotMessage = function (msg) {
 		return '<span class="chatBotMessage">'+msg+'</span>';
 	};
-	var messageReq = new Request.JSON({
-		url: 'message.php',
-		autoCancel: true,
-		onComplete : function(response,errorMsg) {
-			if(response) {
-				MBchat.updateables.poller.pollResponse(response)
-			} else {
-				displayErrorMessage(errorMsg);
-			}
-		}
-	});
-	var whisperReq = new Request.JSON({
-		url: 'whisper.php',
-		autoCancel: true,
-		onComplete : function(response,errorMsg) {
-			if(response) {
-				MBchat.updateables.poller.pollResponse(response)
-			} else {
-				displayErrorMessage(errorMsg);
-			}
-		}
-	});
-	var privateReq = new Request.JSON({
-		url:'private.php',
-		autoCancel:true,
-		onComplete:function(response,errorMsg) {
-			if(response) {
-				MBchat.updateables.poller.pollResponse(response)
-			} else {
-				displayErrorMessage(errorMsg);
-			}
-		}
-	});
+	var messageReq = new ServerReq('message.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
+	var whisperReq = new ServerReq('whisper.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
+	var privateReq = new ServerReq('private.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
 	var goPrivate = function() {
-		privateReq.get($merge(myRequestOptions,{
+		privateReq.transmit({
 			'wid': this.getParent().get('id').substr(1).toInt(), 
 			'lid' : MBchat.updateables.poller.getLastId(),
-			'rid' : room.rid}));
+			'rid' : room.rid});
 	};
 	var contentSize;
 return {
@@ -139,10 +131,10 @@ return {
 		exit.addEvent('click', function(e) {
 			e.stop();
 			if (privateRoom != 0) {
-				privateReq.get($merge(myRequestOptions,{
+				privateReq.transmit({
 					'wid':  0, 
 					'lid' : MBchat.updateables.poller.getLastId(),
-					'rid' : room.rid })); 
+					'rid' : room.rid }); 
 			} else {
 				if (room.rid == 0 ) {
 					if (this.hasClass('exit-r')) {
@@ -187,16 +179,16 @@ return {
 		$('messageForm').addEvent('submit', function(e) {
 			e.stop();
 			if (privateRoom == 0 ) {
-				messageReq.get($merge(myRequestOptions,{
+				messageReq.transmit({
 					'rid':room.rid,
 					'lid':MBchat.updateables.poller.getLastId(),
-					'text':$('messageText').value}));
+					'text':$('messageText').value});
 			} else {
-				whisperReq.get($merge(myRequestOptions,{
+				whisperReq.transmit({
 					'wid':privateRoom,
 					'rid':room.rid,
 					'lid':MBchat.updateables.poller.getLastId(),
-					'text':$('messageText').value}));
+					'text':$('messageText').value});
 			}
 
 			$('messageText').value = '';
@@ -214,7 +206,7 @@ return {
 		
 	},
 	logout: function () {
-		var logoutRequest = new Request ({url: 'logout.php'}).get(myRequestOptions);
+		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).get(myRequestOptions);
 	},
 	sounds: function () {
 		var music = false;
@@ -355,21 +347,30 @@ return {
 				var pollerId;
 				var lastId = null;
 				var fullPoll=true;
+				var wid;
 
 				var pollRequest = new Request.JSON({
 					url: 'poll.php',
 					autoCancel: true,
 					onComplete : function(response,errorMsg) {
 						if(response) {
-							MBchat.updateables.poller.pollResponse(response)
+							if(response.whisperers) {
+								MBchat.updateables.whispers.updateWhisperers(wid,response.whisperers);
+							}
+							MBchat.updateables.poller.pollResponse(response.messages)
 						} else {
 							displayErrorMessage(errorMsg);
 						}
 					}
 				});
 				var poll = function () {
-					if (this.online.getCurrentRid() >= 0) {
+					if (!requestInProgress) {
 						var pollRequestOptions = {'lid':lastId, 'rid': this.online.getCurrentRid() };
+						if(getWhisperers != 0) {
+							$extend(pollRequestOptions,{'getw':getWhisperers});
+							wid = getWhisperers;
+							
+						}
 						presenceCounter++;
 						if (presenceCounter > presenceInterval) {
 							presenceCounter = 0;
@@ -377,9 +378,13 @@ return {
 							if (!fullPoll) {
 								$extend(pollRequestOptions,{'noresponse': true }); //Tell poll not to reply
 							}
+							getWhisperers = 0;
 							pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
 						} else {
-							if (fullPoll) pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
+							if (fullPoll) {
+								getWhisperers = 0;
+								pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
+							}
 						}
 					} 
 				};
@@ -404,8 +409,8 @@ return {
 						fullPoll=true;
 					},
 
-					pollResponse : function(response) {
-						response.messages.each(function(item) {
+					pollResponse : function(messages) {
+						messages.each(function(item) {
 							var lid = item.lid.toInt();
 							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
 							if ( fullPoll) MBchat.updateables.processMessage(item);
@@ -612,26 +617,19 @@ return {
 					div.destroy(); //removes from list
 					labelList();
 				};
-				request = new Request.JSON({
-					url: 'online.php',
-					onComplete: function(response,errorMsg) {
-						if (response) {
-							onlineList.removeClass('loading');
-							onlineList.addClass(room.type);
-							currentRid = loadingRid;
-							loadingRid = -1;
-							var users = response.online;
-							if (users.length > 0 ) {
-								users.each(function(user) {
-									addUser(user);
-								});
-							}
-							lastId = response.lastid.toInt();
-							MBchat.updateables.poller.setLastId(lastId);
-						} else {
-							displayErrorMessage(errorMsg);
-						}
+				request = new ServerReq('online.php',function(response) {
+					onlineList.removeClass('loading');
+					onlineList.addClass(room.type);
+					currentRid = loadingRid;
+					loadingRid = -1;
+					var users = response.online;
+					if (users.length > 0 ) {
+						users.each(function(user) {
+							addUser(user);
+						});
 					}
+					lastId = response.lastid.toInt();
+					MBchat.updateables.poller.setLastId(lastId);
 				});
 				return {
 					init: function () {
@@ -640,15 +638,12 @@ return {
 						currentRid = -1;
 					},
 					show : function (rid) {
-						if (request.running) {//cancel previous request if running
-							request.cancel(); 
-						}
 						onlineList.empty();
 						onlineList.erase('class');
 						onlineList.addClass('loading');
 						currentRid = -1;
 						loadingRid = rid;
-						request.get($merge(myRequestOptions,{'rid':rid }));
+						request.transmit({'rid':rid });
 					},
 					getCurrentRid: function() {
 						return currentRid;
@@ -882,62 +877,49 @@ return {
 						var exit = $('exit');
 						exit.addClass('exit-r');
 						exit.removeClass('exit-f');
-						var request = new Request.JSON({
-							url: 'room.php',
-							onComplete : function(response,errorMsg) {
-								if (response) {
-									room = response.room;
-									response.messages.each(function(msg) {
-										if(!lastId) lastId = msg.lid.toInt() -1;
-										MBchat.updateables.processMessage(msg);
-									});
-									lastId = response.lastid.toInt();
-								//Ensure we get all message from here on in
-									MBchat.updateables.poller.setLastId(lastId);
-								//Display room name at head of page
-									var el = new Element('h1')
-										.set('text', room.name )
-										.inject('roomNameContainer');
-									if (room.type == 'M' && 
-										(me.mod == 'M' || me.role == 'H' || 
-										me.role == 'G' || me.role == 'S' )) { //Can't go to private room here
-										var whisperBoxes = $$('.whisperBox');
-										whisperBoxes.each ( function (whisperBox) {
-											var privateBox = whisperBox.getElement('.private');
-											privateBox.removeClass('private');
-											privateBox.addClass('nonprivate');
-											privateBox.removeEvent('click',goPrivate);
-										});
-									}
-										
-									MBchat.updateables.online.show(room.rid);	//Show online list for room	
-								} else {
-									displayErrorMessage(errorMsg);
-								}
-								$('messageText').focus();							
+						var request = new ServerReq('room.php',function(response) {
+							room = response.room;
+							room.rid = room.rid.toInt();
+							response.messages.each(function(msg) {
+								if(!lastId) lastId = msg.lid.toInt() -1;
+								MBchat.updateables.processMessage(msg);
+							});
+							lastId = response.lastid.toInt();
+						//Ensure we get all message from here on in
+							MBchat.updateables.poller.setLastId(lastId);
+						//Display room name at head of page
+							var el = new Element('h1')
+								.set('text', room.name )
+								.inject('roomNameContainer');
+							if (room.type == 'M' && 
+								(me.mod == 'M' || me.role == 'H' || 
+								me.role == 'G' || me.role == 'S' )) { //Can't go to private room here
+								var whisperBoxes = $$('.whisperBox');
+								whisperBoxes.each ( function (whisperBox) {
+									var privateBox = whisperBox.getElement('.private');
+									privateBox.removeClass('private');
+									privateBox.addClass('nonprivate');
+									privateBox.removeEvent('click',goPrivate);
+								});
 							}
-						}).get($merge(myRequestOptions,{'rid' : rid}));
+								
+							MBchat.updateables.online.show(room.rid);	//Show online list for room	
+							$('messageText').focus();							
+						}).transmit({'rid' : rid});
 						MBchat.sounds.resetTimer();
 					},
 					leaveRoom: function () {
 						lastId = null;
-						var request = new Request.JSON ({
-							url :'exit.php',
-							onComplete : function(response,errorMsg) {
-								if (response) {
-									response.messages.each(function(msg) {
-										if(!lastId) lastId = msg.lid.toInt() -1;
-										MBchat.updateables.processMessage(msg);
-									});
-									lastId = response.lastid.toInt();
-								//Ensure we get all message from here on in
-									MBchat.updateables.poller.setLastId(lastId);
-									MBchat.updateables.online.show(0);	//Show online list for entrance hall
-								} else {
-									displayErrorMessage(errorMsg);
-								}
-							}
-						}).get($merge(myRequestOptions,{'rid' : room.rid}));
+						var request = new ServerReq ('exit.php',function(response) {
+							response.messages.each(function(msg) {
+								if(!lastId) lastId = msg.lid.toInt() -1;
+								MBchat.updateables.processMessage(msg);
+							});
+							lastId = response.lastid.toInt();
+						//Ensure we get all message from here on in
+							MBchat.updateables.poller.setLastId(lastId);
+							MBchat.updateables.online.show(0);	//Show online list for entrance hall
+						}).transmit({'rid' : room.rid});
 						//we might have been in a room that stopped me going to private room
 						if (room.type == 'M' && 
 							(me.mod == 'M' || me.role == 'H' || 
@@ -1167,39 +1149,15 @@ return {
 						whisperer.addClass('whisperer');
 						whisperer.set('id', 'W'+wid+'U'+user.uid);
 					}
-					//Now need to get a full picture of who might be in this wid
-					var request = new Request.JSON({
-						url:'getwhisperers.php',
-						onComplete: function(response,errorMsg) {
-							whisperList.removeClass('loading');
-							if(response) {
-								response.whisperers.each(function(whisperer) {
-									//inject a user element into box
-									if(me.uid != whisperer.uid) {
-										addUser(whisperer,whisper);
-									}
-								});
-							} else { 
-								displayErrorMessage(errorMsg);
-							}
-						}
-					});
-					request.get($merge(myRequestOptions,{'wid':wid}));	
+					getWhisperers = wid;  //This will cause poll to get the whisperers and fill in the box later	
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
-						var leaveWhisper = new Request.JSON({
-							url:'leavewhisper.php',
-							onComplete: function(response,errorMsg) {
-								if(response) {
-									whisper.destroy();
-									$('content').setStyles(contentSize);
-								} else { 
-									displayErrorMessage(errorMsg);
-								}
-							}
+						var leaveWhisper = new ServerReq('leavewhisper.php',function(response) {
+							whisper.destroy();
+							$('content').setStyles(contentSize);
 						});
-						leaveWhisper.get($merge(myRequestOptions,{'wid': wid}));
+						leaveWhisper.transmit({'wid': wid});
 					});
 					var privateBox = whisper.getElement('.private');
 					//can't go private if a key character in a modded room
@@ -1211,11 +1169,11 @@ return {
 					}
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
-						whisperReq.get($merge(myRequestOptions,{
+						whisperReq.transmit({
 							'wid':wid,
 							'rid':room.rid,
 							'lid':MBchat.updateables.poller.getLastId(),
-							'text':whisper.getElement('.whisperInput').value}));
+							'text':whisper.getElement('.whisperInput').value});
 						whisper.getElement('.whisperInput').value = '';
 						MBchat.sounds.resetTimer();
 					});
@@ -1321,19 +1279,16 @@ return {
 											return true;		 
 										}, dragReturn)){ 
 								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
-											var getNewWhisperReq = new Request.JSON({
-												url:'newwhisper.php',
-												onComplete: function(response,errorMsg) {
-													if(response && response.wid != 0) {
-														var whisper = createWhisperBox(response.wid,response.user);
-														dragReturn.start(whisper.getCoordinates()); //move towards it
-													} else {
-														//logged out before we started whisper
-														dragReturn.start($('onlineList').getCoordinates());
-													} 
-												}
+											var getNewWhisperReq = new ServerReq('newwhisper.php',function(response) {
+												if(response.wid != 0) {
+													var whisper = createWhisperBox(response.wid,response.user);
+													dragReturn.start(whisper.getCoordinates()); //move towards it
+												} else {
+												//logged out before we started whisper
+													dragReturn.start($('onlineList').getCoordinates());
+												} 
 											});
-											getNewWhisperReq.get($merge(myRequestOptions,{'wuid':user.uid}));
+											getNewWhisperReq.transmit({'wuid':user.uid});
 										}
 									} else {
 										if (droppable == dropNew) {
@@ -1345,17 +1300,10 @@ return {
 										}
 										//See if already in whisper with this user
 										if (addUser (user,droppable) ) {
-											var addUserToWhisperReq = new Request.JSON({
-												url:'joinwhisper.php',
-												onComplete: function(response,errorMsg) {
-													if(!response) {
-														displayErrorMessage(errorMsg);
-													}
-												}
-											});
-											addUserToWhisperReq.get($merge(myRequestOptions,{
+											var addUserToWhisperReq = new ServerReq('joinwhisper.php',function(response) {});
+											addUserToWhisperReq.transmit({
 												'wuid':user.uid,
-												'wid':droppable.get('id').substr(1).toInt()}));
+												'wid':droppable.get('id').substr(1).toInt()});
 										}
 									}
 								} else {
@@ -1416,6 +1364,19 @@ return {
 							//ignore the rest of the messages
 								break;
 							}
+						}
+					},
+					updateWhisperers: function(wid,whisperers) {
+						whisperBox = $('W'+wid);
+						if (whisperBox) { //just in case it disappeared in the mean time
+							var whisperList = whisperBox.getElement('.whisperList');
+							whisperList.removeClass('loading');
+							whisperers.each(function(whisperer) {
+								//inject a user element into box
+								if(me.uid != whisperer.uid) {
+									addUser(whisperer,whisperBox);
+								}
+							});
 						}
 					}
 				};
@@ -1499,28 +1460,22 @@ return {
 						break;
 					}
 				}
-				var request = new Request.JSON({
-					url: 'log.php',
-					autoCancel: true,
-					onComplete : function(response,errorMsg) {
-						messageList.removeClass('loading');
-						if(response) {
-							response.messages.each(function(item) {
-								processMessage(item);
-							});
-						} else {
-							displayErrorMessage(errorMsg);
-						}
+				var request = new ServerReq('log.php',function(response) {
+					messageList.removeClass('loading');
+					if(response) {
+						response.messages.each(function(item) {
+							processMessage(item);
+						});
 					}
 				});
 				var fetchLogDelay;
 				var fetchLog = function() {
 					messageList.empty();
 					messageList.addClass('loading');
-					request.get($merge(myRequestOptions,{
+					request.transmit({
 						'rid' : logRid,
 						'start' : new Date(endTime.getTime()-startTimeOffset).getTime()/1000,
-						'end': endTime.getTime()/1000 }));
+						'end': endTime.getTime()/1000 });
 				};
 				return {
 					init: function() {

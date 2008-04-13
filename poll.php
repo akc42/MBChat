@@ -15,8 +15,26 @@ if (isset($_GET['presence'])) {
 	dbQuery('UPDATE users SET time = NOW() WHERE uid ='.dbMakeSafe($uid).';');  //Mark me as being active
 	include('timeout.php');		//Timeout inactive users 
 }
+echo '{';
+if(isset($_GET['getw'])) {
+
+	$result = dbQuery('SELECT users.uid,name,role, wid FROM participant JOIN users ON users.uid = participant.uid WHERE wid = '.dbMakeSafe($_GET['getw']).';');
+	$whisperers = array();
+	if(mysql_num_rows($result) != 0) {
+		while($row=mysql_fetch_assoc($result)) {
+			$user = array();
+			$user['uid'] = $row['uid'];
+			$user['name'] = $row['name'];
+			$user['role'] = $row['role'];
+			$whisperers[]= $user;
+		}		
+	};
+	mysql_free_result($result);
+	echo '"whisperers":'.json_encode($whisperers).',';
+		
+}
 if (isset($_GET['noresponse'])) {
-	echo '{"messages" : [ ] }' ; //make it appear there are no messages
+	echo '"messages" : [ ] }' ; //make it appear there are no messages
 } else {
 	$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 	$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE lid > '.dbMakeSafe($lid).' AND ( participant.uid = '.dbMakeSafe($uid);
@@ -47,6 +65,6 @@ if (isset($_GET['noresponse'])) {
 		}		
 	};
 	mysql_free_result($result);
-	echo '{"messages":'.json_encode($messages).'}';
+	echo '"messages":'.json_encode($messages).'}';
 }
 ?>
