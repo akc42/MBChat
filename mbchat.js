@@ -862,6 +862,9 @@ return {
 						var exit = $('exit');
 						exit.addClass('exit-r');
 						exit.removeClass('exit-f');
+						room.rid = rid; //set upi room first so random calls afterwards don't screw me
+						room.name = 'Loading';
+						room.type = 'I';
 						var request = new ServerReq('room.php',function(response) {
 							room = response.room;
 							room.rid = room.rid.toInt();
@@ -898,6 +901,7 @@ return {
 					},
 					leaveRoom: function () {
 						lastId = null;
+						room = entranceHall;   //Set up to be in the entrance hall 
 						var request = new ServerReq ('exit.php',function(response) {
 							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
