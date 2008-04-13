@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.12';
+	var version = 'v1.3.13';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -476,36 +476,22 @@ return {
 										'click' : function(e) {
 											if (e.control) { //Promote to moderator
 												if (user.role != 'M') { //but only if not already one
-													var request = new Request.JSON({
-														'url' : 'promote.php',
-														'onComplete' : function (response,errorMsg) {
-															if(response) {
-																MBchat.updateables.poller.pollResponse(response)
-															} else {
-																displayErrorMessage(errorMsg);
-															}
-														}
-													}).get($merge(myRequestOptions,{
+													var request = new ServerReq('promote.php', function (response) {
+														MBchat.updateables.poller.pollResponse(response);
+													}).transmit({
 														'lid':MBchat.updateables.poller.getLastId(),
 														'rid':room.rid,
-														'puid':user.uid}));
+														'puid':user.uid});
 												}
 											} else {
 												var qtext = div.retrieve('question');
 												if (qtext) { // only send one if there is one
-													var request = new Request.JSON({
-														'url' : 'release.php',
-														'onComplete' : function (response,errorMsg) {
-															if(response) {
-																MBchat.updateables.poller.pollResponse(response)
-															} else {
-																displayErrorMessage(errorMsg);
-															}
-														}
-													}).get($merge(myRequestOptions,{
+													var request = new ServerReq('release.php',function (response) {
+														MBchat.updateables.poller.pollResponse(response);
+													}).transmit({
 														'lid':MBchat.updateables.poller.getLastId(),
 														'rid':room.rid,
-														'quid':user.uid}));
+														'quid':user.uid});
 												}
 											}
 										},
@@ -543,18 +529,11 @@ return {
 									div.addEvent('click', function(e) {
 										e.stop();
 										if(e.control && e.alt) {
-											var request = new Request.JSON({
-												'url' : 'demote.php',
-												'onComplete' : function (response,errorMsg) {
-													if(response) {
-														MBchat.updateables.poller.pollResponse(response)
-													} else {
-														displayErrorMessage(errorMsg);
-													}
-												}
-											}).get($merge(myRequestOptions,{
+											var request = new ServerReq({'demote.php',function (response) {
+												MBchat.updateables.poller.pollResponse(response);
+											}).transmit({
 												'lid':MBchat.updateables.poller.getLastId(),
-												'rid':room.rid}));
+												'rid':room.rid});
 										}
 									});
 								}
@@ -620,7 +599,7 @@ return {
 					div.destroy(); //removes from list
 					labelList();
 				};
-				request = new ServerReq('online.php',function(response) {
+				onlineReq = new ServerReq('online.php',function(response) {
 					onlineList.removeClass('loading');
 					onlineList.addClass(room.type);
 					currentRid = loadingRid;
@@ -647,14 +626,14 @@ return {
 						onlineList.addClass('loading');
 						currentRid = -1;
 						loadingRid = rid;
-						request.transmit({'rid':rid });
+						onlineReq.transmit({'rid':rid });
 					},
 					getCurrentRid: function() {
 						return currentRid;
 					},
 					processMessage: function (msg) {
 						if(!lastId) return;	//not processing messages yet
-						var lid = msg.lid.toInt();
+						var lid = msg.lid;
 						if (lastId < lid) {
 							lastId = lid;
 							userDiv = $('U'+msg.user.uid);
@@ -918,7 +897,7 @@ return {
 					leaveRoom: function () {
 						lastId = null;
 						var request = new ServerReq ('exit.php',function(response) {
-							response.messages.each(function(msg) {
+							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
 								item.rid = item.rid.toInt();
 								item.user.uid = item.user.uid.toInt();
