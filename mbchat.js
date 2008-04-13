@@ -247,7 +247,7 @@ return {
 		return {
 			init: function () {
 				var sd = Cookie.read('soundDelay')
-				Cookie.write('soundDeley',sd,{duration:50}); //Just write so validity starts again
+				Cookie.write('soundDelay',sd,{duration:50}); //Just write so validity starts again
 				if (sd) {
 					var delayMin = sd.toInt()
 					Timer.start = 6 * delayMin;
