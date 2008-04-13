@@ -128,6 +128,10 @@ body, td, th
 	width:540px;
 }
 
+#mainRooms {
+	margin-top:70px;
+}
+
 .room {
 	display: block;
 	position:relative;

@@ -185,7 +185,7 @@ soundManager.onload = function() {
 </div>
 
 <div id="entranceHall">
-	<div  class="rooms">
+	<div  id="mainRooms" class="rooms">
 	<h3>Main Rooms</h3>
 		<div id="R<?php echo MBCHAT_MEMBERS_LOUNGE; ?>" class="room">Members Lounge</div>
 <?php if($role != 'B') { ?>
