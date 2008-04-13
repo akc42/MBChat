@@ -11,6 +11,7 @@ define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
+$messages = array();
 $result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
 if(mysql_num_rows($result) != 0) {
 	$room = mysql_fetch_assoc($result);
@@ -39,7 +40,6 @@ if(mysql_num_rows($result) != 0) {
 		$sql .= 'OR rid = '.dbMakeSafe($rid).') AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
 		$sql .= 'ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
 		$result = dbQuery($sql);
-		$messages = array();
 		if(mysql_num_rows($result) != 0) {
 			while($row=mysql_fetch_assoc($result)) {
 				$user = array();

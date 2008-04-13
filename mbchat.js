@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.6';
+	var version = 'v1.3.7';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -89,23 +89,27 @@ return {
 		roomgroups.each( function (roomgroup,i) {
 			var rooms = roomgroup.getElements('.room');
 			var fx = new Fx.Elements(rooms, {link:'cancel', duration: 500, transition: roomTransition.easeOut });
-			rooms.each( function(room, i){
+			rooms.each( function(door, i){
 				var request;
-				room.addEvent('mouseenter', function(e){
-					//adjust width of room to be wide
-					var obj = {};
-					obj[i] = {'width': [room.getStyle('width').toInt(), 219]};
-					rooms.each(function(otherRoom, j){
-						if (otherRoom != room){
-							var w = otherRoom.getStyle('width').toInt();
-							if (w != 67) obj[j] = {'width': [w, 67]};
-						}
-					});
-					fx.start(obj);
-					// Set up online list for this room
-					MBchat.updateables.online.show(room.get('id').substr(1).toInt());
+				door.addEvent('mouseenter', function(e){
+					if (room.rid == 0) {
+						//adjust width of room to be wide
+						var obj = {};
+						obj[i] = {'width': [door.getStyle('width').toInt(), 219]};
+						rooms.each(function(otherRoom, j){
+							if (otherRoom != door){
+								var w = otherRoom.getStyle('width').toInt();
+								if (w != 67) obj[j] = {'width': [w, 67]};
+							}
+						});
+						fx.start(obj);
+						// Set up online list for this room
+						MBchat.updateables.online.show(door.get('id').substr(1).toInt());
+					} else {
+						displayErrorMessage('Debug - MouseEnter in Room');
+					}
 				});
-				room.addEvent('mouseleave', function(e){
+				door.addEvent('mouseleave', function(e){
 					var obj = {};
 					rooms.each(function(other, j){
 						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
@@ -113,12 +117,12 @@ return {
 					fx.start(obj);
 					MBchat.updateables.online.show(0);  //get entrance hall list
 				});
-				room.addEvent('click', function(e) {
+				door.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
 					if(e.control && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
-						MBchat.updateables.logger.startLog(room.get('id').substr(1).toInt(),room.get('text'));
+						MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),room.get('text'));
 					} else {
-						MBchat.updateables.message.enterRoom(room.get('id').substr(1).toInt());
+						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
 					}
 				});
 			});
@@ -377,6 +381,8 @@ return {
 						} else {
 							if (fullPoll) pollRequest.get($merge(myRequestOptions,pollRequestOptions));  //go get data
 						}
+					} else {
+						displayErrorMessage('Debug - Invalid Room');
 					}
 				};
 				return {
@@ -416,7 +422,7 @@ return {
 				var onlineList ;		//Actual Display List
 				var lastId;
 				var loadingRid;
-				var currentRid;
+				var currentRid = -1;
 				var labelList = function() {
 					var node = onlineList.firstChild;
 					if (node) {
