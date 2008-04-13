@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.11';
+	var version = 'v1.3.12';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -411,7 +411,10 @@ return {
 
 					pollResponse : function(messages) {
 						messages.each(function(item) {
-							var lid = item.lid.toInt();
+							item.lid = item.lid.toInt();
+							item.rid = item.rid.toInt();
+							item.user.uid = item.user.uid.toInt();
+							var lid = item.lid;
 							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
 							if ( fullPoll) MBchat.updateables.processMessage(item);
 						});
@@ -625,6 +628,7 @@ return {
 					var users = response.online;
 					if (users.length > 0 ) {
 						users.each(function(user) {
+							user.uid = user.uid.toInt();
 							addUser(user);
 						});
 					}
@@ -880,9 +884,12 @@ return {
 						var request = new ServerReq('room.php',function(response) {
 							room = response.room;
 							room.rid = room.rid.toInt();
-							response.messages.each(function(msg) {
-								if(!lastId) lastId = msg.lid.toInt() -1;
-								MBchat.updateables.processMessage(msg);
+							response.messages.each(function(item) {
+								item.lid = item.lid.toInt();
+								item.rid = item.rid.toInt();
+								item.user.uid = item.user.uid.toInt();
+								if(!lastId) lastId = item.lid - 1;
+								MBchat.updateables.processMessage(item);
 							});
 							lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
@@ -912,8 +919,11 @@ return {
 						lastId = null;
 						var request = new ServerReq ('exit.php',function(response) {
 							response.messages.each(function(msg) {
-								if(!lastId) lastId = msg.lid.toInt() -1;
-								MBchat.updateables.processMessage(msg);
+								item.lid = item.lid.toInt();
+								item.rid = item.rid.toInt();
+								item.user.uid = item.user.uid.toInt();
+								if(!lastId) lastId = item.lid -1;
+								MBchat.updateables.processMessage(item);
 							});
 							lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
@@ -1281,7 +1291,9 @@ return {
 								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
 											var getNewWhisperReq = new ServerReq('newwhisper.php',function(response) {
 												if(response.wid != 0) {
-													var whisper = createWhisperBox(response.wid,response.user);
+													var user = response.user
+													user.uid = user.uid.toInt();
+													var whisper = createWhisperBox(response.wid.toInt(),user);
 													dragReturn.start(whisper.getCoordinates()); //move towards it
 												} else {
 												//logged out before we started whisper
@@ -1339,7 +1351,7 @@ return {
 									// If we get here, this is a WJ for a whisper box we don't have
 									if (me.uid == msg.user.uid ) {
 										//OK - someone else has selected me to be in a whisper
-										createWhisperBox(msg.rid);  //but without (yet) any other user
+										createWhisperBox(msg.rid.toInt());  //but without (yet) any other user
 										MBchat.sounds.newWhisper();
 									}
 									// Throw others away 
@@ -1372,6 +1384,7 @@ return {
 							var whisperList = whisperBox.getElement('.whisperList');
 							whisperList.removeClass('loading');
 							whisperers.each(function(whisperer) {
+								whisperer.uid = whisperer.uid.toInt();
 								//inject a user element into box
 								if(me.uid != whisperer.uid) {
 									addUser(whisperer,whisperBox);
@@ -1464,6 +1477,9 @@ return {
 					messageList.removeClass('loading');
 					if(response) {
 						response.messages.each(function(item) {
+							item.lid = item.lid.toInt();
+							item.rid = item.rid.toInt();
+							item.user.uid = item.user.uid.toInt();
 							processMessage(item);
 						});
 					}
