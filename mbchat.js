@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.13';
+	var version = 'v1.3.14';
 	var me;
 	var myRequestOptions;
 	var entranceHall;  //Entrance Hall Object
@@ -102,12 +102,14 @@ return {
 					}
 				});
 				door.addEvent('mouseleave', function(e){
-					var obj = {};
-					rooms.each(function(other, j){
-						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
-					});
-					fx.start(obj);
-					MBchat.updateables.online.show(0);  //get entrance hall list
+					if(room.rid == 0 ) {
+						var obj = {};
+						rooms.each(function(other, j){
+							obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
+						});
+						fx.start(obj);
+						MBchat.updateables.online.show(0);  //get entrance hall list
+					}
 				});
 				door.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
