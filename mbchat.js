@@ -529,7 +529,7 @@ return {
 									div.addEvent('click', function(e) {
 										e.stop();
 										if(e.control && e.alt) {
-											var request = new ServerReq({'demote.php',function (response) {
+											var request = new ServerReq('demote.php',function (response) {
 												MBchat.updateables.poller.pollResponse(response);
 											}).transmit({
 												'lid':MBchat.updateables.poller.getLastId(),
