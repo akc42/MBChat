@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.20';
+	var version = 'v1.3.21';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -231,7 +231,13 @@ return {
 		var Timer = {counter:30 , start : 30 }; //Units of 10 seconds
 		var countDown = function() {
 			if (this.counter > 0 ) this.counter-- ;
-			var soundDelay = 6*$('soundDelay').value ;
+			var soundDelay = 6*$('soundDelay').value.toInt() ;
+			if (isNaN(parseInt(soundDelay))) {
+				soundDelay = 30;
+				$('soundDelay').value = '5';
+				Cookie.write('soundDelay', '5',{duration:50});
+			}
+
 			if ( soundDelay != this.start) {
 				this.counter += soundDelay -this.start ;
 				this.start = soundDelay;
@@ -261,24 +267,28 @@ return {
 		
 		return {
 			init: function () {
+				//deal with sound delay
 				var sd = Cookie.read('soundDelay')
-				Cookie.write('soundDelay',sd,{duration:50}); //Just write so validity starts again
-				if (sd) {
-					var delayMin = sd.toInt()
-					Timer.start = 6 * delayMin;
-					Timer.counter = Timer.start;
-					$('soundDelay').value = delayMin;
+				if (isNaN(parseInt(sd))) {
+					sd = '5';
 				}
+				Cookie.write('soundDelay',sd,{duration:50}); //Just write so validity starts again
+				var delayMin = sd.toInt()
+				Timer.start = 6 * delayMin;
+				Timer.counter = Timer.start;
+				$('soundDelay').value = sd;
 				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
+				//music
 				musicEnabled = $('musicEnabled');
 				var mu = Cookie.read('musicEnabled');
-				Cookie.write('musicEnabled', mu ,{duration:50});
-				if (mu) {
-					if (mu == 'true') {
-						musicEnabled.checked = true;
-					} else {
-						musicEnabled.checked = false;
-					}
+				if (!mu) {
+					mu = 'false';
+					Cookie.write('musicEnabled', mu ,{duration:50});
+				}
+				if (mu == 'true') {
+					musicEnabled.checked = true;
+				} else {
+					musicEnabled.checked = false;
 				}
 				musicEnabled.addEvent('click', function(e) {
 					if(!musicEnabled.checked) {
@@ -292,13 +302,14 @@ return {
 				});
 				soundEnabled = $('soundEnabled');
 				var so = Cookie.read('soundEnabled');
-				Cookie.write('soundEnabled', so,{duration:50});
-				if (so) {
-					if (so == 'true') {
-						soundEnabled.checked = true;
-					} else {
-						soundEnabled.checked = false;
-					}
+				if (!so) {
+					so = 'true';
+					Cookie.write('soundEnabled', so,{duration:50});
+				}
+				if (so == 'true') {
+					soundEnabled.checked = true;
+				} else {
+					soundEnabled.checked = false;
 				}
 				soundEnabled.addEvent('click', function(e) {
 					if(!soundEnabled.checked) {
