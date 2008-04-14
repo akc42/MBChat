@@ -17,6 +17,8 @@ if(mysql_num_rows($result) > 0) {  //only insert into channel if still there
 
 	$row=mysql_fetch_assoc($result);
 
+	dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
+
 	if ($text != '') {  //only insert non blank text - ignore other
 		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).

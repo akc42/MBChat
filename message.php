@@ -41,11 +41,9 @@ if(mysql_num_rows($result) != 0) {
 					', "MQ" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($text).');');
 		}
 	} else {
-		if ($rid != $row['rid']) {
-			//just force user to be in the correct room.
-			dbQuery('UPDATE users SET time = NOW(), question = NULL, rid = '.dbMakeSafe($rid).
-				' WHERE uid = '.dbMakeSafe($uid).';');
-		}
+		//just indicate presemce
+		dbQuery('UPDATE users SET time = NOW(), question = NULL, rid = '.dbMakeSafe($rid).
+			' WHERE uid = '.dbMakeSafe($uid).';');
 		if ($text != '') {  //only insert non blank text - ignore other
 			dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 					dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($role).
