@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.19';
+	var version = 'v1.3.20';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
