@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.21';
+	var version = 'v1.3.21beta';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -25,25 +25,34 @@ MBchat = function () {
 	var emoticonRegExpStr;
 	var logOptions;
 	var getWhisperers = 0;
+	var requestChain = new Chain();
 	var requestInProgress = false;
 	var ServerReq = new Class({
-		initialize: function(url,process,cancel) {
-			this.request = new Request.JSON({
-				url:url,
-				link:((cancel)?'cancel':'chain'),
-				onComplete: function(response,errorMessage) {
-					requestInProgress = false;
-					if(response) {
-						process(response);
-					} else {
-						displayErrorMessage(errorMsg);
-					}
+		initialize: function(url,process) {
+			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
+				if(response) {
+					process(response);
+				} else {
+					displayErrorMessage(errorMsg);
 				}
-			});
+				requestInProgress = false;
+				requestChain.callChain();  //send next queued request
+			}});
 		},
 		transmit: function (options) {
-			requestInProgress = true;
-			this.request.get($merge(myRequestOptions,options));
+			if (requestInProgress) {
+				requestChain.chain(this.transmit.bind(this, arguments));  //queue up
+			} else {
+				requestInProgress = true;
+				this.request.get($merge(myRequestOptions,options));
+			}
+		},
+		cancel: function() {
+			if (requestInProgress && this.request.running) {
+				this.request.cancel();
+				requestInProgress = false;
+				requestChain.callChain();
+			}	
 		}		
 	});
 	var displayUser = function(user,container) {
@@ -382,29 +391,26 @@ return {
 					MBchat.updateables.poller.pollResponse(response.messages)
 				});
 				var poll = function () {
-//					if (!requestInProgress) {
-						var pollRequestOptions = {'lid':lastId, 'rid': room.rid };
-						if(getWhisperers != 0) {
-							$extend(pollRequestOptions,{'getw':getWhisperers});
-							wid = getWhisperers;
-							
+					var pollRequestOptions = {'lid':lastId, 'rid': room.rid };
+					if(getWhisperers != 0) {
+						$extend(pollRequestOptions,{'getw':getWhisperers});
+						wid = getWhisperers;
+					}
+					presenceCounter++;
+					if (presenceCounter > presenceInterval) {
+						presenceCounter = 0;
+						$extend(pollRequestOptions,{'presence': true });
+						if (!fullPoll) {
+							$extend(pollRequestOptions,{'noresponse': true }); //Tell poll not to reply
 						}
-						presenceCounter++;
-						if (presenceCounter > presenceInterval) {
-							presenceCounter = 0;
-							$extend(pollRequestOptions,{'presence': true });
-							if (!fullPoll) {
-								$extend(pollRequestOptions,{'noresponse': true }); //Tell poll not to reply
-							}
+						getWhisperers = 0;
+						pollRequest.transmit(pollRequestOptions);  //go get data
+					} else {
+						if (fullPoll) {
 							getWhisperers = 0;
 							pollRequest.transmit(pollRequestOptions);  //go get data
-						} else {
-							if (fullPoll) {
-								getWhisperers = 0;
-								pollRequest.transmit(pollRequestOptions);  //go get data
-							}
 						}
-//					} 
+					}
 				};
 				return {
 					init : function (pollOptions) {
@@ -632,7 +638,7 @@ return {
 					}
 					lastId = response.lastid.toInt();
 					MBchat.updateables.poller.setLastId(lastId);
-				},true);
+				});
 				return {
 					init: function () {
 						onlineList = $('onlineList');		//Actual Display List
@@ -643,6 +649,7 @@ return {
 						onlineList.empty();
 						onlineList.erase('class');
 						onlineList.addClass('loading');
+						onlineReq.cancel();  //Cancel any previous online request
 						currentRid = -1;
 						loadingRid = rid;
 						onlineReq.transmit({'rid':rid });
