@@ -63,11 +63,6 @@ $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$gro
 
 dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.
 				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
-dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($uid).','.dbMakeSafe($name)
-				.','.dbMakeSafe($role).', "LI" , 0 );');
-$lid = mysql_insert_id();  // get the ID of this transaction for whisper management		
-
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
@@ -92,8 +87,7 @@ window.addEvent('domready', function() {
 				password : '<?php echo sha1("Key".$uid); ?>',
 				mod: <?php echo '"'.$mod.'"' ; if (isset($_GET['super']) && $role == 'A' ) { echo ', additional : true';} ?>  }, 
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
-				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>,
-				lastid: <?php echo $lid ; ?>},
+				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>},
 				{fetchdelay: <?php echo MBCHAT_FETCHLOG_DELAY ; ?>,
 				spinrate: <?php echo MBCHAT_LOG_SPIN_RATE ; ?>,
 				secondstep:<?php echo MBCHAT_LOG_SECOND_STEPS ; ?>,

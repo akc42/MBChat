@@ -13,14 +13,13 @@ require_once('db.php');
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if(mysql_num_rows($result) != 0) {
 	$row=mysql_fetch_assoc($result);
-	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($uid).' ;');
 	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-			', "LO" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
+			', "LI" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
 $lid = mysql_insert_id();
 		
 };
 mysql_free_result($result);
 
-echo '{"Logout" : '.$txt.'}' ;
+echo '{"Login" : "'.$txt.'", "lastid" : '.$lid.' }' ;
 ?> 

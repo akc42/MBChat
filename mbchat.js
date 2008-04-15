@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.21beta';
+	var version = 'v1.3.22';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -91,6 +91,12 @@ return {
 // Save key data about me
 		me =  user; 
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
+		var loginReq = new ServerReq('login.php',function(response) {
+			MBchat.updateables.init(pollOptions,response.lastid.toInt());
+			MBchat.updateables.online.show(0);	//Show online list for entrance hall
+		});
+		loginReq.transmit($merge({'mbchat':version},MooTools,
+			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
@@ -170,7 +176,8 @@ return {
 							MBchat.updateables.logger.startLog(99);
 						} else {
 							MBchat.logout();
-							window.location = '/forum' ; //and go back to the forum
+							 //and go back to the forum
+							window.location = '/forum' ;
 						}
 					}
 				} else {
@@ -223,14 +230,14 @@ return {
 		window.addEvent('resize', function() {
 			contentSize = $('content').getCoordinates();
 		});
-
-		MBchat.updateables.init(pollOptions);
 		MBchat.sounds.init();		//start sound system
-		MBchat.updateables.online.show(0);	//Show online list for entrance hall
+
 		
 	},
 	logout: function () {
-		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).get(myRequestOptions);
+		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).get($merge(myRequestOptions,
+				{'mbchat':version},MooTools,
+				{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 	},
 	sounds: function () {
 		var music = false;
@@ -363,11 +370,11 @@ return {
 			});
 		};
 		return {
-			init : function (pollOptions) {
+			init : function (pollOptions,lastid) {
 				MBchat.updateables.online.init();
 				MBchat.updateables.message.init();
 				MBchat.updateables.poller.init(pollOptions);
-				MBchat.updateables.whispers.init(pollOptions.lastid.toInt());
+				MBchat.updateables.whispers.init(lastid);
 				MBchat.updateables.logger.init();
 			},
 			processMessage : function(message) {
@@ -1440,10 +1447,10 @@ return {
 					}
 					switch (msg.type) {
 					case 'LI':
-						message('Logs In');
+						message('Logs In ' + msg.message);
 						break;
 					case 'LO':
-						message('Logs Out');
+						message('Logs Out ' + msg.message);
 						break;
 					case 'LT':
 						message('Logs Out (timeout)');
