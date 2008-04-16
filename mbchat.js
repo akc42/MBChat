@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.22';
+	var version = 'v1.3.23';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -41,18 +41,16 @@ MBchat = function () {
 		},
 		transmit: function (options) {
 			if (requestInProgress) {
-				requestChain.chain(this.transmit.bind(this, arguments));  //queue up
+				requestChain.chain(this.transmit.bind(this, options));  //queue up
+				if (this.request.running) { // if this sort then release
+					this.request.cancel();
+					requestInProgress = false;
+					requestChain.callChain();
+				}
 			} else {
 				requestInProgress = true;
 				this.request.get($merge(myRequestOptions,options));
 			}
-		},
-		cancel: function() {
-			if (requestInProgress && this.request.running) {
-				this.request.cancel();
-				requestInProgress = false;
-				requestChain.callChain();
-			}	
 		}		
 	});
 	var displayUser = function(user,container) {
@@ -225,6 +223,7 @@ return {
 
 			$('messageText').value = '';
 			MBchat.sounds.resetTimer();
+			return false;
 		});
 		contentSize = $('content').getCoordinates();
 		window.addEvent('resize', function() {
@@ -656,10 +655,9 @@ return {
 						onlineList.empty();
 						onlineList.erase('class');
 						onlineList.addClass('loading');
-						onlineReq.cancel();  //Cancel any previous online request
+						onlineReq.transmit({'rid':rid });
 						currentRid = -1;
 						loadingRid = rid;
-						onlineReq.transmit({'rid':rid });
 					},
 					getCurrentRid: function() {
 						return currentRid;
