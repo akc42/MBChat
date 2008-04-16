@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.24';
+	var version = 'v1.3.25';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -24,9 +24,6 @@ MBchat = function () {
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
 	var logOptions;
-	var getWhisperers = 0;
-	var requestChain = new Chain();
-	var requestInProgress = false;
 	var ServerReq = new Class({
 		initialize: function(url,process) {
 			this.request = new Request.JSON({url:url,link:'cancel',onComplete: function(response,errorMessage) {
@@ -379,32 +376,17 @@ return {
 				var wid;
 
 				var pollRequest = new ServerReq('poll.php',function(response) {
-					if(response.whisperers) {
-						MBchat.updateables.whispers.updateWhisperers(wid,response.whisperers);
-					}
 					MBchat.updateables.poller.pollResponse(response.messages)
 				});
+				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var poll = function () {
 					var pollRequestOptions = {'lid':lastId, 'rid': room.rid };
-					if(getWhisperers != 0) {
-						$extend(pollRequestOptions,{'getw':getWhisperers});
-						wid = getWhisperers;
-					}
 					presenceCounter++;
 					if (presenceCounter > presenceInterval) {
 						presenceCounter = 0;
-						$extend(pollRequestOptions,{'presence': true });
-						if (!fullPoll) {
-							$extend(pollRequestOptions,{'noresponse': true }); //Tell poll not to reply
-						}
-						getWhisperers = 0;
-						pollRequest.transmit(pollRequestOptions);  //go get data
-					} else {
-						if (fullPoll) {
-							getWhisperers = 0;
-							pollRequest.transmit(pollRequestOptions);  //go get data
-						}
+						presenceReq.transmit({});  //say here (also timeout others)
 					}
+					if (fullPoll) pollRequest.transmit(pollRequestOptions);  //go get data
 				};
 				return {
 					init : function (pollOptions) {
@@ -1158,7 +1140,14 @@ return {
 						whisperer.addClass('whisperer');
 						whisperer.set('id', 'W'+wid+'U'+user.uid);
 					}
-					getWhisperers = wid;  //This will cause poll to get the whisperers and fill in the box later	
+					var getWhisperersReq = new ServerReq('getwhisperers.php',function(response) {
+						whisperList.removeClass('loading');
+						response.whisperers.each(function(whisperer) {
+							whisperer.uid = whisperer.uid.toInt();
+							if(me.uid != whisperer.uid) addUser(whisperer,whisper);
+						});
+					});
+					getWhisperersReq.transmit({'wid':wid});
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
 					closeBox.addEvent('click', function(e) {
