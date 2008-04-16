@@ -30,7 +30,7 @@ MBchat = function () {
 				if(response) {
 					process(response);
 				} else {
-					displayErrorMessage(errorMsg);
+					displayErrorMessage(errorMessage);
 				}
 			}});
 		},
