@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.23';
+	var version = 'v1.3.24';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -29,28 +29,16 @@ MBchat = function () {
 	var requestInProgress = false;
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url,link:'cancel',onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
 					displayErrorMessage(errorMsg);
 				}
-				requestInProgress = false;
-				requestChain.callChain();  //send next queued request
 			}});
 		},
 		transmit: function (options) {
-			if (requestInProgress) {
-				requestChain.chain(this.transmit.bind(this, options));  //queue up
-				if (this.request.running) { // if this sort then release
-					this.request.cancel();
-					requestInProgress = false;
-					requestChain.callChain();
-				}
-			} else {
-				requestInProgress = true;
-				this.request.get($merge(myRequestOptions,options));
-			}
+			this.request.get($merge(myRequestOptions,options));
 		}		
 	});
 	var displayUser = function(user,container) {
