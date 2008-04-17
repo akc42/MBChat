@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.25';
+	var version = 'v1.3.26';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -152,11 +152,15 @@ return {
 			} else {
 				if (room.rid == 0 ) {
 					if (this.hasClass('exit-r')) {
-						// just exiting from loging
+						// just exiting from logging
 						MBchat.updateables.logger.returnToEntranceHall(e);
 					} else {
-						if (e.control && me.additional) {
-							MBchat.updateables.logger.startLog(99);
+						if (e.control && (me.role == 'A' || me.role == 'L' )) {
+							if(me.additional) {
+								MBchat.updateables.logger.startLog(99);
+							} else {
+								MBchat.updateables.logger.startLog(0);
+							}
 						} else {
 							MBchat.logout();
 							 //and go back to the forum
