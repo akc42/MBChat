@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.26';
+	var version = 'v1.3.27';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -169,6 +169,21 @@ return {
 					}
 				} else {
 					MBchat.updateables.message.leaveRoom();
+				}
+			}
+		});
+		window.addEvent('keydown', function(e) {
+			if(!e.control) return;  //only interested if control key is pressed
+			if (e.key == '0') {
+				if (room.rid == 0) {
+					MBchat.logout();
+					window.location = '/forum' ;
+				} else {
+					MBchat.updateables.message.leaveRoom();
+				}
+			} else {
+				if($('R'+e.key)) {
+					MBchat.updateables.message.enterRoom(e.key.toInt());
 				}
 			}
 		});
