@@ -172,8 +172,7 @@ return {
 				}
 			}
 		});
-		var keys = function(e) {
-			e.stop();
+		document.addEvent('keydown',function(e) {
 			if(!e.control) return;  //only interested if control key is pressed
 			if (e.key == '0') {
 				if (room.rid == 0) {
@@ -187,8 +186,7 @@ return {
 					MBchat.updateables.message.enterRoom(e.key.toInt());
 				}
 			}
-		};
-		document.addEvent('keydown',keys);
+		});
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
