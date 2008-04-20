@@ -174,7 +174,6 @@ return {
 		});
 		var keys = function(e) {
 			e.stop();
-			displayErrorMessage('Key Press Control =' + e.control+' Key =' +e.key);
 			if(!e.control) return;  //only interested if control key is pressed
 			if (e.key == '0') {
 				if (room.rid == 0) {
