@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.27';
+	var version = 'v1.3.28';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -172,7 +172,9 @@ return {
 				}
 			}
 		});
-		window.addEvent('keydown', function(e) {
+		var keys = function(e) {
+			e.stop();
+			displayErrorMessage('Key Press Control =' + e.control+' Key =' +e.key);
 			if(!e.control) return;  //only interested if control key is pressed
 			if (e.key == '0') {
 				if (room.rid == 0) {
@@ -186,7 +188,8 @@ return {
 					MBchat.updateables.message.enterRoom(e.key.toInt());
 				}
 			}
-		});
+		};
+		document.addEvent('keydown',keys);
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
