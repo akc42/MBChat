@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.28';
+	var version = 'v1.3.29';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -399,13 +399,19 @@ return {
 				});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var poll = function () {
-					var pollRequestOptions = {'lid':lastId, 'rid': room.rid };
+					var pollRequestOptions = {'lid':lastId};
 					presenceCounter++;
 					if (presenceCounter > presenceInterval) {
 						presenceCounter = 0;
-						presenceReq.transmit({});  //say here (also timeout others)
+						if (fullPoll) {
+							$extend(pollRequestOptions,{'presence':true});
+						} else {
+							presenceReq.transmit({});  //say here (also timeout others)
+						}
 					}
-					if (fullPoll) pollRequest.transmit(pollRequestOptions);  //go get data
+					if (fullPoll) {
+						pollRequest.transmit(pollRequestOptions);  //go get data
+					}
 				};
 				return {
 					init : function (pollOptions) {
@@ -661,7 +667,7 @@ return {
 							switch (msg.type) {
 							case 'LO' : 
 							case 'LT' :
-								if (userDiv && msg.rid == currentRid) {
+								if (userDiv) {
 									removeUser(userDiv)
 								}
 								break;
@@ -693,7 +699,7 @@ return {
 								break;
 							case 'RE' :
 								if (currentRid != 0) {
-									if (!userDiv) {
+									if (!userDiv  && msg.rid == currentRid) {
 										var user = msg.user;
 										user.question = msg.message;
 										userDiv = addUser(user);
@@ -715,34 +721,40 @@ return {
 								}
 								break;
 							case 'MQ' : // User asks a question
-								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									var user = msg.user;
-									user.question = msg.message;
-									userDiv = addUser(user);
+								if(msg.rid == currentRid) {
+									if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
+										var user = msg.user;
+										user.question = msg.message;
+										userDiv = addUser(user);
+									}
+									var span = userDiv.getElement('span');
+									span.addClass('ask');
 								}
-								var span = userDiv.getElement('span');
-								span.addClass('ask');
 								break;
 							case 'MR' :
 							case 'ME' :
-								//A message from a user must mean he no longer has a question outstanding
-								var span = userDiv.getElement('span');
-								span.removeClass('ask');
-								if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-									addUser(msg.user); //there will be no question
+								if(msg.rid == currentRid) {
+									//A message from a user must mean he no longer has a question outstanding
+									var span = userDiv.getElement('span');
+									span.removeClass('ask');
+									if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
+										addUser(msg.user); //there will be no question
+									}
 								}
 								break;
 							case 'RM' : // becomes moderator
 							case 'RN' : // stops being moderator
-								if (me.uid == msg.user.uid) {
-									if (msg.user.role == 'M') {
-										me.mod = 'M'
-									} else {
-										me.mod = 'N'
+								if(msg.rid == currentRid) {
+									if (me.uid == msg.user.uid) {
+										if (msg.user.role == 'M') {
+											me.mod = 'M'
+										} else {
+											me.mod = 'N'
+										}
 									}
+									// Given user is changing from mod to not or visa vera, need to remove and then re-add
+									addUser(msg.user);
 								}
-								// Given user is changing from mod to not or visa vera, need to remove and then re-add
-								addUser(msg.user);
 								break;
 							case 'PE' :
 								var whisperBox = $('W' + msg.rid);
@@ -990,18 +1002,7 @@ return {
 								}
 								break;
 							case 'WH' :
-								var whisperList;
-								var whisperIdStr;
-								//Must only display whispers for me
-								var whisperBoxes = $$('.whisperBox');
-								if(!whisperBoxes.every(function(whisperBox) {
-									whisperIdStr = whisperBox.get('id');
-									if(msg.rid == whisperIdStr.substr(1).toInt()) {
-										whisperList = whisperBox.getElement('.whisperList');
-										return false;
-									}
-									return true;
-								})) {
+								if (MBchat.updateables.whispers.isWhisperingIn(msg.rid)) {
 									if (privateRoom == 0) {
 										var whisper = new Element('span',{'class':'whisper'});
 										var othersAdded = false;
@@ -1012,7 +1013,8 @@ return {
 											othersAdded = true;
 										}
 										//whisperList says who the other whisperers are
-										var whisperers = whisperList.getChildren();
+										var whisperIdStr = 'W'+msg.rid;
+										var whisperers = $(whisperIdStr).getElement('.whisperList').getChildren();
 										whisperers.each(function(whisperer) {
 											var uid = whisperer.get('id').substr(whisperIdStr.length+1).toInt();
 											if (uid != msg.user.uid) { //This is not the whisperer so include
@@ -1035,12 +1037,12 @@ return {
 								}
 								break;
 							case 'WJ' :
-								if(msg.user.uid != me.uid) {
+								if(msg.user.uid != me.uid && MBchat.updateables.whispers.isWhisperingIn(msg.rid)) {
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Joins your whisper box'));
 								}
 								break;
 							case 'WL' :
-								if(msg.user.uid != me.uid) {
+								if(msg.user.uid != me.uid&& MBchat.updateables.whispers.isWhisperingIn(msg.rid)) {
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves your whisper box'));
 								}
 								break;
@@ -1398,6 +1400,15 @@ return {
 								}
 							});
 						}
+					},
+					isWhisperingIn : function (wid) {
+						var whisperBoxes = $$('.whisperBox');
+						return !whisperBoxes.every(function(whisperBox) {
+							if(wid == whisperBox.get('id').substr(1).toInt()) {
+								return false;
+							}
+							return true;
+						});
 					}
 				};
 			}(),
