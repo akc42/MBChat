@@ -261,6 +261,7 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 
 
 <div id="userOptions">
+<form>
 	<input id="autoScroll" type="checkbox" checked="checked" />
 	<label for="autoScroll">Autoscroll</label>
 	<span id="soundOptions">
@@ -271,6 +272,7 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 		<input id="soundDelay" type="text" size="1" value="5" />
 		<label for="soundDelay">Minutes 'till sound</label>
 	</span>
+</form>
 </div>
 
 <div id="copyright">MBchat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
