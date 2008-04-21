@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.29';
+	var version = 'v1.3.30';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -172,6 +172,24 @@ return {
 				}
 			}
 		});
+		var messageSubmit = function(event) {
+			event.stop();
+			if (privateRoom == 0 ) {
+				messageReq.transmit({
+					'rid':room.rid,
+					'lid':MBchat.updateables.poller.getLastId(),
+					'text':$('messageText').value});
+			} else {
+				whisperReq.transmit({
+					'wid':privateRoom,
+					'rid':room.rid,
+					'lid':MBchat.updateables.poller.getLastId(),
+					'text':$('messageText').value});
+			}
+
+			$('messageText').value = '';
+			MBchat.sounds.resetTimer();
+		}
 		document.addEvent('keydown',function(e) {
 			if(!e.control) return;  //only interested if control key is pressed
 			if (e.key == '0') {
@@ -184,6 +202,10 @@ return {
 			} else {
 				if($('R'+e.key)) {
 					MBchat.updateables.message.enterRoom(e.key.toInt());
+				} else {
+					if(e.key == 's') {
+						messageSubmit(e);
+					}
 				}
 			}
 		});
@@ -209,24 +231,8 @@ return {
 		//finish pattern and turn it into a regular expression to use;
 		regExpStr += ')';
 		emoticonRegExpStr = new RegExp(regExpStr, 'gm');
-
 		$('messageForm').addEvent('submit', function(e) {
-			e.stop();
-			if (privateRoom == 0 ) {
-				messageReq.transmit({
-					'rid':room.rid,
-					'lid':MBchat.updateables.poller.getLastId(),
-					'text':$('messageText').value});
-			} else {
-				whisperReq.transmit({
-					'wid':privateRoom,
-					'rid':room.rid,
-					'lid':MBchat.updateables.poller.getLastId(),
-					'text':$('messageText').value});
-			}
-
-			$('messageText').value = '';
-			MBchat.sounds.resetTimer();
+			messageSubmit(e);
 			return false;
 		});
 		contentSize = $('content').getCoordinates();
