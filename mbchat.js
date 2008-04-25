@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.30';
+	var version = 'v1.3.31';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -191,20 +191,31 @@ return {
 			MBchat.sounds.resetTimer();
 		}
 		document.addEvent('keydown',function(e) {
-			if(!e.control) return;  //only interested if control key is pressed
-			if (e.key == '0') {
-				if (room.rid == 0) {
-					MBchat.logout();
-					window.location = '/forum' ;
+			if(!e.control ) {
+				if(!e.alt) return;  //only interested if control or alt key is pressed
+				if (room.rid != 0) return; //only interested if in entrance hall
+				if (e.key == '0') {
+					MBchat.updateables.online.show(0);  //get entrance hall list
 				} else {
-					MBchat.updateables.message.leaveRoom();
+					if($('R'+e.key)) {
+						MBchat.updateables.online.show(e.key.toInt());  //get entrance hall list
+					}
 				}
-			} else {
-				if($('R'+e.key)) {
-					MBchat.updateables.message.enterRoom(e.key.toInt());
+			} else {				
+				if (e.key == '0') {
+					if (room.rid == 0) {
+						MBchat.logout();
+						window.location = '/forum' ;
+					} else {
+						MBchat.updateables.message.leaveRoom();
+					}
 				} else {
-					if(e.key == 's') {
-						messageSubmit(e);
+					if($('R'+e.key)) {
+						MBchat.updateables.message.enterRoom(e.key.toInt());
+					} else {
+						if(e.key == 's') {
+							messageSubmit(e);
+						}
 					}
 				}
 			}
