@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.3.31';
+	var version = 'v1.4.0';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -61,7 +61,7 @@ MBchat = function () {
 	var privateReq = new ServerReq('private.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
 	var goPrivate = function() {
 		privateReq.transmit({
-			'wid': this.getParent().get('id').substr(1).toInt(), 
+			'wid': this.getParent().get('id').substr(1).toInt(),
 			'lid' : MBchat.updateables.poller.getLastId(),
 			'rid' : room.rid});
 	};
@@ -202,12 +202,19 @@ return {
 					}
 				}
 			} else {				
-				if (e.key == '0') {
-					if (room.rid == 0) {
-						MBchat.logout();
-						window.location = '/forum' ;
+				if (e.key == '0' || e.key == 'x') {
+					if (privateRoom != 0) {
+						privateReq.transmit({
+							'wid':  0,
+							'lid' : MBchat.updateables.poller.getLastId(),
+							'rid' : room.rid });
 					} else {
-						MBchat.updateables.message.leaveRoom();
+						if (room.rid == 0) {
+							MBchat.logout();
+							window.location = '/forum' ;
+						} else {
+							MBchat.updateables.message.leaveRoom();
+						}
 					}
 				} else {
 					if($('R'+e.key)) {
@@ -622,6 +629,33 @@ return {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
 						div.firstChild.addClass('whisperer');
+						div.addEvent('keydown', function(e) {
+							if(!e.control) return;
+							if(e.key == 'w') {
+								e.stop();
+								var whisperBoxes = $$('.whisperBox');
+								if (whisperBoxes.every(function(whisperBox,i) {
+									var widStr = whisperBox.get('id');
+									var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
+									if (whisperers.length == 1) { //we only want to worry about this if only other person
+										if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
+											return false;
+										}
+									}
+									return true;
+								})){
+								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper
+									var getNewWhisperReq = new ServerReq('newwhisper.php',function(response) {
+										if(response.wid != 0) {
+											var user = response.user
+											user.uid = user.uid.toInt();
+											var whisper = createWhisperBox(response.wid.toInt(),user);
+										}
+									});
+									getNewWhisperReq.transmit({'wuid':user.uid});
+								}
+							}
+						});
 					}
 					var qtext = div.retrieve('question');
 					if (qtext) {
@@ -1165,6 +1199,15 @@ return {
 					}
 					return false;
 				}
+				var whisperSubmit = function(whisper,wid) {
+					whisperReq.transmit({
+						'wid':wid,
+						'rid':room.rid,
+						'lid':MBchat.updateables.poller.getLastId(),
+						'text':whisper.getElement('.whisperInput').value});
+					whisper.getElement('.whisperInput').value = '';
+					MBchat.sounds.resetTimer();
+				}
 				var createWhisperBox = function (wid,user) {
 					var template = $('whisperBoxTemplate');
 					var whisper = template.clone();
@@ -1188,11 +1231,11 @@ return {
 					getWhisperersReq.transmit({'wid':wid});
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
+					var leaveWhisper = new ServerReq('leavewhisper.php',function(response) {
+						whisper.destroy();
+						$('content').setStyles(contentSize);
+					});
 					closeBox.addEvent('click', function(e) {
-						var leaveWhisper = new ServerReq('leavewhisper.php',function(response) {
-							whisper.destroy();
-							$('content').setStyles(contentSize);
-						});
 						leaveWhisper.transmit({'wid': wid});
 					});
 					var privateBox = whisper.getElement('.private');
@@ -1205,13 +1248,30 @@ return {
 					}
 					whisper.getElement('form').addEvent('submit', function(e) {
 						e.stop();
-						whisperReq.transmit({
-							'wid':wid,
-							'rid':room.rid,
-							'lid':MBchat.updateables.poller.getLastId(),
-							'text':whisper.getElement('.whisperInput').value});
-						whisper.getElement('.whisperInput').value = '';
-						MBchat.sounds.resetTimer();
+						whisperSubmit(whisper,wid);
+					});
+					whisper.addEvent('keydown',function(e) {
+						if(!e.alt) return;
+						switch (e.key) {
+						case 'p' :
+							if (room.type != 'M' || (me.mod != 'M' && me.role != 'H' && me.role != 'G' && me.role !='S')) {
+								e.stop();
+								var boundPrivateBox = goPrivate.bind(privateBox);
+								boundPrivateBox();
+							}
+							break;
+						case 's' :
+							e.stop();
+							whisperSubmit(whisper,wid);
+							break;
+						case 'x' :
+							e.stop();
+							leaveWhisper.transmit({'wid': wid});
+							break;
+						default:
+							break;
+						}
+
 					});
 					whisper.addClass('wBactive');
 					whisper.inject(document.body);
