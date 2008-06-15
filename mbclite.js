@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.0';
+	var version = 'v1.1';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -66,18 +66,19 @@ MBchat = function () {
 			'rid' : room.rid});
 	};
 	var contentSize;
+	var pO;
+	var loginReq = new ServerReq('login.php',function(response) {
+		MBchat.updateables.init(pO,response.lastid.toInt());
+		MBchat.updateables.online.show(0);	//Show online list for entrance hall
+	});
 return {
 	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
 		var span = $('version');
 		span.set('text', version);
-		
+		pO = pollOptions;
 // Save key data about me
 		me =  user; 
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
-		var loginReq = new ServerReq('login.php',function(response) {
-			MBchat.updateables.init(pollOptions,response.lastid.toInt());
-			MBchat.updateables.online.show(0);	//Show online list for entrance hall
-		});
 		loginReq.transmit($merge({'mbchat':version},MooTools,
 			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 		privateRoom = 0;
@@ -383,8 +384,16 @@ return {
 							switch (msg.type) {
 							case 'LO' : 
 							case 'LT' :
-								if (userDiv) {
-									removeUser(userDiv)
+								if (me.uid == msg.user.uid) {
+									//Trying to log me off - log in again
+									loginReq.transmit($merge({'mbchat':version},MooTools,
+										{'browser':Browser.Engine.name+Browser.Engine.version,
+										'platform':Browser.Platform.name}));
+
+								} else {
+									if (userDiv) {
+										removeUser(userDiv)
+									}
 								}
 								break;
 							case 'RX' :

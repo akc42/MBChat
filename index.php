@@ -16,6 +16,9 @@ if($user_info['is_guest']) {
 	header( 'Location: http://mb.home/static/Chat.htm' ) ;
 	exit;
 };
+$groups =& $user_info['groups'];
+$uid = $ID_MEMBER;
+$name =& $user_info['name'];
 
 // SMF membergroup IDs for the groups that we have used to define characteristics which control Chat Group
 define('SMF_CHAT_BABY',		10);
@@ -24,6 +27,13 @@ define('SMF_CHAT_MODERATOR',	14);
 define('SMF_CHAT_MELINDA',	13);
 define('SMF_CHAT_HONORARY',	20);
 define('SMF_CHAT_SPECIAL',	19);
+define('SMF_CHAT_LITE',		22);
+
+if(in_array(SMF_CHAT_LITE,$groups)) {
+	header( 'Location: http://mb.home/chat/lite.php' );
+	exit;
+};
+
 
 define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
@@ -51,9 +61,6 @@ define('MBCHAT_LOG_6HOUR_STEPS', 6);		//No of spin steps where clock varies by 6
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-$groups =& $user_info['groups'];
-$uid = $ID_MEMBER;
-$name =& $user_info['name'];
 $role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
 			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
