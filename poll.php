@@ -13,10 +13,7 @@ if(isset($_GET['presence'])) {
 	dbQuery('UPDATE users SET time = NOW() WHERE uid ='.dbMakeSafe($uid).';'); 
 	include('timeout.php');		//Timeout inactive users
 }
-
-$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, uid , name, role, text  FROM log';
-$sql .= ' WHERE lid > '.dbMakeSafe($lid).' ORDER BY lid;';
-$result = dbQuery($sql);
+$result = dbQuery('SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, uid , name, role, text  FROM log WHERE lid > '.dbMakeSafe($lid).' ORDER BY lid;');
 $messages = array();
 if(mysql_num_rows($result) != 0) {
 	while($row=mysql_fetch_assoc($result)) {
