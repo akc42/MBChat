@@ -360,7 +360,8 @@ div.logging {
 
 
 #chatList {
-	overflow:auto;
+	overflow-X:hidden;
+	overflow-Y:auto;
 /*	border:1px solid #ADADAD; */
 	background-color:#FFF;
 }
