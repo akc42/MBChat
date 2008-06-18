@@ -24,11 +24,7 @@ if(mysql_num_rows($result) != 0) {
 	
 	$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text  FROM log';
 	$sql .= ' WHERE UNIX_TIMESTAMP(time) > '.dbMakeSafe($_GET['start']).' AND UNIX_TIMESTAMP(time) < '.dbMakeSafe($_GET['end']).' AND ';
-	if ($rid == 99) {
-		$sql .= ' rid > 98 ORDER BY rid,lid ;';
-	} else {
-		$sql .= 'rid = '.dbMakeSafe($rid).' ORDER BY lid ;';
-	}
+	$sql .= 'rid = '.dbMakeSafe($rid).' ORDER BY lid ;';
 	$result = dbQuery($sql);
 	$i = 0 ;
 	if(mysql_num_rows($result) != 0) {

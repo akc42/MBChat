@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.4.2';
+	var version = 'v1.4.3';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -158,11 +158,7 @@ return {
 						MBchat.updateables.logger.returnToEntranceHall(e);
 					} else {
 						if (e.control && (me.role == 'A' || me.role == 'L' )) {
-							if(me.additional) {
-								MBchat.updateables.logger.startLog(99);
-							} else {
-								MBchat.updateables.logger.startLog(0);
-							}
+							MBchat.updateables.logger.startLog(0);
 						} else {
 							MBchat.logout();
 							 //and go back to the forum

@@ -7,6 +7,14 @@
 // Show all errors:
 error_reporting(E_ALL);
 // Path to the chat directory:
+define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
+
+require_once(MBCHAT_PATH.'../forum/SSI.php');
+//If not logged in to the forum, not allowed any further so redirect to page to say so
+if($user_info['is_guest']) {
+	header( 'Location: http://mb.home/static/Chat.htm' ) ;
+	exit;
+};
 
 
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid']) 
@@ -28,11 +36,12 @@ $sql = 'SELECT UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text 
 $sql .= ' WHERE UNIX_TIMESTAMP(time) > '.dbMakeSafe($_GET['start']).' AND UNIX_TIMESTAMP(time) < '.dbMakeSafe($_GET['end']).' AND rid ';
 if ($rid == 99) {
 	$sql .= '> 98 ORDER BY rid,lid ;';
+	$room = 'Non Standard';
 } else {
 	$sql .= '= '.dbMakeSafe($rid).' ORDER BY lid ;';
+	$room = $_GET['room'];
 }
 $result = dbQuery($sql);
-if(mysql_num_rows($result) != 0) {
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
@@ -44,7 +53,7 @@ if(mysql_num_rows($result) != 0) {
 <body>
 <a id="exitPrint" href="/chat"><img src="exit.gif"/></a>
 <h1>Melinda&#8217;s Backups Chat History Log</h1>
-<h2><?php echo $_GET['room']; ?></h2> 
+<h2><?php echo $room; ?></h2> 
 <h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3> 
 
 <?php
@@ -58,7 +67,7 @@ global $row;
 	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span><br/>';
 	echo "\n";
 }
-
+if(mysql_num_rows($result) != 0) {
 	while($row=mysql_fetch_assoc($result)) {
 
 		echo '<span class="time">'.date("h:i:s a",$row['utime']-$tzo).'</span><span class=';
@@ -104,7 +113,12 @@ global $row;
 			break;
 		}
 	}		
-};
+} else {
+	echo '<span class="time">'.date("h:i:s a",$_GET['start']-$tzo).'</span><span class=';
+	echo '"C">Hephaestus</span><span><b>THERE ARE NO MESSAGES TO DISPLAY</b></span><br/>';
+	echo "\n";
+}
+
 mysql_free_result($result);
 ?>
 
