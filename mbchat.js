@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.4.4';
+	var version = 'v1.4.5';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -1286,7 +1286,7 @@ return {
 					position.top = position.top + (Math.random()-0.5) * 50;
 					position.left = position.left + (Math.random()-0.5) * 150;
 					whisper.setStyles(position);
-					whisper.getElement('.whisperInput').focus();
+//(see if helps usability)		whisper.getElement('.whisperInput').focus();
 					var drag = new Drag(whisper,{
 						handle:whisper.getElement('.dragHandle'),
 						snap:0,
