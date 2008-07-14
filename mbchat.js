@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.4.5';
+	var version = 'v1.4.6';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -127,7 +127,7 @@ return {
 				});
 				door.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
-					if(e.control && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
+					if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
 						MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
 					} else {
 						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
@@ -157,13 +157,9 @@ return {
 						// just exiting from logging
 						MBchat.updateables.logger.returnToEntranceHall(e);
 					} else {
-						if (e.control && (me.role == 'A' || me.role == 'L' )) {
-							MBchat.updateables.logger.startLog(0);
-						} else {
-							MBchat.logout();
-							 //and go back to the forum
-							window.location = '/forum' ;
-						}
+						MBchat.logout();
+						 //and go back to the forum
+						window.location = '/forum' ;
 					}
 				} else {
 					MBchat.updateables.message.leaveRoom();
@@ -188,43 +184,6 @@ return {
 			$('messageText').value = '';
 			MBchat.sounds.resetTimer();
 		}
-		document.addEvent('keydown',function(e) {
-			if(!e.control ) {
-				if(!e.alt) return;  //only interested if control or alt key is pressed
-				if (room.rid != 0) return; //only interested if in entrance hall
-				if (e.key == '0') {
-					MBchat.updateables.online.show(0);  //get entrance hall list
-				} else {
-					if($('R'+e.key)) {
-						MBchat.updateables.online.show(e.key.toInt());  //get entrance hall list
-					}
-				}
-			} else {				
-				if (e.key == '0' || e.key == 'x') {
-					if (privateRoom != 0) {
-						privateReq.transmit({
-							'wid':  0,
-							'lid' : MBchat.updateables.poller.getLastId(),
-							'rid' : room.rid });
-					} else {
-						if (room.rid == 0) {
-							MBchat.logout();
-							window.location = '/forum' ;
-						} else {
-							MBchat.updateables.message.leaveRoom();
-						}
-					}
-				} else {
-					if($('R'+e.key)) {
-						MBchat.updateables.message.enterRoom(e.key.toInt());
-					} else {
-						if(e.key == 's') {
-							messageSubmit(e);
-						}
-					}
-				}
-			}
-		});
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
 		emoticonSubstitution = new Hash({});
