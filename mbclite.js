@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.4.5';
+	var version = 'v1.4.7';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -553,8 +553,10 @@ return {
 										$('inputContainer').set('styles',{ 'display':'none'});
 										$('entranceHall').set('styles',{'display':'block'});
 									}
-								//need to make a whisper box with my whisperers in it.
-									$('W'+privateRoom).setStyle('display','block');
+									if($('W'+privateRoom)) {
+								//need to make a whisper box with my whisperers in it (if still here).
+										$('W'+privateRoom).setStyle('display','block');
+									}
 									$('content').setStyles(contentSize);
 									privateRoom = 0;
 								} else {

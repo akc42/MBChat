@@ -1,5 +1,5 @@
 MBchat = function () {
-	var version = 'v1.4.6';
+	var version = 'v1.4.7';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -856,8 +856,10 @@ return {
 										exit.removeClass('exit-r');
 									}
 									MBchat.sounds.resetTimer();
-								//need to make a whisper box with my whisperers in it.
-									$('W'+privateRoom).setStyle('display','block');
+									if($('W'+privateRoom)) {
+								//need to make a whisper box with my whisperers in it (if not closed already)
+										$('W'+privateRoom).setStyle('display','block');
+									}
 									$('content').setStyles(contentSize);
 									privateRoom = 0;
 								} else {
