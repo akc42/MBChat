@@ -1,0 +1,4 @@
+2008 08 31	When you enter chat, sometimes you get the last three
+     		hours of messages, at other times you don't.  Need to
+     		find out why and make it so that you always get the
+     		previous messages 
