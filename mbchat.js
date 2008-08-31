@@ -1,4 +1,5 @@
 MBchat = function () {
+	var version;
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -23,6 +24,7 @@ MBchat = function () {
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
 	var logOptions;
+	var version;
 	var ServerReq = new Class({
 		initialize: function(url,process) {
 			this.request = new Request.JSON({url:url,link:'cancel',onComplete: function(response,errorMessage) {
@@ -67,22 +69,21 @@ MBchat = function () {
 	var contentSize;
 	var pO;
 	var loginReq = new ServerReq('login.php',function(response) {
-		MBchat.updateables.init(pO,response.lastid.toInt());
+		MBchat.updateables.poller.init(pO); //These haven't been initiated with normal init sequence, but await successful login
+		MBchat.updateables.whispers.init(response.lastid.toInt());
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 	});
 return {
 	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
+		logOptions = logOptionParameters;
 		pO = pollOptions;
-		
+		version = $('version').get('text');
 // Save key data about me
 		me =  user; 
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
-		loginReq.transmit($merge({'mbchat':version},MooTools,
-			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
-		logOptions = logOptionParameters;
 // We need to setup all the entrance hall
 		entranceHall = new Room(0,entranceHallName,'O');
 		room = new Room();
@@ -212,7 +213,10 @@ return {
 			contentSize = $('content').getCoordinates();
 		});
 		MBchat.sounds.init();		//start sound system
-
+		MBchat.updateables.init(); //Start Rest
+		// And logon
+		loginReq.transmit($merge({'mbchat':version},MooTools,
+			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 		
 	},
 	logout: function () {
@@ -351,11 +355,10 @@ return {
 			});
 		};
 		return {
-			init : function (pollOptions,lastid) {
+			init : function () {
+				//only initialise parts of this - the rest needs to wait until we get response from login.
 				MBchat.updateables.online.init();
 				MBchat.updateables.message.init();
-				MBchat.updateables.poller.init(pollOptions);
-				MBchat.updateables.whispers.init(lastid);
 				MBchat.updateables.logger.init();
 			},
 			processMessage : function(message) {

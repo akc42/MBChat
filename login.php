@@ -5,8 +5,8 @@ $uid = $_GET['user'];
 if ($_GET['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
 
-$txt = 'MBchat version: '.$_GET['mbchat'].', Mootools Version : '.$_GET['version'].' build '.$_GET['build'] ;
-$txt .=' Browser : '.$_GET['browser'].' on Platform : '.$_GET['platform'];
+$txt = 'MBchat version - '.$_GET['mbchat'].', Mootools_Version - '.$_GET['version'].' - build - '.$_GET['build'] ;
+$txt .=' Browser - '.$_GET['browser'].' on Platform - '.$_GET['platform'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 

@@ -283,7 +283,7 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 </form>
 </div>
 
-<div id="copyright">MBchat <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+<div id="copyright">MBchat <span id="version"><?php include('version.php');?></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
 </div>
 </body>
 
@@ -292,5 +292,5 @@ echo '<img class="emoticon" src="'.MBCHAT_EMOTICON_PATH.$row['filename'].'" alt=
 	dbQuery('DELETE FROM log WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
 //timeout any users that are too old
 
-	include('timeout.php');	
+	include('timeout.php');
 ?>
