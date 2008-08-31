@@ -67,7 +67,8 @@ MBchat = function () {
 	var contentSize;
 	var pO;
 	var loginReq = new ServerReq('login.php',function(response) {
-		MBchat.updateables.init(pO,response.lastid.toInt());
+		MBchat.updateables.poller.init(pO);
+		MBchat.updateables.whispers.init(response.lastid.toInt());
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 	});
 return {
@@ -75,9 +76,8 @@ return {
 		pO = pollOptions;
 // Save key data about me
 		me =  user; 
+		version = $('version').get('text');
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
-		loginReq.transmit($merge({'mbchat':version},MooTools,
-			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
@@ -150,6 +150,10 @@ return {
 		window.addEvent('resize', function() {
 			contentSize = $('content').getCoordinates();
 		});
+		MBchat.updateables.init(); //Start Rest
+		loginReq.transmit($merge({'mbchat':version},MooTools,
+			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
+
 	},
 	logout: function () {
 		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).get($merge(myRequestOptions,
@@ -164,11 +168,9 @@ return {
 			});
 		};
 		return {
-			init : function (pollOptions,lastid) {
+			init : function () {
 				MBchat.updateables.online.init();
 				MBchat.updateables.message.init();
-				MBchat.updateables.poller.init(pollOptions);
-				MBchat.updateables.whispers.init(lastid);
 			},
 			processMessage : function(message) {
 				MBchat.updateables.online.processMessage(message);

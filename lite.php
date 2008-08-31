@@ -185,7 +185,7 @@ window.addEvent('unload', function() {
 </div>
 
 
-<div id="copyright">MBchat light <span><?php include('version.php') ?></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+<div id="copyright">MBchat light <span id ="version" ><?php include('version.php') ?></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
 </div>
 </body>
 
