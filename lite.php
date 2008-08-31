@@ -185,7 +185,7 @@ window.addEvent('unload', function() {
 </div>
 
 
-<div id="copyright">MBchat light <span id="version"></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
+<div id="copyright">MBchat light <span><?php include('version.php') ?></span> &copy; 2008 Alan Chandler.  Licenced under the GPL</div>
 </div>
 </body>
 
@@ -194,5 +194,6 @@ window.addEvent('unload', function() {
 	dbQuery('DELETE FROM log WHERE NOW() > DATE_ADD( time, INTERVAL '.MBCHAT_PURGE_MESSAGE_INTERVAL.' DAY);');
 //timeout any users that are too old
 
-	include('timeout.php');	
+	include('timeout.php');
+
 ?>

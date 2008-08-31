@@ -1,5 +1,4 @@
 MBchat = function () {
-	var version = 'v1.4.7';
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
@@ -73,8 +72,6 @@ MBchat = function () {
 	});
 return {
 	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
-		var span = $('version');
-		span.set('text', version);
 		pO = pollOptions;
 		
 // Save key data about me
