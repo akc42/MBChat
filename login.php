@@ -21,5 +21,5 @@ $lid = mysql_insert_id();
 };
 mysql_free_result($result);
 
-echo '{"Login" : "'.$txt.'", "lastid" : '.$lid.' }' ;
+echo '{"Login" : '.$uid.', "lastid" : '.$lid.' }' ;
 ?> 
