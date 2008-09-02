@@ -1,4 +1,5 @@
 MBchat = function () {
+	var version;
 	var me;
 	var myRequestOptions;
 	var Room = new Class({
