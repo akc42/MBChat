@@ -24,6 +24,7 @@ define('SMF_CHAT_MODERATOR',	14);
 define('SMF_CHAT_MELINDA',	13);
 define('SMF_CHAT_HONORARY',	20);
 define('SMF_CHAT_SPECIAL',	19);
+define('SMF_CHAT_NO_WHISPER',23);
 
 define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
@@ -60,6 +61,7 @@ $role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L'
 			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :'R'))) ;
 
 $mod = (in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N');
+$whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');
 
 dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.
 				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
@@ -85,7 +87,8 @@ window.addEvent('domready', function() {
 				name: '<?php echo $name ; ?>',
 				 role: '<?php echo $role; ?>',
 				password : '<?php echo sha1("Key".$uid); ?>',
-				mod: <?php echo '"'.$mod.'"' ;  ?>  }, 
+				mod: <?php echo '"'.$mod.'"' ;  ?>,
+				whisperer: <?php echo $whisperer ; ?> },
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>},
 				{fetchdelay: <?php echo MBCHAT_FETCHLOG_DELAY ; ?>,
