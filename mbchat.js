@@ -581,7 +581,7 @@ return {
 							}
 						} 
 					}
-					if (user.uid != me.uid) {
+					if (user.uid != me.uid && me.role != 'B') {  //Can only initiate a whisper if not a BB
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});

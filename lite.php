@@ -38,7 +38,7 @@ define('MBCHAT_POLL_PRESENCE',	10);	//Rate of presence polls (mark online)
 
 define('MBCHAT_EMOTICON_PATH', '/static/images/emoticons/');
 
-define('MBCHAT_PURGE_MESSAGE_INTERVAL',7); //No of days messages kept for
+define('MBCHAT_PURGE_MESSAGE_INTERVAL',20); //No of days messages kept for
 define('MBCHAT_CHATBOT_NAME','Hephaestus');
 define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in chat list
 
