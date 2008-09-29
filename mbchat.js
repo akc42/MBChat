@@ -581,7 +581,7 @@ return {
 							}
 						} 
 					}
-					if (user.uid != me.uid && me.whisperer) {  //Can only initiate a whisper if not restricted
+					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});

@@ -293,7 +293,7 @@ return {
 							} 
 						} 
 					}
-					if (user.uid != me.uid && me.whisperer) {  //Can only initiate a whisper if not restricted
+					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers
 						div.firstChild.addClass('whisperer');
 						div.addEvent('keydown', function(e) {
 							if(!e.control) return;
