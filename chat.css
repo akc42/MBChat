@@ -327,7 +327,8 @@ div.list {
 	position:absolute;
 	right:20px;
 	bottom:20px;
-	color:#fff;
+	color:#FF0000;
+	text-shadow:white 1px 1px;
 	width:200px;
 }
 #soundDelay {
