@@ -83,7 +83,7 @@ dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid)
 	<![endif]-->
 	<script src="/static/scripts/mootools-1.2-core.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="/static/scripts/mootools-1.2-more.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/static/scripts/soundmanager2.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/static/scripts/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="mbchat.js" type="text/javascript" charset="UTF-8"></script>
 </head>
 <body>
@@ -115,7 +115,7 @@ window.addEvent('unload', function() {
 });
 
 var soundReady = false;
-
+soundManager.url = '/static/scripts/';
 soundManager.onload = function() {
 	soundManager.createSound({
 		id : 'whispers',
