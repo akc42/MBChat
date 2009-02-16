@@ -35,7 +35,7 @@ MBchat = function () {
 			}});
 		},
 		transmit: function (options) {
-			this.request.get($merge(myRequestOptions,options));
+			this.request.post($merge(myRequestOptions,options));
 		}		
 	});
 	var displayUser = function(user,container) {
@@ -157,7 +157,7 @@ return {
 
 	},
 	logout: function () {
-		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).get($merge(myRequestOptions,
+		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
 				{'mbchat':version},MooTools,
 				{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
 	},

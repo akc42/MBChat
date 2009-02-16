@@ -17,7 +17,7 @@ if($user_info['is_guest']) {
 };
 
 
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid']) 
+if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])
 	&& isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end']) && isset($_GET['tzo'])))
 	die('Log - Hacking attempt - wrong parameters');
 $uid = $_GET['user'];
@@ -54,7 +54,7 @@ $result = dbQuery($sql);
 <a id="exitPrint" href="/chat"><img src="exit.gif"/></a>
 <h1>Melinda&#8217;s Backups Chat History Log</h1>
 <h2><?php echo $room; ?></h2> 
-<h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3> 
+<h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3>
 
 <?php
 function message($txt) {

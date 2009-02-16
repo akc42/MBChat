@@ -1,11 +1,11 @@
 <?php
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])))
+if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid'])))
 	die('Hacking attempt - wrong parameters');
-$uid = $_GET['user'];
+$uid = $_POST['user'];
 
-if ($_GET['password'] != sha1("Key".$uid))
-	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
-$rid = $_GET['rid'];
+if ($_POST['password'] != sha1("Key".$uid))
+	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
+$rid = $_POST['rid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');

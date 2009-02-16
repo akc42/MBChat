@@ -1,15 +1,15 @@
 <?php
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['lid'])))
+if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['lid'])))
 	die('Poll-Hacking attempt - wrong parameters');
-$uid = $_GET['user'];
+$uid = $_POST['user'];
 
-if ($_GET['password'] != sha1("Key".$uid))
-	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
-$lid = $_GET['lid'];
+if ($_POST['password'] != sha1("Key".$uid))
+	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
+$lid = $_POST['lid'];
 
 define ('MBC',1);
 require_once('db.php');
-if(isset($_GET['presence'])) {
+if(isset($_POST['presence'])) {
 	dbQuery('UPDATE users SET time = NOW() WHERE uid ='.dbMakeSafe($uid).';'); 
 	include('timeout.php');		//Timeout inactive users
 }

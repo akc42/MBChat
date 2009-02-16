@@ -1,10 +1,10 @@
 <?php
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])))
+if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid'])))
 	die('Hacking attempt - wrong parameters');
-$uid = $_GET['user'];
-if ($_GET['password'] != sha1("Key".$uid))
-	die('Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
-$rid = $_GET['rid'];
+$uid = $_POST['user'];
+if ($_POST['password'] != sha1("Key".$uid))
+	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
+$rid = $_POST['rid'];
 
 define('MBCHAT_MAX_TIME',	3);		//Max hours of message to display in a room
 define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
