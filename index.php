@@ -62,10 +62,11 @@ define('MBCHAT_LOG_6HOUR_STEPS', 6);		//No of spin steps where clock varies by 6
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-$role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
-			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
+$role = ((in_array(SMF_CHAT_LEAD, $groups))? 'L' : (  // which role 
+			(in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
-			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :'R'))) ;
+			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :(
+			($user_info['is_admin'])? 'A' : 'R'))))) ;
 
 $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 $whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');

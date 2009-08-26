@@ -196,7 +196,7 @@ body, td, th
 
 /* these are the classes related to user types */
 /* admin/leadership team */
-span.A , span.L {
+span.L {
 	color:#036972;   
 }
 /* melinda - head of our club */
@@ -216,7 +216,7 @@ span.B {
 	color:#414141;
 }
 /* regular members */
-span.R {
+span.A , span.R {
 	color:#414141;
 }
 /* chatbot */
