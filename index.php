@@ -95,8 +95,8 @@ dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid)
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
 	<![endif]-->
-	<script src="/static/scripts/mootools-1.2-core.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/static/scripts/mootools-1.2-more.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/static/scripts/mootools-1.2.3-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/static/scripts/mootools-1.2.3.1-more.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="/static/scripts/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="mbchat.js" type="text/javascript" charset="UTF-8"></script>
 </head>

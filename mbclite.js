@@ -24,15 +24,18 @@ MBchat = function () {
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
 	var logOptions;
+	var logged_in;
+	var reqQueue = new Request.Queue({stopOnFailure:false});
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url,link:'cancel',onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
 					displayErrorMessage(errorMessage);
 				}
 			}});
+			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
 		},
 		transmit: function (options) {
 			this.request.post($merge(myRequestOptions,options));
@@ -74,6 +77,7 @@ MBchat = function () {
 	});
 return {
 	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
+	    logged_in = true;
 		pO = pollOptions;
 // Save key data about me
 		me =  user; 
@@ -157,9 +161,12 @@ return {
 
 	},
 	logout: function () {
-		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
-				{'mbchat':version},MooTools,
-				{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
+	    if(logged_in) {
+    		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
+	    			{'mbchat':version},MooTools,
+	        		{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
+        }
+        logged_in = false;
 	},
 	updateables : function () {
 		var replaceHyperLinks = function(text) {
