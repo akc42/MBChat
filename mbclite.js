@@ -25,15 +25,17 @@ MBchat = function () {
 	var emoticonRegExpStr;
 	var logOptions;
 	var logged_in;
+	var reqQueue = new Request.Queue({stopOnFailure:false});
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url,link:'cancel',onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
 					displayErrorMessage(errorMessage);
 				}
 			}});
+			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
 		},
 		transmit: function (options) {
 			this.request.post($merge(myRequestOptions,options));
