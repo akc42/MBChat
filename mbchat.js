@@ -25,6 +25,7 @@ MBchat = function () {
 	var emoticonRegExpStr;
 	var logOptions;
 	var version;
+	var logged_in;
 	var ServerReq = new Class({
 		initialize: function(url,process) {
 			this.request = new Request.JSON({url:url,link:'cancel',onComplete: function(response,errorMessage) {
@@ -75,6 +76,7 @@ MBchat = function () {
 	});
 return {
 	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
+	    logged_in = true;
 		logOptions = logOptionParameters;
 		pO = pollOptions;
 		version = $('version').get('text');
@@ -220,9 +222,12 @@ return {
 		
 	},
 	logout: function () {
-		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
-				{'mbchat':version},MooTools,
-				{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
+	    if(logged_in) {
+    		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
+	    			{'mbchat':version},MooTools,
+	        		{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
+        }
+        logged_in = false;
 	},
 	sounds: function () {
 		var music = false;
