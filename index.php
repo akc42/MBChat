@@ -70,9 +70,22 @@ $role = ((in_array(SMF_CHAT_LEAD, $groups))? 'L' : (  // which role
 
 $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 $whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');
+//Make a pipe for this user - but before doing so kill anyother using this userID.  We can only have one chat at once.
+$old_umask = umask(0007);
+if(file_exists(MBCHAT_PATH."pipes/msg".$uid)) {
+// we have to kill other chat, in case it was stuck
+    $sendpipe=fopen(MBCHAT_PATH."pipes/msg".$_POST['uid'],'r+');
+    fwrite($sendpipe,'$LX');
+    fclose($sendpipe);
+// Now sleep long enough for the other instance to go away
+    sleep(2);
+}
+posix_mkfifo(MBCHAT_PATH."pipes/msg".$uid,0660);
+umask($old_umask);
 
 dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.
 				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
+				
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
@@ -110,7 +123,7 @@ window.addEvent('domready', function() {
 				'<?php echo MBCHAT_ENTRANCE_HALL ?>',
 				<?php echo MBCHAT_MAX_MESSAGES ?>);
 });	
-window.addEvent('unload', function() {
+window.addEvent('beforeunload', function() {
 	MBchat.logout();
 	
 });
