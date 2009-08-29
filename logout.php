@@ -10,8 +10,6 @@ $txt .=' Browser : '.$_POST['browser'].' on Platform : '.$_POST['platform'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
-unlink(MBCHAT_PATH."pipes/msg".$uid); //Loose FIFO
 
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if(mysql_num_rows($result) != 0) {
@@ -25,6 +23,8 @@ if(mysql_num_rows($result) != 0) {
 		
 };
 mysql_free_result($result);
+define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
+unlink(MBCHAT_PATH."pipes/msg".$uid); //Loose FIFO
 
 echo '{"Logout" : '.$txt.'}' ;
 ?> 
