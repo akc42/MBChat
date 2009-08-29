@@ -23,6 +23,7 @@ if(mysql_num_rows($result) != 0) {
 		
 };
 mysql_free_result($result);
+usleep(50000);
 define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
 unlink(MBCHAT_PATH."pipes/msg".$uid); //Loose FIFO
 
