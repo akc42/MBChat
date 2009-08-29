@@ -20,6 +20,8 @@ if(mysql_num_rows($result) != 0) {
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 					dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
 					', "LH" ,'.dbMakeSafe($rid).');');
+	include_once('send.php');
+    send_to_all(mysql_insert_id(),$uid, $user['name'],$user['role'],"LH",$rid,'');	
 	
 	
 	$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text  FROM log';

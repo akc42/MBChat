@@ -24,7 +24,7 @@ MBchat = function () {
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
 	var logOptions;
-	var logged_in;
+	var logged_in = false;
 	var reqQueue = new Request.Queue({stopOnFailure:false});
 	var ServerReq = new Class({
 		initialize: function(url,process) {
@@ -59,9 +59,9 @@ MBchat = function () {
 	var chatBotMessage = function (msg) {
 		return '<span class="chatBotMessage">'+msg+'</span>';
 	};
-	var messageReq = new ServerReq('message.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
-	var whisperReq = new ServerReq('whisper.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
-	var privateReq = new ServerReq('private.php',function (response) {MBchat.updateables.poller.pollResponse(response.messages)});
+	var messageReq = new ServerReq('message.php',function (r) {});
+	var whisperReq = new ServerReq('whisper.php',function (r) {});
+	var privateReq = new ServerReq('private.php',function (r) {});
 	var goPrivate = function() {
 		privateReq.transmit({
 			'wid': this.getParent().get('id').substr(1).toInt(),
@@ -71,13 +71,14 @@ MBchat = function () {
 	var contentSize;
 	var pO;
 	var loginReq = new ServerReq('login.php',function(response) {
+	    logged_in = true;
 		MBchat.updateables.poller.init(pO);
 		MBchat.updateables.whispers.init(response.lastid.toInt());
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 	});
 return {
 	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
-	    logged_in = true;
+	    logged_in = false;
 		pO = pollOptions;
 // Save key data about me
 		me =  user; 
@@ -162,6 +163,7 @@ return {
 	},
 	logout: function () {
 	    if(logged_in) {
+	        MBchat.updateables.poller.logout(); //stop poller completely
     		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
 	    			{'mbchat':version},MooTools,
 	        		{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
@@ -186,42 +188,37 @@ return {
 				MBchat.updateables.whispers.processMessage(message);
 			},
 			poller : function() {
-				var presenceInterval;
-				var presenceCounter = 0;
 				var pollInterval;
 				var pollerId;
 				var lastId = null;
-				var fullPoll=true;
+				var fullPoll=false;
 				var wid;
 
-				var pollRequest = new ServerReq('poll.php',function(response) {
-					MBchat.updateables.poller.pollResponse(response.messages)
-				});
+				var pollRequest = new Request.JSON({url:'read.php',onComplete: function(response) {
+				    if(response) {
+				        MBchat.updateables.poller.pollResponse(response.messages);
+				        if (fullPoll) pollRequest.post(myRequestOptions);
+				    } else {
+				        MBchat.logout();
+						 //and go back to the forum
+						window.location = '/forum' ;
+				    }
+				}});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
-				var poll = function () {
-					var pollRequestOptions = {'lid':lastId};
-					presenceCounter++;
-					if (presenceCounter > presenceInterval) {
-						presenceCounter = 0;
-						if (fullPoll) {
-							$extend(pollRequestOptions,{'presence':true});
-						} else {
+				var pollPresence = function () {
 							presenceReq.transmit({});  //say here (also timeout others)
-						}
-					}
-					if (fullPoll) {
-						pollRequest.transmit(pollRequestOptions);  //go get data
-					}
 				};
 				return {
 					init : function (pollOptions) {
 						presenceInterval = pollOptions.presence;
 						pollInterval = pollOptions.poll;	
+						fullPoll=true;	
 					},
 					setLastId : function(lid) {
 						if (!lastId) {
 							lastId = lid;
-							pollerId = poll.periodical(pollInterval,MBchat.updateables);
+							pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);
+		        		    if (fullPoll) pollRequest.post(myRequestOptions);		
 						} else {
 							lastId = (lastId > lid)? lid : lastId;  //set to earliest value
 						}
@@ -231,7 +228,10 @@ return {
 					},
 
 					start : function () {
-						fullPoll=true;
+	        		    if (!fullPoll) {
+	        		        fullPoll=true;
+	        		        pollRequest.post(myRequestOptions);		
+						}
 					},
 
 					pollResponse : function(messages) {
@@ -246,6 +246,10 @@ return {
 					},
 					stop : function() {
 						fullPoll=false;
+					},
+					logout: function() {
+					    stop();
+					    $clear(pollerId);
 					}
 				};
 			}(),
@@ -403,6 +407,13 @@ return {
 									}
 								}
 								break;
+							case 'LX' :
+							    if (me.uid == msg.user.uid) {
+							        MBchat.logout();
+	            					 //and go back to the forum
+            						window.location = '/forum' ;
+							    }
+							    break;
 							case 'RX' :
 								if (currentRid == 0) {
 									if (!userDiv) {
@@ -755,33 +766,38 @@ return {
 								}
 								break;
 							default:
-								if(privateRoom == 0) {
-									if (msg.rid == room.rid) {
-										switch(msg.type) {
-										case 'ME' :
-											this.displayMessage(lastId,msg.time,msg.user,msg.message);
-											break;
-										case 'LT' :
-											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-											break;
-										case 'LI' :
-											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
-											break;
-										case 'LO' :
-											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
-											break;
-										case 'RM' :
-											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
-											break;
-										case 'RN' :
-											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
-											break;
-										default:
-											break;
-										}
-									}
-								}
 								break;
+							}
+						}
+						//Regardless of whether we;ve seen these before we are going to display them again.
+						if(privateRoom == 0) {
+							if (msg.rid == room.rid) {
+								switch(msg.type) {
+								case 'ME' :
+									this.displayMessage(lastId,msg.time,msg.user,msg.message);
+									MBchat.sounds.messageArrives();
+									break;
+								case 'LT' :
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
+									MBchat.sounds.roomMove();
+									break;
+								case 'LI' :
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
+									MBchat.sounds.roomMove();
+									break;
+								case 'LO' :
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
+									MBchat.sounds.roomMove();
+									break;
+								case 'RM' :
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
+									break;
+								case 'RN' :
+									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Is no longer a moderator'));
+									break;
+								default:
+									break;
+								}
 							}
 						}
 					},

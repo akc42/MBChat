@@ -19,6 +19,8 @@ if(mysql_num_rows($result) != 0) {
 		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 			dbMakeSafe($wuid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "WJ" ,'.dbMakeSafe($wid).');');
+	    include_once('send.php');
+        send_to_all(mysql_insert_id(),$wuid, $row['name'],$row['role'],"WJ",$wid,'');	
 	}
 	mysql_free_result($result);
 	

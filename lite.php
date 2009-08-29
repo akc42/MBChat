@@ -34,7 +34,7 @@ define('MBCHAT_GREEN_ROOM',	3);
 define('MBCHAT_VAMP_CLUB',	4);
 define('MBCHAT_AUDITORIUM',	5);
 
-define('MBCHAT_POLL_INTERVAL',	2000);  //Poll interval in milliseconds
+define('MBCHAT_POLL_INTERVAL',	60000);  //Poll interval in milliseconds
 define('MBCHAT_POLL_PRESENCE',	10);	//Rate of presence polls (mark online)
 
 define('MBCHAT_EMOTICON_PATH', '/static/images/emoticons/');
@@ -66,8 +66,8 @@ $whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');
 $old_umask = umask(0007);
 if(file_exists(MBCHAT_PATH."pipes/msg".$uid)) {
 // we have to kill other chat, in case it was stuck
-    $sendpipe=fopen(MBCHAT_PATH."pipes/msg".$_POST['uid'],'r+');
-    fwrite($sendpipe,'$LX');
+    $sendpipe=fopen(MBCHAT_PATH."pipes/msg".$uid,'r+');
+    fwrite($sendpipe,'<LX>');
     fclose($sendpipe);
 // Now sleep long enough for the other instance to go away
     sleep(2);

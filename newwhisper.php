@@ -32,10 +32,12 @@ if(mysql_num_rows($result) == 2) {
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 		dbMakeSafe($wuid).','.dbMakeSafe($wuser['name']).','.dbMakeSafe($wuser['role']).
 		', "WJ" ,'.dbMakeSafe($wid).');');
+	include_once('send.php');
+    send_to_all(mysql_insert_id(),$wuid, $wuser['name'],$wuser,"WJ",$wid,'');	
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 		dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
 		', "WJ" ,'.dbMakeSafe($wid).');');
-	
+	send_to_all(mysql_insert_id(),$uid, $user['name'],$user['role'],"WJ",$wid,'');	
 }	
 
 

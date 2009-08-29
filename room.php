@@ -11,6 +11,7 @@ define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
+$didre = false;
 $messages = array();
 $result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
 if(mysql_num_rows($result) != 0) {
@@ -35,6 +36,10 @@ if(mysql_num_rows($result) != 0) {
 		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 						dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 						', "RE" ,'.dbMakeSafe($rid).','.dbMakeSafe($user['question']).');');
+		$didre = true;
+		$name = $user['name'];
+		$question = $user['question'];
+        $lid= mysql_insert_id();
 		$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 		$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( (participant.uid = '.dbMakeSafe($uid).' AND type = "WH" )' ;
 		$sql .= 'OR rid = '.dbMakeSafe($rid).') AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
@@ -63,5 +68,8 @@ if(mysql_num_rows($result) != 0) {
 	}	
 }
 echo '{ "room" :'.json_encode($room).', "messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$row['lid'].'}';
-
+if ($didre) {
+    include_once('send.php');
+    send_to_all($lid,$uid, $name,$role,"RE",$rid,$question);	
+}
 ?>

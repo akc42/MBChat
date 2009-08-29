@@ -45,6 +45,8 @@ if ($rid != 0) {
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 					dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
 					', "RX" ,'.dbMakeSafe($rid).');');
+	include_once('send.php');
+    send_to_all(mysql_insert_id(),$uid, $user['name'],$role,"RX",$rid,'');	
 }
 //should only return the whispers
 $sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';

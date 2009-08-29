@@ -22,8 +22,9 @@ if(mysql_num_rows($result) != 0) {
 				dbMakeSafe($uid).','.dbMakeSafe($user['name']).', '.
 				dbMakeSafe($user['moderator']).', "RN" ,'.
 				dbMakeSafe($rid).');');
+		include_once('send.php');
+        send_to_all(mysql_insert_id(),$uid, $user['name'],$user['moderator'],"RN",$rid,"");	
 
 	}
 }
-include('poll.php');  //Get an immediate reply to messages
 ?>

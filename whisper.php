@@ -23,9 +23,11 @@ if(mysql_num_rows($result) > 0) {  //only insert into channel if still there
 		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "WH" ,'.dbMakeSafe($wid).','.dbMakeSafe($text).');');
+		include_once('send.php');
+        send_to_all(mysql_insert_id(),$uid, $row['name'],$role,"WH",$wid,$text);	
+
 	}
 }
 mysql_free_result($result);
-
-include('poll.php');  //by including this we send current messages immediately
+echo '{"Status":"OK"}';
 ?> 

@@ -11,7 +11,7 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
-unlink(MBCHAT_PATH."pipes/msg".$uid,0660); //Loose FIFO
+unlink(MBCHAT_PATH."pipes/msg".$uid); //Loose FIFO
 
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if(mysql_num_rows($result) != 0) {
@@ -20,7 +20,8 @@ if(mysql_num_rows($result) != 0) {
 	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "LO" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
-$lid = mysql_insert_id();
+	include_once('send.php');
+    send_to_all(mysql_insert_id(),$uid, $row['name'],$row['role'],"LO",$row['rid'],'');	
 		
 };
 mysql_free_result($result);

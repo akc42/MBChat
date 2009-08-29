@@ -12,8 +12,6 @@ $text = htmlentities(stripslashes($_POST['text']),ENT_QUOTES);   // we need to g
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 
-
-
 $result = dbQuery('SELECT uid, users.name, role, question, users.rid, type FROM users LEFT JOIN rooms ON users.rid = rooms.rid WHERE uid = '
 	.dbMakeSafe($uid).' ;');
 if(mysql_num_rows($result) != 0) {
@@ -24,33 +22,33 @@ if(mysql_num_rows($result) != 0) {
 	
 	$role = $row['role'];
 	$type = $row['type'];
-	
+	$mtype = '' ;
 	if ($type == 'M' && $role != 'M' && $role != 'H' && $role != 'G' && $role != 'S' ) {
 	//we are in a moderated room and not allowed to speak, so we just update the question we want to ask
 		if( $text == '') {
 			dbQuery('UPDATE users SET time = NOW(), question = NULL, rid = '.dbMakeSafe($rid).
 				' WHERE uid = '.dbMakeSafe($uid).';');
-			dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-					dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($role).
-					', "MR" ,'.dbMakeSafe($rid).', NULL );');
+			$mtype = "MR";
 		} else {
 			dbQuery('UPDATE users SET time = NOW(), question = '.dbMakeSafe($text).', rid = '.dbMakeSafe($rid).
 				' WHERE uid = '.dbMakeSafe($uid).';');
-			dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-					dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($role).
-					', "MQ" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($text).');');
+			$mtype = "MQ";
 		}
 	} else {
 		//just indicate presemce
 		dbQuery('UPDATE users SET time = NOW(), question = NULL, rid = '.dbMakeSafe($rid).
 			' WHERE uid = '.dbMakeSafe($uid).';');
 		if ($text != '') {  //only insert non blank text - ignore other
-			dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-					dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($role).
-					', "ME" ,'.dbMakeSafe($rid).','.dbMakeSafe($text).');');
+		    $mtype = "ME";
 		}
 	}
+	include_once('send.php');
+	if ($mtype != '') {
+		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
+					dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($role).
+					','.dbMakeSafe($mtype).','.dbMakeSafe($rid).','.dbMakeSafe($text).');');
+        send_to_all(mysql_insert_id(),$uid, $row['name'],$role,$mtype,$rid,$text);	
+    }
 }
-
-include('poll.php');  //Get an immediate reply to messages
+echo '{"Status":"OK"}';
 ?> 

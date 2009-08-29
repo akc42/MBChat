@@ -16,6 +16,7 @@ if(mysql_num_rows($result) != 0) {
 	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 					dbMakeSafe($quid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
 					', "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
+	include_once('send.php');
+    send_to_all(mysql_insert_id(),$quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
 }
-include('poll.php');  //Get an immediate reply to messages
 ?>
