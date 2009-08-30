@@ -12,7 +12,9 @@ $lid = $_POST['lid'];
 
 
 $readpipe=fopen(MBCHAT_PATH."pipes/msg".$uid,'r');
-$response=fread($readpipe,400);
+while (!feof($readpipe)) {
+    $response .= fread($readpipe,8192);
+}
 fclose($readpipe);
 
 if (strlen($response) > 0 ) {
