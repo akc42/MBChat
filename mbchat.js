@@ -436,7 +436,7 @@ return {
 						fullPoll=false;
 					},
 					logout: function() {
-					    stop();
+					    MBchat.updateables.poller.stop();
 					    $clear(pollerId);
 					}
 				};
