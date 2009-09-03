@@ -1,4 +1,0 @@
-All files in this application are
-
-
-Copyright (c) 2008 Alan Chandler, licenced under the GPL (see LICENCE.txt file in this directory)
