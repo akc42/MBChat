@@ -8,23 +8,18 @@
 error_reporting(E_ALL);
 // Path to the chat directory:
 
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
+if(!(isset($_GET['uid']) && isset($_GET['pass'])  && isset($_GET['name'])  && isset($_GET['mod']) && isset($_GET['role']) && is
+set($_GET['whi'])))
+ die('Hacking attempt - wrong parameters');
+$uid = $_GET['uid'];
+$password = $_GET['pass'];
+if ($password != sha1("Key".$uid))
+   die('Hacking attempt got: '.$password.' expected: '.sha1("Key".$uid));
 
-require_once(MBCHAT_PATH.'../forum/SSI.php');
-//If not logged in to the forum, not allowed any further so redirect to page to say so
-if($user_info['is_guest']) {
-	header( 'Location: http://mb.home/static/Chat.htm' ) ;
-	exit;
-};
-
-// SMF membergroup IDs for the groups that we have used to define characteristics which control Chat Group
-define('SMF_CHAT_BABY',		10);
-define('SMF_CHAT_LEAD',		9);
-define('SMF_CHAT_MODERATOR',	14);
-define('SMF_CHAT_MELINDA',	13);
-define('SMF_CHAT_HONORARY',	20);
-define('SMF_CHAT_SPECIAL',	19);
-define('SMF_CHAT_NO_WHISPER',23);
+$name=$_GET['name'];
+$role=$_GET['role'];
+$mod=$_GET['mod'];
+$whi=$_GET['whi'];
 
 define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
@@ -52,16 +47,7 @@ define('MBCHAT_LOG_6HOUR_STEPS', 6);		//No of spin steps where clock varies by 6
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-$groups =& $user_info['groups'];
-$uid = $ID_MEMBER;
-$name =& $user_info['name'];
-$role = (in_array(SMF_CHAT_LEAD, $groups))? (($user_info['is_admin'])? 'A' : 'L') :   // which role 
-			((in_array(SMF_CHAT_BABY, $groups))? 'B' :(
-			(in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
-			(in_array(SMF_CHAT_HONORARY, $groups))? 'G' :'R'))) ;
 
-$mod = (in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N');
-$whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');
 //Make a pipe for this user - but before doing so kill anyother using this userID.  We can only have one chat at once.
 $old_umask = umask(0007);
 if(file_exists(MBCHAT_PATH."pipes/msg".$uid)) {
@@ -77,18 +63,19 @@ umask($old_umask);
 
 dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.
 				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
-
+				
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>Melinda's Backups Chat</title>
+	<title>Melinda's Backups Chat (Lite)</title>
 	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
 	<![endif]-->
-	<script src="/static/scripts/mootools-1.2.3-core-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/static/scripts/mootools-1.2.3.1-more.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/mootools-1.2.3-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="mootools-1.2.3.1-more.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="mbclite.js" type="text/javascript" charset="UTF-8"></script>
 </head>
 <body>
@@ -100,8 +87,8 @@ window.addEvent('domready', function() {
 				name: '<?php echo $name ; ?>',
 				 role: '<?php echo $role; ?>',
 				password : '<?php echo sha1("Key".$uid); ?>',
-				mod: <?php echo '"'.$mod.'"' ;  ?>,
-				whisperer: <?php echo $whisperer ; ?> },
+				mod: <?php echo '"'.$mod.'"' ; ?> ,
+				whisperer: <?php echo $whi ; ?>  }, 
 				{poll: <?php echo MBCHAT_POLL_INTERVAL ; ?>,
 				presence:<?php echo MBCHAT_POLL_PRESENCE ; ?>},
 				{fetchdelay: <?php echo MBCHAT_FETCHLOG_DELAY ; ?>,
@@ -118,6 +105,44 @@ window.addEvent('beforeunload', function() {
 	MBchat.logout();
 	
 });
+
+var soundReady = false;
+soundManager.url = '/js/';
+soundManager.onload = function() {
+	soundManager.createSound({
+		id : 'whispers',
+		url : 'ding.mp3',
+		autoLoad : true ,
+		autoPlay : false 
+	});
+	soundManager.createSound({
+		id : 'move',
+		url : 'exit.mp3',
+		autoLoad : true ,
+		autoPlay : false 
+	});
+	soundManager.createSound({
+		id : 'speak',
+		url : 'poptop.mp3',
+		autoLoad : true ,
+		autoPlay : false 
+	});
+	soundManager.createSound({
+		id : 'creaky',
+		url : 'creaky.mp3',
+		autoLoad : true ,
+		autoPlay : false
+	});
+	soundManager.createSound({
+		id : 'music',
+		url : 'iyl.mp3',
+		autoLoad : true ,
+		autoPlay : false
+	});
+
+	soundReady=true;
+};
+
 
 
 	// -->

@@ -130,7 +130,7 @@ return {
 					} else {
 						if (room.rid == 0) {
 							MBchat.logout();
-							window.location = '/forum' ;
+							window.location = 'forum.php' ;
 						} else {
 							MBchat.updateables.message.leaveRoom();
 						}
@@ -196,12 +196,12 @@ return {
 
 				var pollRequest = new Request.JSON({url:'read.php',onComplete: function(response) {
 				    if(response) {
-				        MBchat.updateables.poller.pollResponse(response.messages);
-				        if (fullPoll) pollRequest.post(myRequestOptions);
+				        if(response.messages) MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
+				        if (fullPoll) pollRequest.post.delay(50,this,myRequestOptions);
 				    } else {
 				        MBchat.logout();
 						 //and go back to the forum
-						window.location = '/forum' ;
+						window.location = 'forum.php' ;
 				    }
 				}});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
@@ -411,7 +411,7 @@ return {
 							    if (me.uid == msg.user.uid) {
 							        MBchat.logout();
 	            					 //and go back to the forum
-            						window.location = '/forum' ;
+            						window.location = 'forum.php' ;
 							    }
 							    break;
 							case 'RX' :
@@ -1069,7 +1069,7 @@ return {
 			if (room.rid == 0 ) {
 				MBchat.logout();
 				//and go back to the forum
-				window.location = '/forum' ;
+				window.location = 'forum.php' ;
 			} else {
 				MBchat.updateables.message.leaveRoom();
 			}
