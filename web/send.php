@@ -19,6 +19,7 @@
             }
             closedir($dh);
         }
+        file_put_contents(MBCHAT_PIPE_PATH.'time.txt', ''.time());
  	}
 ?>
 

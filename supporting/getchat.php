@@ -41,10 +41,12 @@ $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$gro
 $whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');
 $pass = sha1("Key".$uid);
 
+$gp = implode(":",$groups);
+
 // No call the remote chat with all the correct parameters
 if(in_array(SMF_CHAT_LITE,$groups)) {
-	header( "Location: http://mbchat.chandlerfamily.org.uk/lite.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer" );
+	header( "Location: http://mbchat.chandlerfamily.org.uk/lite.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp" );
 	exit;
 };
-header( "Location: http://mbchat.chandlerfamily.org.uk/index.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer");
+header( "Location: http://mbchat.chandlerfamily.org.uk/index.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp");
 ?>

@@ -8,8 +8,7 @@
 error_reporting(E_ALL);
 // Path to the chat directory:
 
-if(!(isset($_GET['uid']) && isset($_GET['pass'])  && isset($_GET['name'])  && isset($_GET['mod']) && isset($_GET['role']) && is
-set($_GET['whi'])))
+if(!(isset($_GET['uid']) && isset($_GET['pass'])  && isset($_GET['name'])  && isset($_GET['mod']) && isset($_GET['role']) && isset($_GET['whi'])))
  die('Hacking attempt - wrong parameters');
 $uid = $_GET['uid'];
 $password = $_GET['pass'];
@@ -20,6 +19,9 @@ $name=$_GET['name'];
 $role=$_GET['role'];
 $mod=$_GET['mod'];
 $whi=$_GET['whi'];
+
+define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
+define('MBCHAT_PIPE_PATH',	MBCHAT_PATH.'pipes/');
 
 define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
@@ -50,7 +52,7 @@ require_once('db.php');
 
 //Make a pipe for this user - but before doing so kill anyother using this userID.  We can only have one chat at once.
 $old_umask = umask(0007);
-if(file_exists(MBCHAT_PATH."pipes/msg".$uid)) {
+if(file_exists(MBCHAT_PIPE_PATH."msg".$uid)) {
 // we have to kill other chat, in case it was stuck
     $sendpipe=fopen(MBCHAT_PATH."pipes/msg".$uid,'r+');
     fwrite($sendpipe,'<LX>');
@@ -58,7 +60,7 @@ if(file_exists(MBCHAT_PATH."pipes/msg".$uid)) {
 // Now sleep long enough for the other instance to go away
     sleep(2);
 }
-posix_mkfifo(MBCHAT_PATH."pipes/msg".$uid,0660);
+posix_mkfifo(MBCHAT_PIPE_PATH."msg".$uid,0660);
 umask($old_umask);
 
 dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.

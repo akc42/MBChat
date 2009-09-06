@@ -24,5 +24,7 @@ if (strlen($response) > 0 ) {
             echo substr($message,1) ;
     }
     echo ']}';
+} else {
+ echo '{"status":"time"}';
 }
 ?>
