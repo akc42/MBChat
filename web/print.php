@@ -43,7 +43,7 @@ $result = dbQuery($sql);
 	<link rel="stylesheet" type="text/css" href="chat-pr.css" title="mbstyle"/>
 </head>
 <body>
-<a id="exitPrint" href="/chat"><img src="exit.gif"/></a>
+<a id="exitPrint" href="forum.php"><img src="exit.gif"/></a>
 <h1>Melinda&#8217;s Backups Chat History Log</h1>
 <h2><?php echo $room; ?></h2> 
 <h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3>
