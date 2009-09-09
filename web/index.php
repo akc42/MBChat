@@ -45,8 +45,8 @@ $gp = implode(":",$groups);
 
 // No call the remote chat with all the correct parameters
 if(in_array(SMF_CHAT_LITE,$groups)) {
-	header( "Location: http://mb.chandlerfamily.org.uk/lite.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp" );
+	header( "Location: lite.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp" );
 	exit;
 };
-header( "Location: http://mb.chandlerfamily.org.uk/chat.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp");
+header( "Location: chat.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp");
 ?>
