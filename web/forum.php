@@ -1,6 +1,6 @@
 <?php
 
-header("location: http://www.melindasbackups.com/forum/index.php");
+header("location: http://mb.chandlerfamily.org.uk/forum/index.php");
 
 ?>
 
