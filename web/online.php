@@ -11,7 +11,7 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 
 
-$result = dbQuery('SELECT uid, name, role, question,private FROM users WHERE rid = '.dbMakeSafe($rid).' ;');
+$result = dbQuery('SELECT uid, name, role, question,private AS wid FROM users WHERE rid = '.dbMakeSafe($rid).' ;');
 $users = array();
 if(mysql_num_rows($result) != 0) {
 	while($row=mysql_fetch_assoc($result)) {

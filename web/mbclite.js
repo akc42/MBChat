@@ -280,12 +280,12 @@ return {
 					div = new Element('div', {'id': 'U'+user.uid}); 
 					var span = displayUser(user,div);
 
-					if (user.private && user.private.toInt() != 0  ) { 
+					if (user.wid && user.wid.toInt() != 0  ) { 
 						//This user is in a private room so maybe we don't display him
 						if (user.uid != me.uid) {
 							//Not me, but I might be in a whisper with them
 
-							var whisperBox = $('W'+user.private);
+							var whisperBox = $('W'+user.wid);
 							if (!whisperBox) {
 								return null; //not in any whisper box, so don't display 
 							}
@@ -547,7 +547,7 @@ return {
 								} else {
 									// Add user to list if in a whisper (otherwise doesn't)
 									var user = msg.user;
-									user.private = msg.rid;
+									user.wid = msg.rid;
 									addUser(user);
 								}
 								break;
