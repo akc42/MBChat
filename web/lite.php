@@ -8,7 +8,7 @@
 error_reporting(E_ALL);
 // Path to the chat directory:
 
-if(!(isset($_GET['uid']) && isset($_GET['pass'])  && isset($_GET['name'])  && isset($_GET['mod']) && isset($_GET['role']) && isset($_GET['whi'])))
+if(!(isset($_GET['uid']) && isset($_GET['pass'])  && isset($_GET['name'])  && isset($_GET['mod']) && isset($_GET['role']) && isset($_GET['whi']) && isset($_GET['gp'])))
  die('Hacking attempt - wrong parameters');
 $uid = $_GET['uid'];
 $password = $_GET['pass'];
