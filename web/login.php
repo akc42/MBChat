@@ -5,8 +5,6 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
-
 $txt = 'MBchat version - '.$_POST['mbchat'].', Mootools_Version - '.$_POST['version'].' - build - '.$_POST['build'] ;
 $txt .=' Browser - '.$_POST['browser'].' on Platform - '.$_POST['platform'];
 define ('MBC',1);   //defined so we can control access to some of the files.
@@ -21,9 +19,9 @@ if(mysql_num_rows($result) != 0) {
     $lid = mysql_insert_id();
     
 //If FIFO doesn't exists (when trying to login after timeout for instance) create it
-	if(!file_exists(MBCHAT_PATH."pipes/msg".$uid)) {
+	if(!file_exists(MBCHAT_PIPE_PATH."msg".$uid)) {
 	    $old_umask = umask(0007);
-    	posix_mkfifo(MBCHAT_PATH."pipes/msg".$uid,0660);
+    	posix_mkfifo(MBCHAT_PIPE_PATH."msg".$uid,0660);
         umask($old_umask);
     }
 	

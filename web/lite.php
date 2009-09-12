@@ -21,9 +21,6 @@ $mod=$_GET['mod'];
 $whi=$_GET['whi'];
 $groups = explode(":",$_GET['gp']);
 
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
-define('MBCHAT_PIPE_PATH',	MBCHAT_PATH.'pipes/');
-
 define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
 define('MBCHAT_MEMBERS_LOUNGE', 1);

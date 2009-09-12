@@ -7,7 +7,6 @@
 // Show all errors:
 error_reporting(E_ALL);
 // Path to the chat directory:
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
 
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])
 	&& isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end']) && isset($_GET['tzo'])))

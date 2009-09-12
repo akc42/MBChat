@@ -5,6 +5,9 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
 	if (!defined('MBC'))
 		die('Hacking attempt...');
+
+//Use for all pipe accesses
+define('MBCHAT_PIPE_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/pipes/');
 	$db_server = 'localhost';
 	$db_name = 'melindas_chat';
 	$db_user = 'melindas_chat';

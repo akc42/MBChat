@@ -9,11 +9,13 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 dbQuery('UPDATE users SET time = NOW() WHERE uid ='.dbMakeSafe($uid).';');  //Mark me as being active
+
 include('timeout.php');		//Timeout inactive users 
 
-
-   
-define('MBCHAT_PIPE_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/pipes/');
+/*
+If no one has been sent any messages in the last 5 minutes then send a null message to wake them up - just to ensure timeouts
+do not kick in
+*/
 
 if(file_get_contents(MBCHAT_PIPE_PATH.'time.txt') + 600 < time()) {
     $dh = opendir(MBCHAT_PIPE_PATH);
