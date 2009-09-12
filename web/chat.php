@@ -53,7 +53,7 @@ require_once('db.php');
 $old_umask = umask(0007);
 if(file_exists(MBCHAT_PIPE_PATH."msg".$uid)) {
 // we have to kill other chat, in case it was stuck
-    $sendpipe=fopen(MBCHAT_PATH."pipes/msg".$uid,'r+');
+    $sendpipe=fopen(MBCHAT_PIPE_PATH."msg".$uid,'r+');
     fwrite($sendpipe,'<LX>');
     fclose($sendpipe);
 // Now sleep long enough for the other instance to go away
