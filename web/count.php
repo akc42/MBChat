@@ -1,7 +1,7 @@
 <?php
 /*
- 	Copyright (c) 2008,2009 Alan Chandler
-    This file is part of MBChat
+ 	Copyright (c) 2009 Alan Chandler
+    This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with MBChat (file COPYING.txt in the "Supporting" directory).  If not, see <http://www.gnu.org/licenses/>.
-
+    along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
 // Link to SMF forum as this is only for logged in members
