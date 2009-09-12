@@ -775,19 +775,15 @@ return {
 								switch(msg.type) {
 								case 'ME' :
 									this.displayMessage(lastId,msg.time,msg.user,msg.message);
-									MBchat.sounds.messageArrives();
 									break;
 								case 'LT' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-									MBchat.sounds.roomMove();
 									break;
 								case 'LI' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
-									MBchat.sounds.roomMove();
 									break;
 								case 'LO' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
-									MBchat.sounds.roomMove();
 									break;
 								case 'RM' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
