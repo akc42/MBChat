@@ -19,6 +19,7 @@ $name=$_GET['name'];
 $role=$_GET['role'];
 $mod=$_GET['mod'];
 $whi=$_GET['whi'];
+$groups = explode(":",$_GET['gp']);
 
 define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
 define('MBCHAT_PIPE_PATH',	MBCHAT_PATH.'pipes/');
