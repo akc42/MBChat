@@ -56,8 +56,6 @@ $pass = sha1("Key".$uid);
 $gp = implode(":",$groups);
 $host  = $_SERVER['HTTP_HOST'];
 $uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-$data = array ('uid' => $uid, 'pass' => $pass, 'name' => $name, 'role' => $role, 'mod' => $mod, 'whi' => $whisperer, 'gp' => $gp);
-$data = http_build_query($data);
 
 // No call the remote chat with all the correct parameters
 if(in_array(SMF_CHAT_LITE,$groups)) {
@@ -66,16 +64,36 @@ if(in_array(SMF_CHAT_LITE,$groups)) {
     $extra = 'chat.php';
 }
 $url = "http://$host$uri/$extra";
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Melinda's Backups Chat</title>
+	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
+	<!--[if lt IE 7]>
+		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
+	<![endif]-->
+	<script src="/js/mootools-1.2.3-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+</head>
+<body>
+<script type="text/javascript">
+	<!--
 
-$params = array('http' => array('method' => 'POST', 'content' => $data ));
-$ctx = stream_context_create($params);
-$fp = @fopen($url, 'rb', false, $ctx);
-if (!$fp) {
-       die ("Problem with url $url");
+window.addEvent('domready', function() {
+    document.chatform.submit();
 }
-$response = @stream_get_contents($fp);
-if ($response === false) {
-       die ("Problem reading data from $url");
-}
-?>
+	// -->
+</script>
+<form name="chatform" action="<?php echo $url;?>">
+<input type="hidden" name="uid" value="<?php echo $uid; ?>" />
+<input type="hidden" name="pass" value="<?php echo $pass; ?>" />
+<input type="hidden" name="name" value="<?php echo $name; ?>" />
+<input type="hidden" name="role" value="<?php echo $role; ?>" />
+<input type="hidden" name="mod" value="<?php echo $mod; ?>" />
+<input type="hidden" name="whi" value="<?php echo $whisper; ?>" />
+<input type="hidden" name="gp" value="<?php echo $gp; ?>" />
+</form>
+</body>
+</html>
+
 
