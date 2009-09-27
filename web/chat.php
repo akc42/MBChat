@@ -21,8 +21,10 @@
 error_reporting(E_ALL);
 // Path to the chat directory:
 
-if(!(isset($_POST['uid']) && isset($_POST['pass'])  && isset($_POST['name'])  && isset($_POST['mod']) && isset($_POST['role']) && isset($_POST['whi']) && isset($_POST['gp'])))
- die('Hacking attempt - wrong parameters');
+if(!(isset($_POST['uid']) && isset($_POST['pass'])  && isset($_POST['name'])  && isset($_POST['mod']) && isset($_POST['role']) && isset($_POST['whi']) && isset($_POST['gp']))) {
+ header('Location: index.php');
+ exit;
+}
 $uid = $_POST['uid'];
 $password = $_POST['pass'];
 if ($password != sha1("Key".$uid))

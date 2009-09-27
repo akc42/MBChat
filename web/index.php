@@ -81,16 +81,16 @@ $url = "http://$host$uri/$extra";
 
 window.addEvent('domready', function() {
     document.chatform.submit();
-}
+});
 	// -->
 </script>
-<form name="chatform" action="<?php echo $url;?>">
+<form name="chatform" action="<?php echo $url;?>" method="post">
 <input type="hidden" name="uid" value="<?php echo $uid; ?>" />
 <input type="hidden" name="pass" value="<?php echo $pass; ?>" />
 <input type="hidden" name="name" value="<?php echo $name; ?>" />
 <input type="hidden" name="role" value="<?php echo $role; ?>" />
 <input type="hidden" name="mod" value="<?php echo $mod; ?>" />
-<input type="hidden" name="whi" value="<?php echo $whisper; ?>" />
+<input type="hidden" name="whi" value="<?php echo $whisperer; ?>" />
 <input type="hidden" name="gp" value="<?php echo $gp; ?>" />
 </form>
 </body>
