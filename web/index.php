@@ -56,7 +56,7 @@ $pass = sha1("Key".$uid);
 $gp = implode(":",$groups);
 $host  = $_SERVER['HTTP_HOST'];
 $uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-$data = array ('uid' => $uid, 'pass' => $pass, 'name' = $name, 'role' => $role, 'mod' => $mod, 'whi' => $whisperer, 'gp' => $gp);
+$data = array ('uid' => $uid, 'pass' => $pass, 'name' => $name, 'role' => $role, 'mod' => $mod, 'whi' => $whisperer, 'gp' => $gp);
 $data = http_build_query($data);
 
 // No call the remote chat with all the correct parameters
