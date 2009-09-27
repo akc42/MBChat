@@ -53,13 +53,29 @@ $role = ((in_array(SMF_CHAT_LEAD, $groups))? 'L' : (  // which role
 $mod = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPECIAL,$groups)?'S':'N'));
 $whisperer = (in_array(SMF_CHAT_NO_WHISPER,$groups)?'false':'true');
 $pass = sha1("Key".$uid);
-
 $gp = implode(":",$groups);
+$host  = $_SERVER['HTTP_HOST'];
+$uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+$data = array ('uid' => $uid, 'pass' => $pass, 'name' = $name, 'role' => $role, 'mod' => $mod, 'whi' => $whisperer, 'gp' => $gp);
+$data = http_build_query($data);
 
 // No call the remote chat with all the correct parameters
 if(in_array(SMF_CHAT_LITE,$groups)) {
-	header( "Location: lite.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp" );
-	exit;
-};
-header( "Location: chat.php?uid=$uid&pass=$pass&name=$name&role=$role&mod=$mod&whi=$whisperer&gp=$gp");
+	$extra = 'lite.php';
+} else {
+    $extra = 'chat.php';
+}
+$url = "http://$host$uri/$extra";
+
+$params = array('http' => array('method' => 'POST', 'content' => $data ));
+$ctx = stream_context_create($params);
+$fp = @fopen($url, 'rb', false, $ctx);
+if (!$fp) {
+       die ("Problem with url $url");
+}
+$response = @stream_get_contents($fp);
+if ($response === false) {
+       die ("Problem reading data from $url");
+}
 ?>
+

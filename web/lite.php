@@ -21,18 +21,18 @@
 error_reporting(E_ALL);
 // Path to the chat directory:
 
-if(!(isset($_GET['uid']) && isset($_GET['pass'])  && isset($_GET['name'])  && isset($_GET['mod']) && isset($_GET['role']) && isset($_GET['whi']) && isset($_GET['gp'])))
+if(!(isset($_POST['uid']) && isset($_POST['pass'])  && isset($_POST['name'])  && isset($_POST['mod']) && isset($_POST['role']) && isset($_POST['whi']) && isset($_POST['gp'])))
  die('Hacking attempt - wrong parameters');
-$uid = $_GET['uid'];
-$password = $_GET['pass'];
+$uid = $_POST['uid'];
+$password = $_POST['pass'];
 if ($password != sha1("Key".$uid))
    die('Hacking attempt got: '.$password.' expected: '.sha1("Key".$uid));
 
-$name=$_GET['name'];
-$role=$_GET['role'];
-$mod=$_GET['mod'];
-$whi=$_GET['whi'];
-$groups = explode(":",$_GET['gp']);
+$name=$_POST['name'];
+$role=$_POST['role'];
+$mod=$_POST['mod'];
+$whi=$_POST['whi'];
+$groups = explode(":",$_POST['gp']);
 
 define('MBCHAT_ENTRANCE_HALL', 'Entrance Hall');
 // These need to match the roomID in the database
