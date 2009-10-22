@@ -77,10 +77,10 @@ body, td, th
 
 #roomNameContainer {
 	position:absolute;
-	top:80px;
+	top:100px;
 	left:350px;
-	width:16em;
-	text-align:center;
+	width:40em;
+	text-align:left;
 }
 #roomNameContainer h1 {
 	font-size:1.5em;

@@ -170,7 +170,13 @@ soundManager.onload = function() {
 	<td align="left" width="30" class="topbg_l" height="70">&nbsp;</td>
 	<td align="left" colspan="2" class="topbg_r" valign="top"><a href="/" alt="Main Site Home Page">
 		<img  style="margin-top: 24px;" src="/static/images/mb-logo-community.gif" alt="Melinda's Backups Community" border="0" /></a>	
-		</td>
+	</td>
+	<td align="center" width="300" class="topbg_r" valign="middle">
+	    <a href="http://melindadoolittle.com" alt="Main Site Home Page" style="text-decoration:none;margin-top:5px;">
+	    <span >MelindaDoolittle.com</span>
+	    <img style="margin-top:5px;" src="/static/images/banner_small.jpg" alt="Melinda Doolittle" border="0" />
+	    </a>
+	</td>	
 	<td align="right" width="400" class="topbg" valign="top">
 	<span style="font-family: tahoma, sans-serif; margin-left: 5px;">Melinda's Backups Community</span>
 	</td>
