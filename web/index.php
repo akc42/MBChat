@@ -73,7 +73,7 @@ $url = "http://$host$uri/$extra";
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
 	<![endif]-->
-	<script src="/js/mootools-1.2.3-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
 </head>
 <body>
 <script type="text/javascript">
