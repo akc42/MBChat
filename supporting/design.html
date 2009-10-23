@@ -522,10 +522,21 @@ Upon generating an event that would previously have been written to the log, as 
 <pre>[[Overview]]
 [[Basic Operation]]</pre>
 </div>
-<div title="Overview" modifier="AlanChandler" created="200908270613" modified="200908270630" changecount="4">
-<pre>The next evolution of chat is to use named pipes (fifo) to speed up communication between partipants in a chat.  The current version of chat has each partipant polling the database every two seconds to see if a new message has arrived.  Instead of doing that, which is inefficient when large numbers are in chat, I am going to have each partipant create a pipe and open it for reading.  When ever anyone writes a chat message, then as well as writing it to the database, it will also be written to all existing pipes.  This should prevent people from having to poll the database and thereby reduce traffic.
+<div title="Mootools More" modifier="AlanChandler" created="200910231536" changecount="1">
+<pre>The following capabilies are required in Mootools More for chat
 
-There is one possible downside.  Each chat participant will have one long running request outstanding with the web server.  It may be that our host (Bluehost) doesn't like this - so we will need to run some tests before putting it into production.
+* Fx.Elements
+* Fx.Scroll
+* Drag
+* Drag.Move
+* Request.Queue</pre>
+</div>
+<div title="Overview" modifier="AlanChandler" created="200908270613" modified="200910231534" changecount="5">
+<pre>The current (v2 onwards) evolution of chat uses named pipes (fifo) to speed up communication between partipants in a chat.  The old version of chat has each partipant polling the database every two seconds to see if a new message has arrived.  Instead of doing that, which is inefficient when large numbers are in chat, each participant creates a pipe and opens it for reading.  When ever anyone writes a chat message,  as well as writing it to the database, it will be written to all existing pipes.  This prevents people from having to poll the database and thereby reduce traffic.
+
+There is one --possible-- downside.  Each chat participant will have one long running request outstanding with the web server.  --It may be that o-- Our host (Bluehost) doesn't like this - so --we will need to run some tests before putting it into production-- it is necessary to run the core of chat on my home server.  The software has a small component left on the melinda's backup web site, which reads the forum information to see that the client is logged on to the forum, and then sends (via a POST, so that the url parameters are hidden) this information to a local chat.php or lite.php to become the chat.  Any attempt at bypassing this post (ie just using the url) causes chat to redirect straight back to melindasbackups.com to request the correct details.
+
+[[Mootools More]] is needed for this version which is stored locally with the rest of the chat scripts.  The basic mootools core software is assumed to exist outside of the current codebase.
 
 [[Next|Basic Operation]]</pre>
 </div>

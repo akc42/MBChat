@@ -89,8 +89,8 @@ dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid)
 		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
 	<![endif]-->
 	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/mootools-1.2.3-core-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="mootools-1.2.3.1-more.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="mootools-1.2.4.1-more.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="mbclite.js" type="text/javascript" charset="UTF-8"></script>
 </head>
 <body>
