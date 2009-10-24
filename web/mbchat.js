@@ -46,8 +46,7 @@ MBchat = function () {
 	var reqQueue = new Request.Queue({stopOnFailure:false});
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-		    this.url = url;
-			this.request = new Request.JSON({url:url,method:'post', onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url, onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
@@ -57,7 +56,7 @@ MBchat = function () {
 			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
 		},
 		transmit: function (options) {
-			reqQueue.send(this.url,$merge(myRequestOptions,options));
+			this.request.post($merge(myRequestOptions,options));
 		}		
 	});
 	var displayUser = function(user,container) {
