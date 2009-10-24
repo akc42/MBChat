@@ -47,7 +47,7 @@ MBchat = function () {
 	var ServerReq = new Class({
 		initialize: function(url,process) {
 		    this.url = url;
-			this.request = new Request.JSON({url:url,method:'post',:onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url,method:'post', onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
