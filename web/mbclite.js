@@ -45,7 +45,8 @@ MBchat = function () {
 	var reqQueue = new Request.Queue({stopOnFailure:false});
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
+		    this.url = url
+			this.request = new Request.JSON({url:url,method:'post',onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
@@ -55,7 +56,7 @@ MBchat = function () {
 			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
 		},
 		transmit: function (options) {
-			this.request.post($merge(myRequestOptions,options));
+			reqQueue.send(this.url,$merge(myRequestOptions,options));
 		}		
 	});
 	var displayUser = function(user,container) {
@@ -211,10 +212,10 @@ return {
 				var fullPoll=false;
 				var wid;
 
-				var pollRequest = new Request.JSON({url:'read.php',onComplete: function(response) {
+				var pollRequest = new Request.JSON({url:'read.php',link:'chain',onComplete: function(response) {
 				    if(response) {
 				        if(response.messages) MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
-				        if (fullPoll) pollRequest.post.delay(50,this,myRequestOptions);
+				        if (fullPoll) pollRequest.post(myRequestOptions); //Should chain since previous request is not yet complete (we are in it)
 				    } else {
 				        MBchat.logout();
 						 //and go back to the forum
