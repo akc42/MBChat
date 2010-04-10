@@ -41,12 +41,11 @@ MBchat = function () {
 	var emoticonSubstitution;
 	var emoticonRegExpStr;
 	var logOptions;
-	var version;
-	var logged_in;
+	var logged_in = false;
 	var reqQueue = new Request.Queue({stopOnFailure:false});
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url, onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
 				if(response) {
 					process(response);
 				} else {
@@ -90,102 +89,26 @@ MBchat = function () {
 	var pO;
 	var loginReq = new ServerReq('login.php',function(response) {
 	    logged_in = true;
-		MBchat.updateables.poller.init(pO); //These haven't been initiated with normal init sequence, but await successful login
+		MBchat.updateables.poller.init(pO);
 		MBchat.updateables.whispers.init(response.lastid.toInt());
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 	});
 return {
-	init : function(user,pollOptions,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
+	init : function(user,presenseInterval,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
 	    logged_in = false;
-		logOptions = logOptionParameters;
-		pO = pollOptions;
-		version = $('version').get('text');
+		pO = presenceInteval*1000;
 // Save key data about me
 		me =  user; 
+		version = $('version').get('text');
 		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
 		privateRoom = 0;
 		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
 		messageListSize = msgLstSz;  //Size of message list
+		logOptions = logOptionParameters;
 // We need to setup all the entrance hall
 		entranceHall = new Room(0,entranceHallName,'O');
 		room = new Room();
 		room.set(entranceHall);
-		var roomgroups = $$('.rooms');
-		var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
-		roomgroups.each( function (roomgroup,i) {
-			var rooms = roomgroup.getElements('.room');
-			var fx = new Fx.Elements(rooms, {link:'cancel', duration: 500, transition: roomTransition.easeOut });
-			rooms.each( function(door, i){
-				var request;
-				door.addEvent('mouseenter', function(e){
-					if (room.rid == 0) {
-						//adjust width of room to be wide
-						var obj = {};
-						obj[i] = {'width': [door.getStyle('width').toInt(), 219]};
-						rooms.each(function(otherRoom, j){
-							if (otherRoom != door){
-								var w = otherRoom.getStyle('width').toInt();
-								if (w != 67) obj[j] = {'width': [w, 67]};
-							}
-						});
-						fx.start(obj);
-						// Set up online list for this room
-						MBchat.updateables.online.show(door.get('id').substr(1).toInt());
-					} else {
-						displayErrorMessage('Debug - MouseEnter in Room');
-					}
-				});
-				door.addEvent('mouseleave', function(e){
-					var obj = {};
-					rooms.each(function(other, j){
-						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
-					});
-					fx.start(obj);
-					if(room.rid == 0 ) {
-						MBchat.updateables.online.show(0);  //get entrance hall list
-					}
-				});
-				door.addEvent('click', function(e) {
-					e.stop();			//browser should not follow link
-					if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
-						MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
-					} else {
-						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
-					}
-				});
-			});
-		});
-
-		var exit = $('exit');
-		var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
-		exit.addEvent('mouseenter',function(e) {
-			exitfx.start({width:100});
-		});
-		exit.addEvent('mouseleave', function(e) {
-			exitfx.start({width:50});
-		});
-		exit.addEvent('click', function(e) {
-			e.stop();
-			if (privateRoom != 0) {
-				privateReq.transmit({
-					'wid':  0, 
-					'lid' : MBchat.updateables.poller.getLastId(),
-					'rid' : room.rid }); 
-			} else {
-				if (room.rid == 0 ) {
-					if (this.hasClass('exit-r')) {
-						// just exiting from logging
-						MBchat.updateables.logger.returnToEntranceHall(e);
-					} else {
-						MBchat.logout();
-						 //and go back to the forum
-						window.location = 'forum.php' ;
-					}
-				} else {
-					MBchat.updateables.message.leaveRoom();
-				}
-			}
-		});
 		var messageSubmit = function(event) {
 			event.stop();
 			if (privateRoom == 0 ) {
@@ -202,30 +125,46 @@ return {
 			}
 
 			$('messageText').value = '';
-			MBchat.sounds.resetTimer();
 		}
+		document.addEvent('keydown',function(e) {
+			if(!e.control ) {
+				if(!e.alt) return;  //only interested if control or alt key is pressed
+				if (room.rid != 0) return; //only interested if in entrance hall
+				if (e.key == '0') {
+					MBchat.updateables.online.show(0);  //get entrance hall list
+				} else {
+					if($('R'+e.key)) {
+						MBchat.updateables.online.show(e.key.toInt());  //get entrance hall list
+					}
+				}
+			} else {				
+				if (e.key == '0' || e.key == 'x') {
+					if (privateRoom != 0) {
+						privateReq.transmit({
+							'wid':  0,
+							'lid' : MBchat.updateables.poller.getLastId(),
+							'rid' : room.rid });
+					} else {
+						if (room.rid == 0) {
+							MBchat.logout();
+							window.location = 'forum.php' ;
+						} else {
+							MBchat.updateables.message.leaveRoom();
+						}
+					}
+				} else {
+					if($('R'+e.key)) {
+						MBchat.updateables.message.enterRoom(e.key.toInt());
+					} else {
+						if(e.key == 's') {
+							messageSubmit(e);
+						}
+					}
+				}
+			}
+		});
 		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
 		//Set up emoticons
-		emoticonSubstitution = new Hash({});
-		
-		var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)
-		var emoticons = $$('img.emoticon');
-		emoticons.each(function(icon,i) {
-			var key = icon.get('alt').substr(1);
-			var img = '<img src="' + icon.get('src') + '" alt="' + key + '" title="' + key + '" />' ;
-			emoticonSubstitution.include(key,img);
-			if(i!=0) regExpStr += '|';
-			regExpStr += key.replace(/\)/g,'\\)') ;  //regular expression is key except if has ) in it which we need to escape
-			icon.addEvent('click', function(e) {
-				e.stop();		
-				var msgText = $('messageText');
-				msgText.value += ':'+ key ;
-				msgText.focus();
-			});
-		});
-		//finish pattern and turn it into a regular expression to use;
-		regExpStr += ')';
-		emoticonRegExpStr = new RegExp(regExpStr, 'gm');
 		$('messageForm').addEvent('submit', function(e) {
 			messageSubmit(e);
 			return false;
@@ -234,146 +173,21 @@ return {
 		window.addEvent('resize', function() {
 			contentSize = $('content').getCoordinates();
 		});
-		MBchat.sounds.init();		//start sound system
 		MBchat.updateables.init(); //Start Rest
-		// And logon
 		loginReq.transmit($merge({'mbchat':version},MooTools,
 			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
-		
+
 	},
 	logout: function () {
 	    if(logged_in) {
-	        MBchat.updateables.poller.logout(); //Stop Poller Function completely
+	        MBchat.updateables.poller.logout(); //stop poller completely
     		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
 	    			{'mbchat':version},MooTools,
 	        		{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
         }
         logged_in = false;
 	},
-	sounds: function () {
-		var music = false;
-		var musicEnabled;
-		var soundEnabled;
-		var playAgain = true;
-		var Timer = {counter:30 , start : 30 }; //Units of 10 seconds
-		var countDown = function() {
-			if (this.counter > 0 ) this.counter-- ;
-			var soundDelay = 6*$('soundDelay').value.toInt() ;
-			if (isNaN(parseInt(soundDelay))) {
-				soundDelay = 30;
-				$('soundDelay').value = '5';
-				Cookie.write('soundDelay', '5',{duration:50});
-			}
-
-			if ( soundDelay != this.start) {
-				this.counter += soundDelay -this.start ;
-				this.start = soundDelay;
-				if (this.counter < 0) this.counter = 0;
-				Cookie.write('soundDelay', $('soundDelay').value.toString(),{duration:50});
-			}
-			
-			if (!music && soundReady) {
-				music = soundManager.getSoundById('music');
-				music.options.onfinish = function () {
-					playAgain = true;
-				}
-				music.volume = 10;
-			}
-			if (musicEnabled.checked) {
-				if (playAgain) {
-					soundManager.play('music');
-					playAgain = false;
-				}
-			} else {
-				if(!playAgain) {
-					soundManager.stop('music');
-					playAgain = true;
-				}
-			}
-		}
-		
-		return {
-			init: function () {
-				//deal with sound delay
-				var sd = Cookie.read('soundDelay')
-				if (isNaN(parseInt(sd))) {
-					sd = '5';
-				}
-				Cookie.write('soundDelay',sd,{duration:50}); //Just write so validity starts again
-				var delayMin = sd.toInt()
-				Timer.start = 6 * delayMin;
-				Timer.counter = Timer.start;
-				$('soundDelay').value = sd;
-				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
-				//music
-				musicEnabled = $('musicEnabled');
-				var mu = Cookie.read('musicEnabled');
-				if (!mu) {
-					mu = 'false';
-					Cookie.write('musicEnabled', mu ,{duration:50});
-				}
-				if (mu == 'true') {
-					musicEnabled.checked = true;
-				} else {
-					musicEnabled.checked = false;
-				}
-				musicEnabled.addEvent('click', function(e) {
-					if(!musicEnabled.checked) {
-						soundManager.stop('music');
-						playAgain = true;
-						Cookie.write('musicEnabled', 'false',{duration:50});
-					} else {
-						Cookie.write('musicEnabled', 'true',{duration:50});
-					}
-
-				});
-				soundEnabled = $('soundEnabled');
-				var so = Cookie.read('soundEnabled');
-				if (!so) {
-					so = 'true';
-					Cookie.write('soundEnabled', so,{duration:50});
-				}
-				if (so == 'true') {
-					soundEnabled.checked = true;
-				} else {
-					soundEnabled.checked = false;
-				}
-				soundEnabled.addEvent('click', function(e) {
-					if(!soundEnabled.checked) {
-						Cookie.write('soundEnabled', 'false',{duration:50});
-					} else {
-						Cookie.write('soundEnabled', 'true',{duration:50});
-					}
-
-				});
-				
-			},
-			resetTimer: function() {
-				Timer.counter = Timer.start;
-			},
-			roomMove : function() {
-				if(soundReady && soundEnabled.checked) {
-					if(room.rid == 4) { //special for vamp club
-						soundManager.play('creaky');
-					} else {
-						soundManager.play('move');
-					}
-				}
-			},
-			newWhisper: function() {
-				if(soundReady && soundEnabled.checked) soundManager.play('whispers');
-			},
-			messageArrives:function() {
-				if(soundReady && Timer.counter == 0 && soundEnabled.checked) soundManager.play('speak');
-			}
-		};
-	}(),
 	updateables : function () {
-		var replaceEmoticons = function(text) {
-			return text.replace(emoticonRegExpStr,function(match,p1) {
-				return emoticonSubstitution.get(p1);
-			});
-		};
 		var replaceHyperLinks = function(text) {
 			return text.replace(hyperlinkRegExp,function(str, p1, p2) {
 				return p1 + '<a href="' + p2 
@@ -382,10 +196,8 @@ return {
 		};
 		return {
 			init : function () {
-				//only initialise parts of this - the rest needs to wait until we get response from login.
 				MBchat.updateables.online.init();
 				MBchat.updateables.message.init();
-				MBchat.updateables.logger.init();
 			},
 			processMessage : function(message) {
 				MBchat.updateables.online.processMessage(message);
@@ -414,9 +226,8 @@ return {
 							presenceReq.transmit({});  //say here (also timeout others)
 				};
 				return {
-					init : function (pollOptions) {
-						presenceInterval = pollOptions.presence;
-						pollInterval = pollOptions.poll;
+					init : function (presenceInterval) {
+						pollInterval = presenceInterval;	
 						fullPoll=true;	
 					},
 					setLastId : function(lid) {
@@ -498,121 +309,18 @@ return {
 						span.addClass('priv');  //makes them Italic to show its private
 					} else {
 						if (room.type === 'M') {
-							if (me.mod === 'M') {
-								if (user.uid != me.uid) {
-									if (user.question) {
-										span.addClass('ask');
-										div.store('question',user.question);
-										div.addClass('hasQuestion');
-									}
-									// I am a moderator in a moderated room - therefore I need to be able to moderate others
-									div.addEvents({
-										'click' : function(e) {
-											if (e.control) { //Promote to moderator
-												if (user.role != 'M') { //but only if not already one
-													var request = new ServerReq('promote.php', function (response) {
-														MBchat.updateables.poller.pollResponse(response);
-													}).transmit({
-														'lid':MBchat.updateables.poller.getLastId(),
-														'rid':room.rid,
-														'puid':user.uid});
-												}
-											} else {
-												var qtext = div.retrieve('question');
-												if (qtext) { // only send one if there is one
-													var request = new ServerReq('release.php',function (response) {
-														MBchat.updateables.poller.pollResponse(response);
-													}).transmit({
-														'lid':MBchat.updateables.poller.getLastId(),
-														'rid':room.rid,
-														'quid':user.uid});
-												}
-											}
-										},
-										'mouseenter' : function(e) {
-											var span = div.getElement('span');
-											if (!(span.hasClass('M') || span.hasClass('H') 
-												|| span.hasClass('G') || span.hasClass('S'))) {
-												var question = new Element('div', {'id' : 'Q'+user.uid});
-												var qtext = div.retrieve('question');
-												if (qtext) {
-													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
-													qtext = replaceEmoticons(qtext); //Then replace emoticons.
-													question.set('html',
-														'<p><b>Click to Release Question<br/>',
-														'Control Click to Promote</b></p>',
-														'<p>',qtext,'</p>'); 
-													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
-												} else {
-													question.set('html','<p><b>Control Click to Promote</b></p>');
-													question.setStyles({'top': e.client.y, 'left':e.client.x });
-												}
-												question.inject(document.body);
-											}
-										},
-										'mouseleave' : function(e) {
-											div.removeClass('hasQuestion');
-											var question = $('Q'+user.uid);
-											if (question) {
-												question.destroy();
-											}
-										}
-									});
-									div.firstChild.addClass('whisperer'); //Adds cursor pointer
-								} else {
-									div.addEvent('click', function(e) {
-										e.stop();
-										if(e.control && e.alt) {
-											var request = new ServerReq('demote.php',function (response) {
-												MBchat.updateables.poller.pollResponse(response);
-											}).transmit({
-												'lid':MBchat.updateables.poller.getLastId(),
-												'rid':room.rid});
-										}
-									});
-								}
-							} else {
-								if (user.question) {
-									span.addClass('ask');
-								}
-								if (me.uid == user.uid) {
-									if (user.question) {
-										div.store('question',user.question);
-										div.addClass('hasQuestion');
-									}
-									div.addEvents({
-										'mouseenter' : function(e) {
-											var span = div.getElement('span');
-											if (!(span.hasClass('M') || span.hasClass('H') 
-												|| span.hasClass('G') || span.hasClass('S'))) {
-												var question = new Element('div', 
-													{'id' :  'Q'+div.get('id').substr(1)});
-												var qtext = div.retrieve('question');
-												if (qtext) {
-													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
-													qtext = replaceEmoticons(qtext); //Then replace emoticons.
-													question.set('html','<p>',qtext,'</p>'); 
-													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
-													div.addClass('hasQuestion');
-													question.inject(document.body);
-												}
-											}
-										},
-										'mouseleave' : function(e) {
-											var question = $( 'Q'+div.get('id').substr(1));
-											if (question) {
-												question.destroy();
-											}
-										}
-									});
-								} 
+							if (user.question) {
+								span.addClass('ask');
 							}
+							if (me.uid == user.uid) {
+								if (user.question) {
+									div.store('question',user.question);
+									div.addClass('hasQuestion');
+								}
+							} 
 						} 
 					}
 					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers
-						span.addEvent('mousedown',function (e) {
-							MBchat.updateables.whispers.whisperWith(user,span,e);
-						});
 						div.firstChild.addClass('whisperer');
 						div.addEvent('keydown', function(e) {
 							if(!e.control) return;
@@ -814,7 +522,6 @@ return {
 										//Not me, but I might be in a whisper with them
 										if (!whisperBox) {
 											MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
-											MBchat.sounds.roomMove();
 											removeUser(userDiv);
 										} else {
 											userDiv.addClass('priv');
@@ -826,11 +533,7 @@ return {
 											messageList.removeClass('whisper');
 											messageList.addClass('chat');
 											$('inputContainer').set('styles',{ 'display':'block'});
-											$('emoticonContainer').set('styles',{ 'display':'block'});
 											$('entranceHall').set('styles',{'display':'none'});	
-											var exit = $('exit');
-											exit.addClass('exit-r');
-											exit.removeClass('exit-f');
 										}
 										$('roomNameContainer').empty();
 										var el = new Element('h1',{'class':'privateRoom'})
@@ -854,10 +557,8 @@ return {
 										});
 										userDiv.addClass('priv');
 										$('messageText').focus();
-										MBchat.sounds.resetTimer();
 										whisperBox.setStyle('display','none');
 										$('content').setStyles(contentSize);
-										MBchat.sounds.roomMove();
 									}
 								} else {
 									// Add user to list if in a whisper (otherwise doesn't)
@@ -884,15 +585,10 @@ return {
 										messageList.removeClass('chat');
 										messageList.addClass('whisper');
 										$('inputContainer').set('styles',{ 'display':'none'});
-										$('emoticonContainer').set('styles',{ 'display':'none'});
 										$('entranceHall').set('styles',{'display':'block'});
-										var exit = $('exit');	
-										exit.addClass('exit-f');
-										exit.removeClass('exit-r');
 									}
-									MBchat.sounds.resetTimer();
 									if($('W'+privateRoom)) {
-								//need to make a whisper box with my whisperers in it (if not closed already)
+								//need to make a whisper box with my whisperers in it (if still here).
 										$('W'+privateRoom).setStyle('display','block');
 									}
 									$('content').setStyles(contentSize);
@@ -901,7 +597,6 @@ return {
 									MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
 									addUser(msg.user);
 								}
-								MBchat.sounds.roomMove();	
 								break;
 							case 'WJ' :
 								if(privateRoom == msg.rid) { //only interested in people joining my private room
@@ -940,11 +635,7 @@ return {
 						messageList.addClass('chat');
 						$('roomNameContainer').empty();
 						$('inputContainer').set('styles',{ 'display':'block'});
-						$('emoticonContainer').set('styles',{ 'display':'block'});
 						$('entranceHall').set('styles',{'display':'none'});	
-						var exit = $('exit');
-						exit.addClass('exit-r');
-						exit.removeClass('exit-f');
 						room = new Room(rid,'Loading','I'); //set upi room first so random calls afterwards don't screw me
 						var request = new ServerReq('room.php',function(response) {
 							response.room.rid = response.room.rid.toInt();
@@ -978,7 +669,6 @@ return {
 							MBchat.updateables.online.show(room.rid);	//Show online list for room	
 							$('messageText').focus();							
 						}).transmit({'rid' : rid});
-						MBchat.sounds.resetTimer();
 					},
 					leaveRoom: function () {
 						lastId = null;
@@ -1018,12 +708,7 @@ return {
 							.set('text', room.name)
 							.inject('roomNameContainer');
 						$('inputContainer').set('styles',{ 'display':'none'});
-						$('emoticonContainer').set('styles',{ 'display':'none'});
 						$('entranceHall').set('styles',{'display':'block'});
-						var exit = $('exit');	
-						exit.addClass('exit-f');
-						exit.removeClass('exit-r');
-						MBchat.sounds.resetTimer();
 					},
 					processMessage: function (msg) {
 						var lid = msg.lid.toInt();
@@ -1038,7 +723,6 @@ return {
 										} else {
 											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
 										}
-										MBchat.sounds.roomMove();
 									}
 								}
 								break;
@@ -1050,7 +734,6 @@ return {
 										} else {
 											this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
 										}
-										MBchat.sounds.roomMove();
 									}
 								}
 								break;
@@ -1086,7 +769,6 @@ return {
 									} else {
 										this.displayMessage(lastId,msg.time,msg.user,'(private) ' + msg.message);
 									}
-									MBchat.sounds.messageArrives();
 								}
 								break;
 							case 'WJ' :
@@ -1109,19 +791,15 @@ return {
 								switch(msg.type) {
 								case 'ME' :
 									this.displayMessage(lastId,msg.time,msg.user,msg.message);
-									MBchat.sounds.messageArrives();
 									break;
 								case 'LT' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out (timeout)'));
-									MBchat.sounds.roomMove();
 									break;
 								case 'LI' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs In to Chat'));
-									MBchat.sounds.roomMove();
 									break;
 								case 'LO' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Logs Out'));
-									MBchat.sounds.roomMove();
 									break;
 								case 'RM' :
 									this.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Has been made a Moderator'));
@@ -1162,7 +840,6 @@ return {
 						timeEl.inject(div);
 						displayUser(user,div);
 						msgText = replaceHyperLinks (msgText);  //replace Hperlinks first
-						msgText = replaceEmoticons(msgText); //Then replace emoticons.
 						var span = new Element('span',{'html': msgText }) ;
 						span.inject(div);
 						if(!noLimit) {
@@ -1176,7 +853,7 @@ return {
 							div.addClass('rowOdd');
 						}
 						div.inject(messageList);
-						if ($('autoScroll').checked) mlScroller.toBottom();
+						mlScroller.toBottom();
 					}
 				}
 			}(),
@@ -1209,7 +886,6 @@ return {
 						'lid':MBchat.updateables.poller.getLastId(),
 						'text':whisper.getElement('.whisperInput').value});
 					whisper.getElement('.whisperInput').value = '';
-					MBchat.sounds.resetTimer();
 				}
 				var createWhisperBox = function (wid,user) {
 					var template = $('whisperBoxTemplate');
@@ -1283,7 +959,7 @@ return {
 					position.top = position.top + (Math.random()-0.5) * 50;
 					position.left = position.left + (Math.random()-0.5) * 150;
 					whisper.setStyles(position);
-//(see if helps usability)		whisper.getElement('.whisperInput').focus();
+//(see if improves usability)		whisper.getElement('.whisperInput').focus();
 					var drag = new Drag(whisper,{
 						handle:whisper.getElement('.dragHandle'),
 						snap:0,
@@ -1320,107 +996,6 @@ return {
 					init: function (lid) {
 						lastId = lid;
 					},
-					whisperWith : function (user,el,event) {
-						var startPosition = el.getCoordinates();
-						var dropNew;
-						if (room.rid == 0 && privateRoom == 0 ) {
-							dropNew = $('chatList');
-						} else {
-							dropNew = $('inputContainer');
-						}
-						var dropZones = $$('.whisperBox');
-						var dragMan = new Element('div',{'class':'dragBox'});
-						dragMan.setStyles(startPosition);
-						var dragDestroy = function() {
-							dragMan.destroy();
-							$('content').setStyles(contentSize);
-						}
-						el.addEvent('mouseup', dragDestroy);
-						displayUser(user,dragMan);
-						var dragReturn = new Fx.Morph(dragMan, {
-							link: 'cancel',
-							duration: 500,
-							transition: Fx.Transitions.Quad.easeOut,
-							onComplete: function (dragged) {
-								dragged.destroy();
-								$('content').setStyles(contentSize);
-							}
-						});
-						dragMan.inject(document.body);
-						dragMan.addEvent('mouseup',dragDestroy);
-						dropZones.include(dropNew);
-						var drag = new Drag.Move(dragMan,{
-							droppables:dropZones,
-							onSnap: function(element) {
-								element.removeEvent('mouseup',dragDestroy);
-							},
-							onDrop: function(element, droppable){
-								dropZones.removeClass('dragOver');
-								if(droppable) {
-									if(droppable == dropNew && privateRoom == 0) {
-										//See if we are already in a whisper with this user
-										var whisperBoxes = $$('.whisperBox');
-										if (whisperBoxes.every(function(whisperBox,i) {
-											var widStr = whisperBox.get('id');
-											var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
-											if (whisperers.length == 1) { //we only want to worry about this if only other person
-												if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
-													this.start(whisperBox.getCoordinates());
-													if(activeWb) {
-														activeWb.removeClass('wBactive');
-													}
-													activeWb = whisperBox;
-													whisperBox.addClass('wBactive');
-													whisperBox.getElement('.whisperInput').focus();
-													return false;
-												}
-											}
-											return true;		 
-										}, dragReturn)){ 
-								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
-											var getNewWhisperReq = new ServerReq('newwhisper.php',function(response) {
-												if(response.wid != 0) {
-													var user = response.user
-													user.uid = user.uid.toInt();
-													var whisper = createWhisperBox(response.wid.toInt(),user);
-													dragReturn.start(whisper.getCoordinates()); //move towards it
-												} else {
-												//logged out before we started whisper
-													dragReturn.start($('onlineList').getCoordinates());
-												} 
-											});
-											getNewWhisperReq.transmit({'wuid':user.uid});
-										}
-									} else {
-										if (droppable == dropNew) {
-											droppable = $('W'+privateRoom); //This was a private room drop
-											$('U'+user.uid).addClass('priv'); //Show in room on online list
-											dragReturn.start($('chatList').getCoordinates());
-										} else {
-											dragReturn.start(droppable.getCoordinates());
-										}
-										//See if already in whisper with this user
-										if (addUser (user,droppable) ) {
-											var addUserToWhisperReq = new ServerReq('joinwhisper.php',function(response) {});
-											addUserToWhisperReq.transmit({
-												'wuid':user.uid,
-												'wid':droppable.get('id').substr(1).toInt()});
-										}
-									}
-								} else {
-									dragReturn.start(startPosition);  // should make dragman return on online list
-								}
-							},
-   							onEnter: function(element, droppable){
-								droppable.addClass('dragOver');
-							},
- 							onLeave: function(element, droppable){
-								droppable.removeClass('dragOver');
-							}							
-						});
-						drag.start(event);
-						$('content').setStyles(contentSize);
-					},
 					processMessage: function (msg) {
 						var lid = msg.lid.toInt();
 						if (lastId < lid) {
@@ -1441,7 +1016,6 @@ return {
 									if (me.uid == msg.user.uid ) {
 										//OK - someone else has selected me to be in a whisper
 										createWhisperBox(msg.rid.toInt());  //but without (yet) any other user
-										MBchat.sounds.newWhisper();
 									}
 									// Throw others away 
 								}
@@ -1491,261 +1065,27 @@ return {
 						});
 					}
 				};
-			}(),
-			logger : function () {
-				var logControls;
-				var printLog;
-				var messageList;
-				var timeShowStartLog;
-				var timeShowEndLog;
-				var aSecond = 1000;
-				var aMinute = 60*aSecond;
-				var anHour = 60*aMinute;
-				var sixHours = 6*anHour;
-				var aDay = 24*anHour;
-				var aWeek = 7*aDay;
-				var earliest;
-				var startTimeOffset;
-				var endTime;
-				var timeChange;
-
-				var timeShow = function() {
-					timeShowEndLog.set('text',endTime.toLocaleString());
-					timeShowStartLog.set('text', new Date(endTime.getTime() - startTimeOffset).toLocaleString());
-				};
-				var intervalCounterId = null;
-				var intervalCounter;
-				var getInterval = function() {
-					var i = intervalCounter;
-					intervalCounter++;
-					if(i < logOptions.secondstep) return aSecond;
-					if(i < logOptions.minutestep) return aMinute;
-					if(i < logOptions.hourstep) return anHour;
-					if(i < logOptions.sixhourstep) return sixHours;
-					return aDay;
-				};
-				var logRid;
-				var printQuery;
-				var processMessage = function (msg) {
-					var message = function (txt) {
-						MBchat.updateables.message.displayMessage(msg.lid,msg.time,chatBot,chatBotMessage(msg.user.name + ' ' + txt),true);
-					}
-					switch (msg.type) {
-					case 'LI':
-						message('Logs In ' + msg.message);
-						break;
-					case 'LO':
-						message('Logs Out ' + msg.message);
-						break;
-					case 'LT':
-						message('Logs Out (timeout)');
-						break;
-					case 'RE':
-						message('Enters Room');
-						break;
-					case 'RX':
-						message('Leaves Room');
-						break;
-					case 'RM':
-						message('Becomes Moderator');
-						break;
-					case 'RN':
-						message('Steps Down from being Moderator');
-						break;
-					case 'WJ':
-						message('Joins whisper no: ' + msg.rid);
-						break;
-					case 'WL':
-						message('Leaves whisper no: ' + msg.rid);
-						break;
-					case 'ME':
-						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,msg.message,true);
-						break;
-					case 'WH':
-						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,'(whispers to :' +msg.rid+')'+msg.message,true);
-						break;
-					case 'LH':
-						message('Reads Log');
-					default:
-					// Do nothing with these
-						break;
-					}
-				}
-				var request = new ServerReq('log.php',function(response) {
-					messageList.removeClass('loading');
-					if(response) {
-						response.messages.each(function(item) {
-							item.lid = item.lid.toInt();
-							item.rid = item.rid.toInt();
-							item.user.uid = item.user.uid.toInt();
-							processMessage(item);
-						});
-					}
-				});
-				var fetchLogDelay;
-				var fetchLog = function() {
-					messageList.empty();
-					messageList.addClass('loading');
-					request.transmit({
-						'rid' : logRid,
-						'start' : new Date(endTime.getTime()-startTimeOffset).getTime()/1000,
-						'end': endTime.getTime()/1000 });
-				};
-				return {
-					init: function() {
-						logControls = $('logControls');
-						messageList = $('chatList');
-						printLog = $('printLog');
-						printLog.addEvent('click',function(e) {
-							printQuery += '&start='+ new Date(endTime.getTime()-startTimeOffset).getTime()/1000;
-							printQuery += '&end='+endTime.getTime()/1000;
-							printQuery += '&tzo='+endTime.getTimezoneOffset()*60;
-							MBchat.logout();
-							window.location = 'print.php?' + printQuery ; //and go back to the forum
-						});
-						timeShowStartLog = $('timeShowStartLog');
-						timeShowEndLog = $('timeShowEndLog');
-						logOptions.minutestep += logOptions.secondstep;  //Operationally this is better, so set it up
-						logOptions.hourstep += logOptions.minutestep;
-						logOptions.sixhourstep += logOptions.hourstep;
-						$('minusStartLog').addEvents({
-							'mousedown' : function (e) {
-								var incrementer = function() {
-									startTimeOffset += getInterval();
-									if (endTime.getTime()-startTimeOffset < earliest) {
-										startTimeOffset = endTime.getTime()- earliest;
-									}
-									timeShow();
-								};
-
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
-								intervalCounter=0;
-
-								incrementer(); //do first one
-								intervalCounterId = incrementer.periodical(logOptions.spinrate);
-							},
-							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
-								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
-							}
-						});
-						$('plusStartLog').addEvents({
-							'mousedown' : function (e) {
-								var decrementer = function() {
-									if (startTimeOffset > 0) {
-										startTimeOffset -= getInterval();
-									}
-									if (startTimeOffset < 0) startTimeOffset = 0;
-									timeShow();
-								};
-
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
-								intervalCounter=0;
-
-								decrementer(); //do first one
-								intervalCounterId = decrementer.periodical(logOptions.spinrate);
-							},
-							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
-								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
-							}
-						});
-						$('minusEndLog').addEvents({
-							'mousedown' : function (e) {
-								var decrementer = function() {
-									var oSTO = startTimeOffset;
-									if (startTimeOffset > 0) {
-										startTimeOffset -= getInterval();
-									}
-									if (startTimeOffset < 0) startTimeOffset = 0;
-									endTime = new Date(endTime.getTime()-oSTO+startTimeOffset);
-									timeShow();
-								};
-
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
-								intervalCounter=0;
-
-								decrementer(); //do first one
-								intervalCounterId = decrementer.periodical(logOptions.spinrate);
-							},
-							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
-								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
-							}
-						});
-						$('plusEndLog').addEvents({
-							'mousedown' : function (e) {
-								var incrementer = function() {
-									var oSTO = startTimeOffset;
-									var maxOffset = new Date().getTime() - endTime.getTime() + oSTO;
-									startTimeOffset += getInterval();
-									if (startTimeOffset > maxOffset) startTimeOffset = maxOffset;
-									endTime = new Date(endTime.getTime() - oSTO + startTimeOffset);
-									timeShow();
-								};
-								
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
-								intervalCounter=0;
-
-								incrementer(); //do first one
-								intervalCounterId = incrementer.periodical(logOptions.spinrate);
-							},
-							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
-								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
-							}
-						});
-					},
-					startLog: function (rid,roomName) {
-						logRid = rid;
-						MBchat.updateables.poller.stop(); //presence polls still happen
-						messageList.removeClass('whisper');
-						messageList.removeClass('chat');
-						messageList.addClass('logging');
-						messageList.empty();
-						printQuery = 'user='+me.uid+'&password='+me.password+'&rid='+rid+'&room='+roomName ;
-						$('inputContainer').addClass('hide');
-						$('emoticonContainer').addClass('hide');
-						$('roomNameContainer').empty();
-						$('entranceHall').addClass('hide');
-						var exit = $('exit');	
-						exit.removeClass('exit-f');
-						exit.addClass('exit-r');
-						$('soundOptions').addClass('hide');
-						$('onlineListContainer').addClass('hide');
-						logControls.removeClass('hide');
-						endTime = new Date();
-						startTimeOffset = anHour;
-						earliest = endTime.getTime() - aWeek;
-						timeShow();
-						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
-
-					},
-					returnToEntranceHall : function(e) {
-						e.stop();
-						logControls.addClass('hide');
-						messageList.removeClass('logging');
-						$('header').removeClass('hide');
-						$('content').removeClass('hide');
-						$('entranceHall').removeClass('hide');	
-						$('soundOptions').removeClass('hide');
-						$('onlineListContainer').removeClass('hide');
-						MBchat.updateables.poller.start();
-						MBchat.updateables.message.leaveRoom();	//go To Entrance Hall
-					}
-				};
 			}()
 		};
-	}()
+	}(),
+	goToRoom: function(roomId) {
+		MBchat.updateables.message.enterRoom(roomId);
+	},
+	exit: function() {
+		if (privateRoom != 0) {
+			privateReq.transmit({
+				'wid':  0, 
+				'lid' : MBchat.updateables.poller.getLastId(),
+				'rid' : room.rid }); 
+		} else {
+			if (room.rid == 0 ) {
+				MBchat.logout();
+				//and go back to the forum
+				window.location = 'forum.php' ;
+			} else {
+				MBchat.updateables.message.leaveRoom();
+			}
+		}
+	}
   }; 
-
-
 }();

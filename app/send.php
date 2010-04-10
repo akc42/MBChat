@@ -16,8 +16,26 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-echo @file_get_contents("http://mbchat.chandlerfamily.org.uk/count.php");
+
+if (!defined('MBC'))
+	die('Hacking attempt...');
+	
+function send_to_all($lid,$uid,$name,$role,$type,$rid,$text) {
+
+    $message = '<{"lid":'.$lid.',"user" :{"uid":'.$uid.',"name":"'.$name.'","role":"'.$role.'"},"type":"'.$type.'","rid":'.$rid.',';
+    $message .= '"message":"'.$text.'","time":'.time().'}>';
+
+    if ($dh = opendir('./data/')) {
+        while (($file = readdir($dh)) !== false) {
+            if (filetype('./data/'.$file) == 'fifo') {
+                $writer=fopen ('./data/'.$file,'r+');
+                fwrite($writer,$message);
+                fclose($writer);  
+            }
+        }
+        closedir($dh);
+    }
+    file_put_contents('./data/time.txt', ''.time());
+}
 ?>
-
-
 
