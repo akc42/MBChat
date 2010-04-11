@@ -23,58 +23,34 @@ html {
 body {
 	padding:0px;
 	margin:0px;
-	background-color: #efefef;
+
 	overflow:hidden;
 	width:100%;
 	height:100%;
 }
 
-/* Tables should show empty cells. */
-table
-{
-	empty-cells: show;
-}
-
-/* By default (td, body..) use Tahoma in black. */
-body, td, th
+body
 {
 	color: #000000;
 	font-size: small;
 	font-family: tahoma, sans-serif;
 }
 
-.topbg
-{
-	color: #737373;
-	font-size: 22px;
-	padding-top: 28px;
-	padding-bottom: 7px;
-	padding-right:25px;
-	background-color: #efefef;
-	background-image: url(/static/images/topbg_r.gif);
-}
 
-.topbg_r
-{
-	color: white;
-	background-color: #efefef;
-	background-image: url(/static/images/topbg.gif);
+#headerContainer {
+	position:absolute;
+	top:100px;
+	left:350px;
+	width:40em;
+	text-align:left;
 }
-
-.topbg_r2
-{
-	color: white;
-	background-color: #efefef;
-	background-image: url(/static/images/topbg_r2.gif);
+#headerContainer h1 {
+	font-size:1.5em;
+	font-family: tahoma, sans-serif;
+	font-weight: normal;
+	color:#737373;
+	margin-left:auto;
 }
-
-.topbg_l
-{
-	color: white;
-	background-color: #efefef;
-	background-image: url(/static/images/topbg_l.gif);
-}
-
 #roomNameContainer {
 	position:absolute;
 	top:80px;

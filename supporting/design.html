@@ -603,7 +603,7 @@ The following capabilies are required in Mootools More for chat
 * Drag.Move
 * Request.Queue</pre>
 </div>
-<div title="Overall Structure" modifier="AlanChandler" created="201004081234" modified="201004100738" changecount="15">
+<div title="Overall Structure" modifier="AlanChandler" created="201004081234" modified="201004110723" changecount="16">
 <pre>This section of the design describes how we structure the application in terms of directories, urls and git branches to provide the appropriate parts of the applications.
 
 In simple terms we use these three concepts as follows:-
@@ -611,16 +611,17 @@ In simple terms we use these three concepts as follows:-
 :We need to provide separation for the following key elements
 :* Supporting documentation and raw images (such as .xcf files) which need to be processed to make the images actually used, and the raw script used to create the master.db database file  - this is the ''supporting'' directory
 :* The components that provide the ''front end'' of the application when (and only when) the application is split.  These will be located in the ''remote'' directory. (It does not require any site templates)
-:* The web application itself will be stored (at least the components that need to be at a //chat// url) at the ''app'' directory.  It will contain one subdirectory:-
+:* The web application itself will be stored (at least the components that need to be at a //chat// url) at the ''app'' directory.  It will contain two subdirectories:-
 :** ''data'' which will be set so that the application can write into it - it will contain:-
 :*** the operating version of the database (copied from the master)
 :*** the //pipes// created by the application for communication between the users directory writeable by the web server
-:* The application includes a template in the top level call to provide a basic layout around the chat rooms.  This will be specific to the site on which it is loaded and I am moving towards a common template for Melinda's Backups and chandlerfamily.org.uk.  However to enable others to demonstrate the chat application a demonstrate template is also provided.  This will be located in the ''template'' directory. (
+:** ''template'' which is a symlink to where ever the template.php file is stored.
+:* The application includes a template in the top level call to provide a basic layout around the chat rooms.  This will be specific to the site on which it is loaded and I am moving towards a common template for Melinda's Backups and chandlerfamily.org.uk.  However to enable others to demonstrate the chat application a demonstrate template is also provided.  This will be located in the ''template'' directory.
 :* There are common javascript libraries that might be of interest to other applications.  These may well be provided separately from the application (although the exact components of the Mootools More library (see [[Mootools]]) need to be consided.  These are stored in the ''js'' directory
 :* A default set of emoticons will be provided in the ''emoticon'' directory.  The database holds the location, and the default setup points to this set' However it is not essential and other sites might decide to link to alternative sources. 
 ;url and directory mapping
 :The application has to assume certain relationship between various components of the application.  These components are either combined using php includes (in which case the relative location of directories is important) or via url paths (where the directories may not be in relation to the each other, but mapped to different directory locations via the web server.  Paths can be relative to the current location or to web server document root. The following relationships exist:-
-:* ''template'' is a //directory// relative to document root to hold the site template.  The application looks for the //template.php// file.
+:* ''template'' is a //directory// relative to application to hold the site template.  The application looks for the //template.php// file. The general expectation is that this directory will be a symlink to whereever the site template is stored
 :* ''js'' is a  //url// relative to document root to hold the common javascript components.  [[Mootools]] and [[SoundManager]] libraries are stored here 
 :* ''data'' is a //directory// relative to where the application is stored holding the pipes and database.
 :* ''emoticons'' is a //directory// whose location is specified in the database.  The default location is as a parallel location to the application itself (ie ../emoticons), but it can be altered to other places if that is more convenient.  

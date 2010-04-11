@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -27,18 +27,13 @@ $rid = $_POST['rid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 
-
-$result = dbQuery('SELECT uid, name, role, question,private AS wid FROM users WHERE rid = '.dbMakeSafe($rid).' ;');
 $users = array();
-if(mysql_num_rows($result) != 0) {
-	while($row=mysql_fetch_assoc($result)) {
-		$users[] = $row;
-	}		
+foreach(dbQuery('SELECT uid, name, role, question,private AS wid FROM users WHERE rid = '.dbMakeSafe($rid).' AND present = 1 ;') as $row) {
+    $users[] = $row;
 };
-mysql_free_result($result);
-$result = dbQuery('SELECT max(lid) AS lid FROM log;');
-$row = mysql_fetch_assoc($result);
-mysql_free_result($result);
 
+$result = dbQuery('SELECT max(lid) AS lid FROM log;');
+$row = dbFetch($result);
 echo '{ "lastid":'.$row['lid'].', "online":'.json_encode($users).'}';
+dbFree($result);
 ?> 

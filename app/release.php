@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -25,15 +25,14 @@ $quid = $_POST['quid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 $result = dbQuery('SELECT uid, name, role, rid, question FROM users WHERE uid = '.dbMakeSafe($quid).';');
-if(mysql_num_rows($result) != 0) {
-	$user = mysql_fetch_assoc($result);
-	mysql_free_result($result);
+if($user = dbFetch($result)) {
 	dbQuery('UPDATE users SET question = NULL WHERE uid = '.dbMakeSafe($quid).';');
 	
 	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 					dbMakeSafe($quid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
 					', "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
 	include_once('send.php');
-    send_to_all(mysql_insert_id(),$quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
+    send_to_all(dbLastId(),$quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
 }
+dbFree($result);
 ?>

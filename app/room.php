@@ -23,22 +23,17 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 $rid = $_POST['rid'];
 
-define('MBCHAT_MAX_TIME',	3);		//Max hours of message to display in a room
-define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
-
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-$didre = false;
+
+
 $messages = array();
+
 $result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
-if(mysql_num_rows($result) != 0) {
-	$room = mysql_fetch_assoc($result);
-	mysql_free_result($result);
+if($room = dbFetch($result)) {
+	dbFree($result);
 	$result = dbQuery('SELECT uid, name, role, moderator,question FROM users WHERE uid = '.dbMakeSafe($uid).';');
-	if(mysql_num_rows($result) != 0) {
-		$user = mysql_fetch_assoc($result);
-		mysql_free_result($result);
-		
+	if($user = dbFetch($result)) {
 		if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
 		//This is a moderated room, and this person is not normal - so swap them into moderated room role
 			$role = $user['moderator'];
@@ -47,8 +42,13 @@ if(mysql_num_rows($result) != 0) {
 			$role = $user['role'];
 			$mod = $user['moderator'];
 		}
+		dbFree($result);
+        $params = Array();
+        foreach(dbQuery("SELECT name, value FROM parameters WHERE name = 'max_time' OR name = 'max_messages' ;") as $row) {
+            $params[$row['name']] = $row['value'];
+        }
 		
-		dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = NOW(), role = '.dbMakeSafe($role)
+		dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = '.time().', role = '.dbMakeSafe($role)
 					.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
 		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 						dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
@@ -56,14 +56,17 @@ if(mysql_num_rows($result) != 0) {
 		$didre = true;
 		$name = $user['name'];
 		$question = $user['question'];
-        $lid= mysql_insert_id();
-		$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
+        
+		$sql = 'SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log';
 		$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( (participant.uid = '.dbMakeSafe($uid).' AND type = "WH" )' ;
-		$sql .= 'OR rid = '.dbMakeSafe($rid).') AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR) ';
-		$sql .= 'ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
-		$result = dbQuery($sql);
-		if(mysql_num_rows($result) != 0) {
-			while($row=mysql_fetch_assoc($result)) {
+		$sql .= ' OR rid = '.dbMakeSafe($rid).') AND log.time > '.(time() - 3600*$params['max_time']);
+		$sql .= ' ORDER BY lid DESC LIMIT '.$params['max_messages'].';';
+		$first = true;
+		foreach(dbQuery($sql) as $row) {
+		    if($first) {
+		        $lid = $row['lid'];
+		        $first = false;
+		    }
 				$user = array();
 				$item = array();
 				$item['lid'] = $row['lid'];
@@ -76,17 +79,10 @@ if(mysql_num_rows($result) != 0) {
 				$item['time'] = $row['time'];
 				$item['message'] = $row['text'];
 				$messages[]= $item;
-			}		
 		};
-		mysql_free_result($result);
-		$result = dbQuery('SELECT max(lid) AS lid FROM log;');
-		$row = mysql_fetch_assoc($result);
-		mysql_free_result($result);
+		echo '{ "room" :'.json_encode($room).', "messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$lid.'}';
+        include_once('send.php');
+        send_to_all($lid,$uid, $name,$role,"RE",$rid,$question);	
 	}	
-}
-echo '{ "room" :'.json_encode($room).', "messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$row['lid'].'}';
-if ($didre) {
-    include_once('send.php');
-    send_to_all($lid,$uid, $name,$role,"RE",$rid,$question);	
 }
 ?>

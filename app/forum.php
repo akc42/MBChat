@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009, 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -16,8 +16,12 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
+define ('MBC',1);   //defined so we can control access to some of the files.
+include_once('db.php');
+$result = dbQuery("SELECT value FROM parameters WHERE name = 'exit_location' ;");
+$row = dbFetch($result);
 
-header("location: http://mb.chandlerfamily.org.uk/forum/index.php");
+header("location: ".$row['value']);
 
 ?>
 

@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -28,26 +28,23 @@ require_once('db.php');
 
 echo '{"messages" :[' ;
 $result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if(mysql_num_rows($result) != 0) {
-	$user = mysql_fetch_assoc($result);
-	mysql_free_result($result);
-	
+if($user = dbFetch($result)) {
+    dbFree($result)	
 	dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
 	
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 					dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
 					', "LH" ,'.dbMakeSafe($rid).');');
 	include_once('send.php');
-    send_to_all(mysql_insert_id(),$uid, $user['name'],$user['role'],"LH",$rid,'');	
+    send_to_all(dbLastId(),$uid, $user['name'],$user['role'],"LH",$rid,'');	
 	
 	
-	$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text  FROM log';
-	$sql .= ' WHERE UNIX_TIMESTAMP(time) > '.dbMakeSafe($_POST['start']).' AND UNIX_TIMESTAMP(time) < '.dbMakeSafe($_POST['end']).' AND ';
+	$sql = 'SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log';
+	$sql .= ' WHERE time > '.dbMakeSafe($_POST['start']).' AND time < '.dbMakeSafe($_POST['end']).' AND ';
 	$sql .= 'rid = '.dbMakeSafe($rid).' ORDER BY lid ;';
 	$result = dbQuery($sql);
 	$i = 0 ;
-	if(mysql_num_rows($result) != 0) {
-		while($row=mysql_fetch_assoc($result)) {
+    foreach(dbQuery($sql) as $row) {
 			$user = array();
 			$item = array();
 			$item['lid'] = $row['lid'];
@@ -64,10 +61,9 @@ if(mysql_num_rows($result) != 0) {
 			}
 			$i++ ;
 			echo json_encode($item) ;
-		}		
 	};
 }
-mysql_free_result($result);
+dbFree($result);
 
 echo ']}';
 ?>

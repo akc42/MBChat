@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -28,17 +28,17 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if(mysql_num_rows($result) != 0) {
-	$row=mysql_fetch_assoc($result);
+if($row=dbFetch($result)) {
+	
 	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "LI" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
-    $lid = mysql_insert_id();
+    $lid = dbLastId();
     
 //If FIFO doesn't exists (when trying to login after timeout for instance) create it
-	if(!file_exists(MBCHAT_PIPE_PATH."msg".$uid)) {
+	if(!file_exists("./data/msg".$uid)) {
 	    $old_umask = umask(0007);
-    	posix_mkfifo(MBCHAT_PIPE_PATH."msg".$uid,0660);
+    	posix_mkfifo("./data/msg".$uid,0660);
         umask($old_umask);
     }
 	
@@ -46,7 +46,7 @@ if(mysql_num_rows($result) != 0) {
     send_to_all($lid,$uid, $row['name'],$row['role'],"LI",$row['rid'],'');	
 		
 };
-mysql_free_result($result);
+dbFree($result);
 
 echo '{"Login" : '.$uid.', "lastid" : '.$lid.' }' ;
 ?> 

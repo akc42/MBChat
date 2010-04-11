@@ -21,17 +21,21 @@ if (!defined('MBC'))
 
 $timedout = time() - $usertimeout;
 dbBegin();
-foreach(dbQuery('SELECT uid, name, role, rid FROM users WHERE time < '.$timedout.';') as $row) {
-
-	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($row['uid']).' ;');
+foreach(dbQuery('SELECT uid, name, role, rid FROM users WHERE time < '.$timedout.' AND present = 1;') as $row) {
+    if(is_null($row['permanent'])) {
+    	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($row['uid']).' ;');
+    } else {
+        dbQuery('UPDATE users SET present = 0 WHERE uid = '.dbMakeSafe($row['uid']).' ;');
+    }
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 			dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "LT" ,'.dbMakeSafe($row['rid']).');');
+
+    unlink("./data/msg".$row['uid']); //Loose FIFO
 		
 	include_once('send.php');
     send_to_all(dbLastId(),$row['uid'], $row['name'],$row['role'],"LT",$row['rid'],'');	
 
-    unlink("./data/msg".$row['uid']); //Loose FIFO
 };
 dbCommit();
 ?>

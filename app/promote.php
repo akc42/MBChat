@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -26,9 +26,7 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 $result = dbQuery('SELECT uid, name, role, rid, moderator, question  FROM users WHERE uid = '.dbMakeSafe($puid).';');
-if(mysql_num_rows($result) != 0) {
-	$user = mysql_fetch_assoc($result);
-	mysql_free_result($result);
+if($user = dbFetch($result)) {
 	
 	if ($user['role'] == 'M' || $user['role'] == 'S') {
 		//already someone special 
@@ -36,7 +34,7 @@ if(mysql_num_rows($result) != 0) {
 	} else {
 		$mod = $user['role'];
 	}
-	dbQuery('UPDATE users SET role = "M", moderator = '.dbMakeSafe($mod).', time = NOW() , question = NULL WHERE uid = '.dbMakeSafe($puid).';');
+	dbQuery('UPDATE users SET role = "M", moderator = '.dbMakeSafe($mod).', time = '.time().' , question = NULL WHERE uid = '.dbMakeSafe($puid).';');
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 					dbMakeSafe($puid).','.dbMakeSafe($user['name']).', "M" , "RM" ,'.dbMakeSafe($user['rid']).');');
 	if ($user['question'] != '' ) {
@@ -44,7 +42,8 @@ if(mysql_num_rows($result) != 0) {
 					dbMakeSafe($puid).','.dbMakeSafe($user['name']).
 					', "M" , "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
 		include_once('send.php');
-        send_to_all(mysql_insert_id(),$puid, $user['name'],"M","ME",$user['rid'],'');	
+        send_to_all(dbLastId(),$puid, $user['name'],"M","ME",$user['rid'],'');	
 	}
 }
+dbFree($result);
 ?>

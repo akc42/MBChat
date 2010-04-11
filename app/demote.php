@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -26,21 +26,20 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
 $result = dbQuery('SELECT uid, name, role, rid, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if(mysql_num_rows($result) != 0) {
-	$user = mysql_fetch_assoc($result);
-	mysql_free_result($result);
+if($user = dbFetch($result)) {
+	dbFree($result);
 	
 	if ($user['role'] == 'M' && $user['rid'] == $rid ) {
 
 		dbQuery('UPDATE users SET role = '.dbMakeSafe($user['moderator']).
-			', moderator = "N", time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
+			', moderator = "N", time = '.time().' WHERE uid = '.dbMakeSafe($uid).';');
 
 		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($uid).','.dbMakeSafe($user['name']).', '.
 				dbMakeSafe($user['moderator']).', "RN" ,'.
 				dbMakeSafe($rid).');');
 		include_once('send.php');
-        send_to_all(mysql_insert_id(),$uid, $user['name'],$user['moderator'],"RN",$rid,"");	
+        send_to_all(dbLastId(),$uid, $user['name'],$user['moderator'],"RN",$rid,"");	
 
 	}
 }

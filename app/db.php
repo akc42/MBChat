@@ -26,13 +26,13 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 		die('Hacking attempt...');
 
     try {
-        $db = new PDO('sqlite:'.MBC);  
+        $db = new PDO('sqlite:./data/chat.db');  
     } catch (PDOException $e) {
         die('Database connection failed: ' . $e->getMessage());
     }
     
 	function dbQuery($sql) {
-	    global $db
+	    global $db;
 		$result = $db->query($sql);
 		if (!$result) {
 			echo '<tt>';
@@ -41,7 +41,7 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 			echo "<br/><br/>\n";
 			echo $sql;
 			echo "<br/><br/>\n\n";
-			echo $db->lastErrorMsg();
+			echo "SQL error code = ".$db->errorCode();
 			echo "<br/><br/>\n\n";
 			echo '</tt>';
 			die('<p>Please inform <i>alan@chandlerfamily.org.uk</i> that a database query failed and include the above text.<br/><br/>Thank You</p>');
@@ -60,21 +60,25 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 	}
 
 	function dbFetch($result) {
-		return $results->fetch(PDO::FETCH_ASSOC);
+		return $result->fetch(PDO::FETCH_ASSOC);
 	}
 	function dbFree($result){
 		$result->closeCursor();
 	}
 	function dbLastId() {
+	    global $db;
 	    return $db->lastInsertID();
 	}
 	function dbBegin() {
+	    global $db;
 	    $db->beginTransaction();
 	}
 	function dbCommit() {
+	    global $db;
 	    $db->commit();
 	}
 	function dbRollback() {
+	    global $db;
 	    $db->rollBack();
 	}
 ?>

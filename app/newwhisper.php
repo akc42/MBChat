@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -28,37 +28,34 @@ require_once('db.php');
 
 $wid = 0;
 $result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).' OR uid = '.dbMakeSafe($wuid).';');
-if(mysql_num_rows($result) == 2) {
-	$user = mysql_fetch_assoc($result);
-	if ($user['uid'] == $uid ) {
-		$wuser = mysql_fetch_assoc($result);
-	} else {
-		$wuser = $user;
-		$user = mysql_fetch_assoc($result);
-	}
-	mysql_free_result($result);
-	dbQuery('LOCK TABLE whisper WRITE;');
-	$result = dbQuery('SELECT wid FROM whisper;');
-	$whisper = mysql_fetch_assoc($result);
-	mysql_free_result($result);
-	$wid = $whisper['wid'];
-	dbQuery('UPDATE whisper SET wid = '.($wid + 1).' ;');
-	dbQuery('UNLOCK TABLES;');
-	dbQuery('INSERT INTO participant SET wid = '.dbMakeSafe($wid).', uid = '.dbmakeSafe($wuid).' ;');
-	dbQuery('INSERT INTO participant SET wid = '.dbMakeSafe($wid).', uid = '.dbmakeSafe($uid).' ;');
-	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-		dbMakeSafe($wuid).','.dbMakeSafe($wuser['name']).','.dbMakeSafe($wuser['role']).
-		', "WJ" ,'.dbMakeSafe($wid).');');
-	include_once('send.php');
-    send_to_all(mysql_insert_id(),$wuid, $wuser['name'],$wuser,"WJ",$wid,'');	
-	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-		dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
-		', "WJ" ,'.dbMakeSafe($wid).');');
-	send_to_all(mysql_insert_id(),$uid, $user['name'],$user['role'],"WJ",$wid,'');	
+if($user = dbFetch($result)) {
+	if($wuser = dbFetch($result)) {
+    	if ($user['uid'] != $uid ) {
+    	    $t = $user;
+    	    $user = $wuser;
+    	    $wuser = $t;
+    	}
+	    dbFree($result);
+	    dbBegin();
+	    dbQuery('UPDATE wid_sequence SET value = value + 1 ;');
+	    $result = dbQuery('SELECT value FROM wid_sequence');
+	    $row=dbFetch($result);
+	    $wid = $row['value'];
+	    dbFree($result);
+	    dbQuery('INSERT INTO participant (wid,uid) values('.$wid.','.dbmakeSafe($wuid).') ;');
+	    dbQuery('INSERT INTO participant (wid,uid) values('.$wid.','.dbmakeSafe($uid).') ;');
+        dbCommit();
+	    dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+		    dbMakeSafe($wuid).','.dbMakeSafe($wuser['name']).','.dbMakeSafe($wuser['role']).
+		    ', "WJ" ,'.dbMakeSafe($wid).');');
+		$lid = dbLastId();
+	    include_once('send.php');
+        send_to_all($lid,$wuid, $wuser['name'],$wuser,"WJ",$wid,'');	
+	    dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+		    dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
+		    ', "WJ" ,'.dbMakeSafe($wid).');');
+	    send_to_all($lid,$uid, $user['name'],$user['role'],"WJ",$wid,'');	
+    }
 }	
-
-
-
 echo '{ "wid" :'.$wid.', "user" :'.json_encode($wuser).'}';
-
 ?>

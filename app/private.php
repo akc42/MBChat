@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -35,28 +35,26 @@ if ($wid != 0 ) {
 				JOIN users ON users.uid = participant.uid WHERE participant.uid = '.
 				dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 
-	if(mysql_num_rows($result) != 0) {
-		$row=mysql_fetch_assoc($result);
-		dbQuery('UPDATE users SET time = NOW() , private = '.dbMakeSafe($wid).' WHERE uid = '.dbMakeSafe($uid).';');
+	if($row = dbFetch($result)) {
+		dbQuery('UPDATE users SET time = '.time().' , private = '.dbMakeSafe($wid).' WHERE uid = '.dbMakeSafe($uid).';');
 		dbQuery('INSERT INTO log (uid, name, role, type, rid ) VALUES ('.
 				dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 				', "PE" ,'.dbMakeSafe($wid).');');
 		include_once('send.php');
-        send_to_all(mysql_insert_id(),$uid, $row['name'],$row['role'],"PE",$wid,'');	
+        send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"PE",$wid,'');	
 	}
 } else {
 
 	$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
-	if(mysql_num_rows($result) != 0) {
-		$row=mysql_fetch_assoc($result);
-		dbQuery('UPDATE users SET time = NOW() , private = 0 WHERE uid = '.dbMakeSafe($uid).';');
+	if($row = dbFetch($result)) {
+		dbQuery('UPDATE users SET time = '.time().' , private = 0 WHERE uid = '.dbMakeSafe($uid).';');
 		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 				dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 				', "PX" ,'.dbMakeSafe($rid).');');	
 		include_once('send.php');
-        send_to_all(mysql_insert_id(),$uid, $row['name'],$row['role'],"PX",$rid,'');	
+        send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"PX",$rid,'');	
 	}
 }
-mysql_free_result($result);
+dbFree($result);
 echo '{"Status":"OK"}';
 ?> 

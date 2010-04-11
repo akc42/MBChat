@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -29,19 +29,22 @@ require_once('db.php');
 
 
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if(mysql_num_rows($result) != 0) {
-	$row=mysql_fetch_assoc($result);
-	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($uid).' ;');
+if($row = dbFetch($result)) {
+    if (is_null($row['permanent'])) {
+    	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($uid).' ;');
+    } else {
+        dbQuery('UPDATE users SET present = 0 WHERE uid = '.dbMakeSafe($uid).' ;');
+    }
 	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "LO" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
 	include_once('send.php');
-    send_to_all(mysql_insert_id(),$uid, $row['name'],$row['role'],"LO",$row['rid'],'');	
+    send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"LO",$row['rid'],'');	
 		
 };
-mysql_free_result($result);
+dbFree($result);
 usleep(20000);
-unlink(MBCHAT_PIPE_PATH."msg".$uid); //Loose FIFO
+unlink("./data/msg".$uid); //Loose FIFO
 
 echo '{"Logout" : '.$txt.'}' ;
 ?> 

@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009, 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -28,19 +28,15 @@ require_once('db.php');
 
 $result = dbQuery('SELECT users.uid, name, role, wid FROM users JOIN participant ON users.uid = participant.uid 
 		WHERE users.uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-if(mysql_num_rows($result) > 0) {
-//Can only delete it if was still there
-	$row = mysql_fetch_assoc($result);
+if($row=dbFetch($result)) {
 	dbQuery('DELETE FROM participant WHERE uid = '.dbmakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 		dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 		', "WL" ,'.dbMakeSafe($wid).');');
 	include_once('send.php');
-    send_to_all(mysql_insert_id(),$uid, $row['name'],$row['role'],"WL",$wid,'');	
+    send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"WL",$wid,'');	
 
 }
-mysql_free_result($result);
-
+dbFree($result);
 echo '{ "Status" : "OK"}';
-
 ?>

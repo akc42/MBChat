@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -25,24 +25,23 @@ $wuid = $_POST['wuid'];
 $wid = $_POST['wid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
+
 //Check I am in this whisper group and therefore can add the new person
-$result = dbQuery('SELECT * FROM participant WHERE uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-if(mysql_num_rows($result) != 0) {
-	mysql_free_result($result);
+$result = dbQuery('SELECT count(*) as num FROM participant WHERE uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
+$row = dbFetch($result);
+dbFree($result);
+if($row['num'] != 0) {
 	$result = dbQuery('SELECT  uid, name, role FROM users WHERE uid = '.dbMakeSafe($wuid).' ;');
-	if(mysql_num_rows($result) != 0) {
-		$row = mysql_fetch_assoc($result);
+	if($row = dbFetch($result)) {
 		dbQuery('INSERT INTO participant SET wid = '.dbMakeSafe($wid).', uid = '.dbmakeSafe($wuid).' ;');
 		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
 			dbMakeSafe($wuid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "WJ" ,'.dbMakeSafe($wid).');');
 	    include_once('send.php');
-        send_to_all(mysql_insert_id(),$wuid, $row['name'],$row['role'],"WJ",$wid,'');	
+        send_to_all(dbLastId(),$wuid, $row['name'],$row['role'],"WJ",$wid,'');	
 	}
-	mysql_free_result($result);
+	dbFree($result);
 	
 }
-
 echo '{ "Status" : "OK"}';
-
 ?>

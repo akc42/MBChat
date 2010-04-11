@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
+
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: -1"); // Date in the past
 if(!(isset($_POST['user']) && isset($_POST['password']) ))
@@ -28,7 +28,7 @@ if ($_POST['password'] != sha1("Key".$uid))
 $lid = $_POST['lid'];
 
 
-$readpipe=fopen(MBCHAT_PATH."pipes/msg".$uid,'r');
+$readpipe=fopen("./data/msg".$uid,'r');
 while (!feof($readpipe)) {
     $response .= fread($readpipe,8192);
 }

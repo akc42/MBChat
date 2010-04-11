@@ -46,7 +46,7 @@ INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (9, 'The News Ro
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (10, 'The Spiders Lair', 'C', 18);
 
 CREATE TABLE users (
-  uid integer NOT NULL,
+  uid integer primary key NOT NULL,
   time bigint DEFAULT (strftime('%s','now')) NOT NULL,
   name character varying NOT NULL,
   role char(1) NOT NULL default 'R',
@@ -54,8 +54,9 @@ CREATE TABLE users (
   moderator char(1) NOT NULL default 'N',
   question character varying,
   private integer NOT NULL default 0,
-  permenant text,                -- will be an md5 of the password
-  present boolean NOT NULL DEFAULT false
+  permanent text,                -- will be an md5 of the password
+  groups text, -- a colon separated list of "smf_groups" for the committee rooms they are allowed to see
+  present boolean NOT NULL DEFAULT 0
 );
     
 CREATE table wid_sequence ( value integer);
@@ -89,6 +90,7 @@ CREATE TABLE parameters (
 );
 
 INSERT INTO parameters VALUES ('emoticon_dir','../emoticons'); -- emoticon directory (either absolute or relative to the application)
+INSERT INTO parameters VALUES ('emoticon_url','/emoticons'); -- emoticon url 
 INSERT INTO parameters VALUES ('sound_whisper','ding.mp3'); -- file path (absolute or relative) to sound for whisper box appearing
 INSERT INTO parameters VALUES ('sound_move','exit.mp3'); -- file path (absolute or relative) to sound for person moving rooms or exiting
 INSERT INTO parameters VALUES ('sound_creaky','creaky.mp3'); -- file path (absolute or relative) to sound for vamp room door 
@@ -100,6 +102,7 @@ INSERT INTO parameters VALUES ('purge_message_interval','20'); -- messages older
 INSERT INTO parameters VALUES ('wakeup_interval','300'); --how long (in seconds) with no pipe traffic to force a wakeup on all listeners
 INSERT INTO parameters VALUES ('chatbot_name','Hephaestus'); --chatbot name - Hephaestus is a greek god - a coppersmith.
 INSERT INTO parameters VALUES ('max_messages','100'); -- maximum number of back messages to display when entering a room
+INSERT INTO parameters VALUES ('max_time','180'); -- maximum number of minutes of back messages to display when entering a room
 INSERT INTO parameters VALUES ('log_fetch_delay','3000'); -- milliseconds to wait before actually getting print log
 INSERT INTO parameters VALUES ('log_spin_rate','500'); -- milliseconds for each step of the spin timer
 INSERT INTO parameters VALUES ('log_step_seconds','2');  -- number of spin steps where the time varies by one second
@@ -107,6 +110,7 @@ INSERT INTO parameters VALUES ('log_step_minutes','4'); -- number of spin steps 
 INSERT INTO parameters VALUES ('log_step_hours','12'); -- number of spin steps where time varies by one hour
 INSERT INTO parameters VALUES ('log_step_6hours','6'); -- number of spin steps where time varies by 6 hours (before switching to days)
 INSERT INTO parameters VALUES ('entrance_hall','Entrance Hall'); -- entrance hall name
+INSERT INTO parameters VALUES ('exit_location','http://chat/index.php'); -- where to exit to.
 
 COMMIT;
 PRAGMA foreign_keys = true;

@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -36,8 +36,8 @@ $tzo = $_GET['tzo']+$dtz->getOffset($now);
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-$sql = 'SELECT UNIX_TIMESTAMP(time) AS utime, type, rid, uid , name, role, text  FROM log';
-$sql .= ' WHERE UNIX_TIMESTAMP(time) > '.dbMakeSafe($_GET['start']).' AND UNIX_TIMESTAMP(time) < '.dbMakeSafe($_GET['end']).' AND rid ';
+$sql = 'SELECT time, type, rid, uid , name, role, text  FROM log';
+$sql .= ' WHERE time > '.dbMakeSafe($_GET['start']).' AND time < '.dbMakeSafe($_GET['end']).' AND rid ';
 if ($rid == 99) {
 	$sql .= '> 98 ORDER BY rid,lid ;';
 	$room = 'Non Standard';
@@ -62,19 +62,20 @@ $result = dbQuery($sql);
 
 <?php
 function message($txt) {
-global $row;
+global $row, $i;
 	echo '"C">Hephaestus</span><span>'.$row['name'].' '.$txt.'</span><br/>';
 	echo "\n";
+	$nomessages = false;
 }
 function umessage($txt) {
-global $row;
+global $row,$i;
 	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span><br/>';
 	echo "\n";
+	$nomessages = false;
 }
-if(mysql_num_rows($result) != 0) {
-	while($row=mysql_fetch_assoc($result)) {
-
-		echo '<span class="time">'.date("h:i:s a",$row['utime']-$tzo).'</span><span class=';
+$nomessages = true;
+foreach(dbQuery($sql) as $row) {
+		echo '<span class="time">'.date("h:i:s a",$row['time']-$tzo).'</span><span class=';
 		switch ($row['type']) {
 		case "LI" :
 			message('Logs In');
@@ -116,14 +117,14 @@ if(mysql_num_rows($result) != 0) {
 		// Do nothing with these
 			break;
 		}
-	}		
-} else {
+}		
+if($nomessages) {
 	echo '<span class="time">'.date("h:i:s a",$_GET['start']-$tzo).'</span><span class=';
 	echo '"C">Hephaestus</span><span><b>THERE ARE NO MESSAGES TO DISPLAY</b></span><br/>';
 	echo "\n";
 }
 
-mysql_free_result($result);
+dbFree($result);
 ?>
 
 

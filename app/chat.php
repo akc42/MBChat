@@ -75,10 +75,11 @@ $groups = explode(":",$_POST['gp']); //A ":" separated list of committees (group
 $lite = ($_POST['ctype'] == 'lite'); //if we need the special lite version (provides accessibility for blind people)
 
 
-dbQuery('REPLACE INTO users (uid,name,role,moderator) VALUES ('.dbMakeSafe($uid).','.
-				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).') ; ') ;
+dbQuery('REPLACE INTO users (uid,name,role,moderator, present) VALUES ('.dbMakeSafe($uid).','.
+				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).', 1) ; ') ; //The last one indicates that the user is present
 				
 function head_content() {
+    global $lite;
 ?><title>Melinda's Backups Chat</title>
 	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
 	<!--[if lt IE 7]>
@@ -92,6 +93,7 @@ function head_content() {
 }
 
 function content() {
+    global $uid,$name, $role, $mod, $whi, $params, $lite, $groups;
 ?><script type="text/javascript">
 	<!--
 
@@ -103,7 +105,7 @@ window.addEvent('domready', function() {
 				mod: <?php echo '"'.$mod.'"' ; ?> ,
 				whisperer: <?php echo $whi ; ?>  }, 
 				<?php echo $params['presence_interval'] ; ?>,
-				{fetchdelay: <?php echo $params['log_fetchlog_delay'] ; ?>,
+				{fetchdelay: <?php echo $params['log_fetch_delay'] ; ?>,
 				spinrate: <?php echo $params['log_spin_rate'] ; ?>,
 				secondstep:<?php echo $params['log_step_seconds'] ; ?>,
 				minutestep:<?php echo $params['log_step_minutes'] ; ?>,
@@ -162,10 +164,11 @@ soundManager.onload = function() {
 
 	// -->
 </script>
+<div id="roomNameContainer">
+    <h1><?php echo $params['entrance_hall']; ?></h1>
+</div>
+<div id="content">
     <div id="exit" class="exit-f"></div>
-    <div id="roomNameContainer">
-	    <h1><?php echo $params['entrance_hall']; ?></h1>
-    </div>
 <?php if(!$lite) {
 ?>    <div id="logControls" class="hide">
 	    <div id="startTimeBlock">
@@ -183,10 +186,10 @@ soundManager.onload = function() {
 	<div  id="mainRooms" class="rooms">
 	    <h3>Main Rooms</h3>
 <?php
-$i=0
+$i=0;
 foreach(dbQuery('SELECT * FROM rooms ORDER BY rid ASC;') as $row) {
     $rid = $row['rid'];
-    if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['smf_group'],$groups))) {
+    if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['smf_group'],$groups)))) {
         if($i > 0 && $i%4 == 0) {
 ?>  <div class="rooms"> 
     	<h3>Committee Rooms</h3>
@@ -203,8 +206,8 @@ foreach(dbQuery('SELECT * FROM rooms ORDER BY rid ASC;') as $row) {
 ?>  	<div style="clear:both"></div>
 	</div>
 <?php 
-    }
-    
+        }
+    }    
 } 
 //If ended loop and hadn't just comleted div we will have to do it here
 if( ($i % 4) != 0 ) { 
@@ -246,11 +249,16 @@ if (!$lite) {
 	foreach ($fns as $filename) {
 
 		if(filetype($dir.'/'.$filename) == 'file') {
-			$split = splitFIlename($filename);
-			if($split[1] == 'gif') {
-				echo '<img src="/static/images/emoticons/'.$filename.'" alt=":'.$split[0].'" title="'.$split[0].'" />';
-				echo "\n";
-			}
+		
+		    $pos = strrpos($filename, '.');
+		    if (!($pos === false)) { // dot is found in the filename
+			    $basename = substr($filename, 0, $pos);
+			    $extension = substr($filename, $pos+1);
+			    if($extension == 'gif') {
+				    echo '<img class="emoticon" src="'.$params['emoticon_url'].'/'.$filename.'" alt=":'.$basename.'" title="'.$basename.'" />';
+				    echo "\n";
+			    }
+			 }
 		}
 	}
 ?></div>
@@ -269,7 +277,8 @@ if (!$lite) {
 	</span>
 </form>
 </div>
-
+<div id="copyright">MB Chat <span id="version"><?php include('./version.php');?></span> &copy; 2008-2010 Alan Chandler</div>
+</div>
 <?php
 }
 }
@@ -277,8 +286,7 @@ if (!$lite) {
 function menu_items() {
 //Noop
 }
-include($_SERVER['DOCUMENT_ROOT']."/template/template.php");
-
+include("./template/template.php");
  
 	//purge messages that are too old from database
 	dbQuery("DELETE FROM log WHERE time < ".(time() - $params['purge_message_interval']*86400).";");

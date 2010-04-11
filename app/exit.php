@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -32,48 +32,55 @@ require_once('db.php');
 
 if ($rid != 0) {
 	$result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
-	if(mysql_num_rows($result) == 0) {
-		die('Leave Room - Invalid Room id');
-	}
-	$room = mysql_fetch_assoc($result);
-	mysql_free_result($result);
+	if ($room = dbFetch($result) ) {
+    	dbFree($result);
 
 
-	$result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
-	if(mysql_num_rows($result) == 0) {
-		die('Leave Room - Invalid User id');
-	}
-	$user = mysql_fetch_assoc($result);
-	mysql_free_result($result);
+	    $result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
+        if($user = dbFetch($result)) {
+    	    dbFree($result);
 	
-	if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
-	//This is a moderated room, and this person is not normal - so swap them out of moderated room role
-		$role = $user['moderator'];
-		$mod = $user['role'];
-	} else {
-		$role = $user['role'];
-		$mod = $user['moderator'];
-	}
+	        if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
+	        //This is a moderated room, and this person is not normal - so swap them out of moderated room role
+		        $role = $user['moderator'];
+		        $mod = $user['role'];
+	        } else {
+		        $role = $user['role'];
+		        $mod = $user['moderator'];
+	        }
 	
-	dbQuery('UPDATE users SET rid = 0, time = NOW(), role = '.dbMakeSafe($role)
-				.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
+	        dbQuery('UPDATE users SET rid = 0, time = '.time().', role = '.dbMakeSafe($role)
+				        .', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
 	
 	
-	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-					dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-					', "RX" ,'.dbMakeSafe($rid).');');
-	include_once('send.php');
-    send_to_all(mysql_insert_id(),$uid, $user['name'],$role,"RX",$rid,'');	
+	        dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
+					        dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
+					        ', "RX" ,'.dbMakeSafe($rid).');');
+	        include_once('send.php');
+            send_to_all(dbLastId(),$uid, $user['name'],$role,"RX",$rid,'');	
+        }
+    }
 }
+
+$params = Array();
+foreach(dbQuery("SELECT name, value FROM parameters WHERE name = 'max_time' OR name = 'max_messages' ;") as $row) {
+    $params[$row['name']] = $row['value'];
+}
+
+
 //should only return the whispers
-$sql = 'SELECT lid, UNIX_TIMESTAMP(time) AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
+$sql = 'SELECT lid, time AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
 $sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = '.dbMakeSafe($uid) ;
-$sql .= ' AND type = "WH" AND NOW() < DATE_ADD(log.time, INTERVAL '.MBCHAT_MAX_TIME.' HOUR)';
-$sql .= ' ORDER BY lid DESC LIMIT '.MBCHAT_MAX_MESSAGES.';';
+$sql .= ' AND type = "WH" AND log.time > '.(time() - 3600*$params['max_time']);
+$sql .= ' ORDER BY lid DESC LIMIT '.$params['max_messages'].';';
 $result = dbQuery($sql);
 $messages = array();
-if(mysql_num_rows($result) != 0) {
-	while($row=mysql_fetch_assoc($result)) {
+$first = true;
+foreach(dbQuery($sql) as $row) {
+    if($first) {
+        $lid = $row['lid'];
+        $first = false;
+    }
 		$user = array();
 		$item = array();
 		$item['lid'] = $row['lid'];
@@ -86,12 +93,6 @@ if(mysql_num_rows($result) != 0) {
 		$item['time'] = $row['time'];
 		$item['message'] = $row['text'];
 		$messages[]= $item;
-	}		
 };
-mysql_free_result($result);
-$result = dbQuery('SELECT max(lid) AS lid FROM log;');
-$row = mysql_fetch_assoc($result);
-mysql_free_result($result);
-
-echo '{"messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$row['lid'].'}';
+echo '{"messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$lid.'}';
 ?>

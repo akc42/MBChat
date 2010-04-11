@@ -30,21 +30,19 @@ define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 $result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant LEFT JOIN users ON users.uid = participant.uid WHERE participant.uid = '
 	.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-if(mysql_num_rows($result) > 0) {  //only insert into channel if still there
+if($row = dbFetch($result)) {  //only insert into channel if still there
 
-	$row=mysql_fetch_assoc($result);
-
-	dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
+	dbQuery('UPDATE users SET time = '.time().' WHERE uid = '.dbMakeSafe($uid).';');
 
 	if ($text != '') {  //only insert non blank text - ignore other
 		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
 			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
 			', "WH" ,'.dbMakeSafe($wid).','.dbMakeSafe($text).');');
 		include_once('send.php');
-        send_to_all(mysql_insert_id(),$uid, $row['name'],$role,"WH",$wid,$text);	
+        send_to_all(dbLastId(),$uid, $row['name'],$role,"WH",$wid,$text);	
 
 	}
 }
-mysql_free_result($result);
+dbFree($result);
 echo '{"Status":"OK"}';
 ?> 
