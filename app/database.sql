@@ -89,7 +89,7 @@ CREATE TABLE parameters (
     value text
 );
 
-INSERT INTO parameters VALUES ('emoticon_dir','../emoticons'); -- emoticon directory (either absolute or relative to the application)
+INSERT INTO parameters VALUES ('emoticon_dir','../static/images/emoticons'); -- emoticon directory (either absolute or relative to the application)
 INSERT INTO parameters VALUES ('emoticon_url','/emoticons'); -- emoticon url 
 INSERT INTO parameters VALUES ('sound_whisper','ding.mp3'); -- file path (absolute or relative) to sound for whisper box appearing
 INSERT INTO parameters VALUES ('sound_move','exit.mp3'); -- file path (absolute or relative) to sound for person moving rooms or exiting
@@ -110,7 +110,7 @@ INSERT INTO parameters VALUES ('log_step_minutes','4'); -- number of spin steps 
 INSERT INTO parameters VALUES ('log_step_hours','12'); -- number of spin steps where time varies by one hour
 INSERT INTO parameters VALUES ('log_step_6hours','6'); -- number of spin steps where time varies by 6 hours (before switching to days)
 INSERT INTO parameters VALUES ('entrance_hall','Entrance Hall'); -- entrance hall name
-INSERT INTO parameters VALUES ('exit_location','http://chat/index.php'); -- where to exit to.
+INSERT INTO parameters VALUES ('exit_location','http://mb.home/forum/index.php'); -- where to exit to.
 
 COMMIT;
 PRAGMA foreign_keys = true;
