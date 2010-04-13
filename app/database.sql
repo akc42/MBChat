@@ -90,7 +90,7 @@ CREATE TABLE parameters (
 );
 
 INSERT INTO parameters VALUES ('emoticon_dir','../static/images/emoticons'); -- emoticon directory (either absolute or relative to the application)
-INSERT INTO parameters VALUES ('emoticon_url','/emoticons'); -- emoticon url 
+INSERT INTO parameters VALUES ('emoticon_url','/static/images/emoticons'); -- emoticon url 
 INSERT INTO parameters VALUES ('sound_whisper','ding.mp3'); -- file path (absolute or relative) to sound for whisper box appearing
 INSERT INTO parameters VALUES ('sound_move','exit.mp3'); -- file path (absolute or relative) to sound for person moving rooms or exiting
 INSERT INTO parameters VALUES ('sound_creaky','creaky.mp3'); -- file path (absolute or relative) to sound for vamp room door 
