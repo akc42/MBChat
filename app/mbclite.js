@@ -64,12 +64,7 @@ MBchat = function () {
 		return el;
 	};
 	var displayErrorMessage = function(txt) {
-		var msg;
-		if (txt) {
-			msg = '<span class="errorMessage">'+txt+'</span>';
-		} else {
-			msg = '<span class="errorMessage">Server Error</span>';
-		}
+		var msg = '<span class="errorMessage">'+txt+'</span>';
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
@@ -217,13 +212,11 @@ return {
 				        if(response.messages) {
 				            nextLid = response.lastlid + 1;
 				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
-				        }
-				        if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain since previous request is not yet complete (we are in it)
+				        } 
 				    } else {
-				        MBchat.logout();
-						 //and go back to the forum
-						window.location = 'forum.php' ;
+                        displayErrorMessage("read.php failure:"+errorMessage);
 				    }
+				    if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
 				}});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var pollPresence = function () {

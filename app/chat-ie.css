@@ -40,12 +40,16 @@ div.chat, div.whisper {
 
 #inputContainer {
 	width:expression(document.body.clientWidth-250);
-	bottom:82px;
+	bottom:76px;
 }
 
 
 #onlineListContainer {
 	height:expression(document.body.clientHeight-315);
+}
+
+#onlineList {
+    height:expression(document.body.clientHeight-344);
 }
 
 #messageContainer #messageTextContainer {

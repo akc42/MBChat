@@ -168,7 +168,7 @@ body
 }
 
 .loading {
-	background: white url(/static/images/spinner.gif) no-repeat center;
+	background: white url(spinner.gif) no-repeat center;
 }
 
 .hide {
@@ -283,7 +283,6 @@ div.hasQuestion {
 	bottom:125px;
 	border:1px solid #ADADAD;
 	background-color:#FFF;
-	overflow:hidden;
 } 
 #onlineListContainer h4 {
 	height:25px;
@@ -295,13 +294,14 @@ div.hasQuestion {
 	color:#FFF;
 	display:block;
 }
-#onlineListContainer>div {
-    position:relative;
-}
 #onlineList {
+    position:absolute;
+    top:29px;
+    bottom:0px;
+    left:0px;
+    width:100%;
 	overflow-X:hidden;
 	overflow-Y:auto;
-    height:100%;
 }
 div.list {
 	padding:10px 2px;

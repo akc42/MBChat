@@ -401,10 +401,10 @@ return {
 				            nextLid = response.lastlid + 1;
 				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
 				        } 
-				        if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain since previous request is not yet complete (we are in it)
 				    } else {
                         displayErrorMessage("read.php failure:"+errorMessage);
 				    }
+				    if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
 				}});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var pollPresence = function () {
