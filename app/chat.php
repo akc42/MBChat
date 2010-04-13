@@ -277,10 +277,11 @@ if (!$lite) {
 	</span>
 </form>
 </div>
-<div id="copyright">MB Chat <span id="version"><?php include('./version.php');?></span> &copy; 2008-2010 Alan Chandler</div>
-</div>
 <?php
 }
+?><div id="copyright">MB Chat <span id="version"><?php include('./version.php');?></span> &copy; 2008-2010 Alan Chandler</div>
+</div>
+<?php
 }
 
 function menu_items() {

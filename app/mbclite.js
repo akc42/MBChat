@@ -89,9 +89,9 @@ MBchat = function () {
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
 	});
 return {
-	init : function(user,presenseInterval,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
+	init : function(user,presenceInterval,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
 	    logged_in = false;
-		pO = presenceInteval*1000;
+		pO = presenceInterval*1000;
 // Save key data about me
 		me =  user; 
 		version = $('version').get('text');

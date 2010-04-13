@@ -44,10 +44,11 @@ if($row && $row['present'] == '0' && (is_null($row['permanent']) || $row['perman
     $mod = "N";
     $whisperer = "true";
     $gp = "12";  
-    $lite = (isset($POST_['lite']))?'lite':'normal';
+    $lite = (isset($_POST['lite']))?'lite':'normal';
     dbQuery("INSERT INTO users (name,groups) VALUES (".dbPostSafe($name).",'12');");
     $uid = dbLastId();
     $pass = sha1("Key".$uid);
+
 }
 dbFree($result);
 
