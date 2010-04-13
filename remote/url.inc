@@ -1,2 +1,2 @@
 <?php
-$uri = "http://chat.home";
+$uri = "http://mb.home/chatserve/";
