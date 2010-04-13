@@ -35,11 +35,8 @@ if($row = dbFetch($result)) {
     } else {
         dbQuery('UPDATE users SET present = 0 WHERE uid = '.dbMakeSafe($uid).' ;');
     }
-	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-			', "LO" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
 	include_once('send.php');
-    send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"LO",$row['rid'],'');	
+    send_to_all($uid, $row['name'],$row['role'],"LO",$row['rid'],'');	
 		
 };
 dbFree($result);

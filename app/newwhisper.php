@@ -45,16 +45,9 @@ if($user = dbFetch($result)) {
 	    dbQuery('INSERT INTO participant (wid,uid) values('.$wid.','.dbmakeSafe($wuid).') ;');
 	    dbQuery('INSERT INTO participant (wid,uid) values('.$wid.','.dbmakeSafe($uid).') ;');
         dbCommit();
-	    dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-		    dbMakeSafe($wuid).','.dbMakeSafe($wuser['name']).','.dbMakeSafe($wuser['role']).
-		    ', "WJ" ,'.dbMakeSafe($wid).');');
-		$lid = dbLastId();
 	    include_once('send.php');
-        send_to_all($lid,$wuid, $wuser['name'],$wuser,"WJ",$wid,'');	
-	    dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-		    dbMakeSafe($uid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
-		    ', "WJ" ,'.dbMakeSafe($wid).');');
-	    send_to_all($lid,$uid, $user['name'],$user['role'],"WJ",$wid,'');	
+        send_to_all($wuid, $wuser['name'],$wuser,"WJ",$wid,'');	
+	    send_to_all($uid, $user['name'],$user['role'],"WJ",$wid,'');	
     }
 }	
 echo '{ "wid" :'.$wid.', "user" :'.json_encode($wuser).'}';

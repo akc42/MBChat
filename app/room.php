@@ -42,6 +42,8 @@ if($room = dbFetch($result)) {
 			$role = $user['role'];
 			$mod = $user['moderator'];
 		}
+		$name = $user['name'];
+		$question = $user['question'];
 		dbFree($result);
         $params = Array();
         foreach(dbQuery("SELECT name, value FROM parameters WHERE name = 'max_time' OR name = 'max_messages' ;") as $row) {
@@ -50,16 +52,15 @@ if($room = dbFetch($result)) {
 		
 		dbQuery('UPDATE users SET rid = '.dbMakeSafe($rid).', time = '.time().', role = '.dbMakeSafe($role)
 					.', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
-		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-						dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-						', "RE" ,'.dbMakeSafe($rid).','.dbMakeSafe($user['question']).');');
-		$didre = true;
-		$name = $user['name'];
-		$question = $user['question'];
+					
+        include_once('send.php');
+        send_to_all($uid, $name,$role,"RE",$rid,$question);
+        	
+
         
 		$sql = 'SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log';
 		$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE ( (participant.uid = '.dbMakeSafe($uid).' AND type = "WH" )' ;
-		$sql .= ' OR rid = '.dbMakeSafe($rid).') AND log.time > '.(time() - 3600*$params['max_time']);
+		$sql .= ' OR rid = '.dbMakeSafe($rid).') AND log.time > '.(time() - 60*$params['max_time']);
 		$sql .= ' ORDER BY lid DESC LIMIT '.$params['max_messages'].';';
 		$first = true;
 		foreach(dbQuery($sql) as $row) {
@@ -81,8 +82,6 @@ if($room = dbFetch($result)) {
 				$messages[]= $item;
 		};
 		echo '{ "room" :'.json_encode($room).', "messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$lid.'}';
-        include_once('send.php');
-        send_to_all($lid,$uid, $name,$role,"RE",$rid,$question);	
 	}	
 }
 ?>

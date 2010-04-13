@@ -50,7 +50,7 @@ MBchat = function () {
 				if(response) {
 					process(response);
 				} else {
-					displayErrorMessage(errorMessage);
+					displayErrorMessage(''+url+' failure:'+errorMessage);
 				}
 			}});
 			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
@@ -65,12 +65,7 @@ MBchat = function () {
 		return el;
 	};
 	var displayErrorMessage = function(txt) {
-		var msg;
-		if (txt) {
-			msg = '<span class="errorMessage">'+txt+'</span>';
-		} else {
-			msg = '<span class="errorMessage">Server Error</span>';
-		}
+		var msg = '<span class="errorMessage">'+txt+'</span>';
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
 	};
@@ -398,15 +393,17 @@ return {
 				var fullPoll=false;
 				var pollInterval;
 				var wid;
-
-				var pollRequest = new Request.JSON({url:'read.php',link:'chain',onComplete: function(response) {
+                
+                var nextLid;
+				var pollRequest = new Request.JSON({url:'read.php',link:'chain',onComplete: function(response,errorMessage) {
 				    if(response) {
-				        if(response.messages) MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
-				        if (fullPoll) pollRequest.post(myRequestOptions); //Should chain since previous request is not yet complete (we are in it)
+				        if(response.messages) {
+				            nextLid = response.lastlid + 1;
+				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
+				        } 
+				        if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain since previous request is not yet complete (we are in it)
 				    } else {
-				        MBchat.logout();
-						 //and go back to the forum
-						window.location = 'forum.php' ;
+                        displayErrorMessage("read.php failure:"+errorMessage);
 				    }
 				}});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
@@ -444,7 +441,16 @@ return {
 							item.rid = item.rid.toInt();
 							item.user.uid = item.user.uid.toInt();
 							var lid = item.lid;
-							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
+							if(lastId) {
+							    if (lid >= lastId) {
+							        if(lid > lastId+1) {
+							            displayErrorMessage("missed a log id, was "+lid+" expecting "+(lastId+1));//we've missed one?
+							        }
+							        lastId = lid;
+							     }
+							} else {
+							    lastId = lid;  //wasn't there before, so now this message is the first one to set lastId
+							}
 							if ( fullPoll) MBchat.updateables.processMessage(item);
 						});
 					},
@@ -948,6 +954,8 @@ return {
 						var request = new ServerReq('room.php',function(response) {
 							response.room.rid = response.room.rid.toInt();
 							room.set(response.room);
+							var soundEnabled = $('soundEnabled').checked;
+							$('soundEnabled').checked = false; //remember if sound was enabled but turn it off
 							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
 								item.rid = item.rid.toInt();
@@ -955,6 +963,7 @@ return {
 								if(!lastId) lastId = item.lid - 1;
 								MBchat.updateables.processMessage(item);
 							});
+							$('soundEnabled').checked = soundEnabled; //turn it on again
 							lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
 							MBchat.updateables.poller.setLastId(lastId);

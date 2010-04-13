@@ -35,11 +35,8 @@ if($row = dbFetch($result)) {  //only insert into channel if still there
 	dbQuery('UPDATE users SET time = '.time().' WHERE uid = '.dbMakeSafe($uid).';');
 
 	if ($text != '') {  //only insert non blank text - ignore other
-		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-			', "WH" ,'.dbMakeSafe($wid).','.dbMakeSafe($text).');');
 		include_once('send.php');
-        send_to_all(dbLastId(),$uid, $row['name'],$role,"WH",$wid,$text);	
+        send_to_all($uid, $row['name'],$role,"WH",$wid,$text);	
 
 	}
 }

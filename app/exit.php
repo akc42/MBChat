@@ -53,11 +53,8 @@ if ($rid != 0) {
 				        .', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
 	
 	
-	        dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-					        dbMakeSafe($user['uid']).','.dbMakeSafe($user['name']).','.dbMakeSafe($role).
-					        ', "RX" ,'.dbMakeSafe($rid).');');
-	        include_once('send.php');
-            send_to_all(dbLastId(),$uid, $user['name'],$role,"RX",$rid,'');	
+	        include_once('./send.php');
+            send_to_all($uid, $user['name'],$role,"RX",$rid,'');	
         }
     }
 }

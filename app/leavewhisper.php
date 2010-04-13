@@ -30,11 +30,8 @@ $result = dbQuery('SELECT users.uid, name, role, wid FROM users JOIN participant
 		WHERE users.uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 if($row=dbFetch($result)) {
 	dbQuery('DELETE FROM participant WHERE uid = '.dbmakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-		dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-		', "WL" ,'.dbMakeSafe($wid).');');
-	include_once('send.php');
-    send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"WL",$wid,'');	
+	include_once('./send.php');
+    send_to_all($uid, $row['name'],$row['role'],"WL",$wid,'');	
 
 }
 dbFree($result);

@@ -34,12 +34,8 @@ if($user = dbFetch($result)) {
 		dbQuery('UPDATE users SET role = '.dbMakeSafe($user['moderator']).
 			', moderator = "N", time = '.time().' WHERE uid = '.dbMakeSafe($uid).';');
 
-		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($uid).','.dbMakeSafe($user['name']).', '.
-				dbMakeSafe($user['moderator']).', "RN" ,'.
-				dbMakeSafe($rid).');');
 		include_once('send.php');
-        send_to_all(dbLastId(),$uid, $user['name'],$user['moderator'],"RN",$rid,"");	
+        send_to_all($uid, $user['name'],$user['moderator'],"RN",$rid,"");	
 
 	}
 }

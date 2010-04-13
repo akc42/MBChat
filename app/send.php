@@ -19,8 +19,13 @@
 
 if (!defined('MBC'))
 	die('Hacking attempt...');
+require_once('./db.php');
 	
-function send_to_all($lid,$uid,$name,$role,$type,$rid,$text) {
+function send_to_all($uid,$name,$role,$type,$rid,$text) {
+	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
+			dbMakeSafe($uid).','.dbMakeSafe($name).','.dbMakeSafe($role).
+			', '.dbMakeSafe($type).' ,'.dbMakeSafe($rid).','.dbMakeSafe($text).');');
+    $lid = dbLastId();
 
     $message = '<{"lid":'.$lid.',"user" :{"uid":'.$uid.',"name":"'.$name.'","role":"'.$role.'"},"type":"'.$type.'","rid":'.$rid.',';
     $message .= '"message":"'.$text.'","time":'.time().'}>';
@@ -35,7 +40,8 @@ function send_to_all($lid,$uid,$name,$role,$type,$rid,$text) {
         }
         closedir($dh);
     }
-    file_put_contents('./data/time.txt', ''.time());
+    file_put_contents('./data/time.txt', ''.time()); //make a time file
+    return $lid;
 }
 ?>
 

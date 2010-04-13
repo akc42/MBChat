@@ -37,21 +37,15 @@ if ($wid != 0 ) {
 
 	if($row = dbFetch($result)) {
 		dbQuery('UPDATE users SET time = '.time().' , private = '.dbMakeSafe($wid).' WHERE uid = '.dbMakeSafe($uid).';');
-		dbQuery('INSERT INTO log (uid, name, role, type, rid ) VALUES ('.
-				dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-				', "PE" ,'.dbMakeSafe($wid).');');
-		include_once('send.php');
-        send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"PE",$wid,'');	
+		include_once('./send.php');
+        send_to_all($uid, $row['name'],$row['role'],"PE",$wid,'');	
 	}
 } else {
 
 	$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
 	if($row = dbFetch($result)) {
 		dbQuery('UPDATE users SET time = '.time().' , private = 0 WHERE uid = '.dbMakeSafe($uid).';');
-		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-				dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-				', "PX" ,'.dbMakeSafe($rid).');');	
-		include_once('send.php');
+		include_once('./send.php');
         send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"PX",$rid,'');	
 	}
 }

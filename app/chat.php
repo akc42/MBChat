@@ -219,7 +219,7 @@ if( ($i % 4) != 0 ) {
 </div>
 <div id="onlineListContainer">
 	<h4>Users Online</h4>
-	<div id="onlineList" class="loading"></div>
+	<div><div id="onlineList" class="loading"></div></div>
 </div>
 <div id="chatList" class="whisper"></div>	
 

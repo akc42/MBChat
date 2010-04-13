@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -20,20 +20,16 @@
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-// Path to the chat directory:
-
-define('MBCHAT_PATH', dirname($_SERVER['SCRIPT_FILENAME']).'/');
-
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./db.php');
 
 $result = dbQuery('SELECT count(*) as chatters FROM users;');
-if ($row = mysql_fetch_assoc($result)) { 
+if ($row = dbFetch($result)) { 
     echo $row['chatters'];
 } else {
     echo '0';
 }
-mysql_free_result($result);
+dbFree($result);
 
 ?>

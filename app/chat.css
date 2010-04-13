@@ -283,6 +283,7 @@ div.hasQuestion {
 	bottom:125px;
 	border:1px solid #ADADAD;
 	background-color:#FFF;
+	overflow:hidden;
 } 
 #onlineListContainer h4 {
 	height:25px;
@@ -294,8 +295,13 @@ div.hasQuestion {
 	color:#FFF;
 	display:block;
 }
+#onlineListContainer>div {
+    position:relative;
+}
 #onlineList {
-	overflow:auto;
+	overflow-X:hidden;
+	overflow-Y:auto;
+    height:100%;
 }
 div.list {
 	padding:10px 2px;

@@ -35,14 +35,10 @@ if($user = dbFetch($result)) {
 		$mod = $user['role'];
 	}
 	dbQuery('UPDATE users SET role = "M", moderator = '.dbMakeSafe($mod).', time = '.time().' , question = NULL WHERE uid = '.dbMakeSafe($puid).';');
-	dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-					dbMakeSafe($puid).','.dbMakeSafe($user['name']).', "M" , "RM" ,'.dbMakeSafe($user['rid']).');');
+    include_once('send.php');
+	send_to_all($puid,$user['name'],"M","RM",$user['rid'],'');
 	if ($user['question'] != '' ) {
-		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('. 
-					dbMakeSafe($puid).','.dbMakeSafe($user['name']).
-					', "M" , "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
-		include_once('send.php');
-        send_to_all(dbLastId(),$puid, $user['name'],"M","ME",$user['rid'],'');	
+        send_to_all(dbLastId(),$puid, $user['name'],"M","ME",$user['rid'],$user['question']);	
 	}
 }
 dbFree($result);

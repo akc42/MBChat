@@ -55,12 +55,9 @@ if($row = dbFetch($result)) {
 		    $mtype = "ME";
 		}
 	}
-	include_once('send.php');
 	if ($mtype != '') {
-		dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-					dbMakeSafe($row['uid']).','.dbMakeSafe($row['name']).','.dbMakeSafe($role).
-					','.dbMakeSafe($mtype).','.dbMakeSafe($rid).','.dbMakeSafe($text).');');
-        send_to_all(dbLastId(),$uid, $row['name'],$role,$mtype,$rid,$text);	
+	    include_once('./send.php');
+        send_to_all($uid, $row['name'],$role,$mtype,$rid,$text);	
     }
 }
 dbFree($result);

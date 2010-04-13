@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -71,14 +71,14 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 	}
 	function dbBegin() {
 	    global $db;
-	    $db->beginTransaction();
+	    $db->exec("BEGIN;");
 	}
 	function dbCommit() {
 	    global $db;
-	    $db->commit();
+	    $db->exec("COMMIT;");
 	}
 	function dbRollback() {
 	    global $db;
-	    $db->rollBack();
+	    $db->exec("ROLLBACK;");
 	}
 ?>

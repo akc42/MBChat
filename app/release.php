@@ -28,11 +28,8 @@ $result = dbQuery('SELECT uid, name, role, rid, question FROM users WHERE uid = 
 if($user = dbFetch($result)) {
 	dbQuery('UPDATE users SET question = NULL WHERE uid = '.dbMakeSafe($quid).';');
 	
-	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-					dbMakeSafe($quid).','.dbMakeSafe($user['name']).','.dbMakeSafe($user['role']).
-					', "ME" ,'.dbMakeSafe($user['rid']).','.dbMakeSafe($user['question']).');');
 	include_once('send.php');
-    send_to_all(dbLastId(),$quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
+    send_to_all($quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
 }
 dbFree($result);
 ?>

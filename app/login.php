@@ -30,10 +30,6 @@ require_once('db.php');
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if($row=dbFetch($result)) {
 	
-	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-			dbMakeSafe($uid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-			', "LI" ,'.dbMakeSafe($row['rid']).','.dbMakeSafe($txt).');');
-    $lid = dbLastId();
     
 //If FIFO doesn't exists (when trying to login after timeout for instance) create it
 	if(!file_exists("./data/msg".$uid)) {
@@ -43,7 +39,7 @@ if($row=dbFetch($result)) {
     }
 	
 	include_once('send.php');
-    send_to_all($lid,$uid, $row['name'],$row['role'],"LI",$row['rid'],'');	
+    $lid = send_to_all($uid, $row['name'],$row['role'],"LI",$row['rid'],'');	
 		
 };
 dbFree($result);

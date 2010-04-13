@@ -211,10 +211,14 @@ return {
 				var fullPoll=false;
 				var wid;
 
+                var nextLid;
 				var pollRequest = new Request.JSON({url:'read.php',link:'chain',onComplete: function(response) {
 				    if(response) {
-				        if(response.messages) MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
-				        if (fullPoll) pollRequest.post(myRequestOptions); //Should chain since previous request is not yet complete (we are in it)
+				        if(response.messages) {
+				            nextLid = response.lastlid + 1;
+				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
+				        }
+				        if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain since previous request is not yet complete (we are in it)
 				    } else {
 				        MBchat.logout();
 						 //and go back to the forum

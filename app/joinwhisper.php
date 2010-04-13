@@ -34,11 +34,8 @@ if($row['num'] != 0) {
 	$result = dbQuery('SELECT  uid, name, role FROM users WHERE uid = '.dbMakeSafe($wuid).' ;');
 	if($row = dbFetch($result)) {
 		dbQuery('INSERT INTO participant SET wid = '.dbMakeSafe($wid).', uid = '.dbmakeSafe($wuid).' ;');
-		dbQuery('INSERT INTO log (uid, name, role, type, rid) VALUES ('.
-			dbMakeSafe($wuid).','.dbMakeSafe($row['name']).','.dbMakeSafe($row['role']).
-			', "WJ" ,'.dbMakeSafe($wid).');');
-	    include_once('send.php');
-        send_to_all(dbLastId(),$wuid, $row['name'],$row['role'],"WJ",$wid,'');	
+	    include_once('./send.php');
+        send_to_all($wuid, $row['name'],$row['role'],"WJ",$wid,'');	
 	}
 	dbFree($result);
 	
