@@ -27,7 +27,7 @@ $txt .=' Browser : '.$_POST['browser'].' on Platform : '.$_POST['platform'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-
+dbBegin();
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if($row = dbFetch($result)) {
     if (is_null($row['permanent'])) {
@@ -40,6 +40,7 @@ if($row = dbFetch($result)) {
 		
 };
 dbFree($result);
+dbCommit();
 usleep(20000);
 unlink("./data/msg".$uid); //Loose FIFO
 

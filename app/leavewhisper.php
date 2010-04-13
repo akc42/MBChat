@@ -25,7 +25,7 @@ $wid = $_POST['wid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
-
+dbBegin();
 $result = dbQuery('SELECT users.uid, name, role, wid FROM users JOIN participant ON users.uid = participant.uid 
 		WHERE users.uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 if($row=dbFetch($result)) {
@@ -35,5 +35,6 @@ if($row=dbFetch($result)) {
 
 }
 dbFree($result);
+dbCommit();
 echo '{ "Status" : "OK"}';
 ?>

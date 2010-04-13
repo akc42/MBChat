@@ -74,7 +74,7 @@ $whi=$_POST['whi'];
 $groups = explode(":",$_POST['gp']); //A ":" separated list of committees (groups) that the user belongs to.
 $lite = ($_POST['ctype'] == 'lite'); //if we need the special lite version (provides accessibility for blind people)
 
-
+dbBegin();
 dbQuery('REPLACE INTO users (uid,name,role,moderator, present) VALUES ('.dbMakeSafe($uid).','.
 				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).', 1) ; ') ; //The last one indicates that the user is present
 				
@@ -83,4 +83,5 @@ dbQuery('REPLACE INTO users (uid,name,role,moderator, present) VALUES ('.dbMakeS
 //timeout any users that are too old
 $usertimeout = $params['user_timeout'];
 	include('./timeout.php');
+dbCommit();
 ?>

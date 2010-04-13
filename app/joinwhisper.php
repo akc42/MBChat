@@ -25,7 +25,7 @@ $wuid = $_POST['wuid'];
 $wid = $_POST['wid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-
+dbBegin();
 //Check I am in this whisper group and therefore can add the new person
 $result = dbQuery('SELECT count(*) as num FROM participant WHERE uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 $row = dbFetch($result);
@@ -40,5 +40,6 @@ if($row['num'] != 0) {
 	dbFree($result);
 	
 }
+dbCommit();
 echo '{ "Status" : "OK"}';
 ?>

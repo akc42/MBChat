@@ -288,10 +288,11 @@ function menu_items() {
 //Noop
 }
 include("./template/template.php");
- 
+dbBegin(); 
 	//purge messages that are too old from database
 	dbQuery("DELETE FROM log WHERE time < ".(time() - $params['purge_message_interval']*86400).";");
 //timeout any users that are too old
 $usertimeout = $params['user_timeout'];
 	include('./timeout.php');
+dbCommit();
 ?>

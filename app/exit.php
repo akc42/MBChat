@@ -31,6 +31,7 @@ require_once('db.php');
 
 
 if ($rid != 0) {
+    dbBegin();
 	$result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
 	if ($room = dbFetch($result) ) {
     	dbFree($result);
@@ -57,6 +58,7 @@ if ($rid != 0) {
             send_to_all($uid, $user['name'],$role,"RX",$rid,'');	
         }
     }
+    dbCommit();
 }
 
 $params = Array();

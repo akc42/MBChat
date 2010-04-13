@@ -29,6 +29,7 @@ $text = htmlentities(stripslashes($_POST['text']),ENT_QUOTES);   // we need to g
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 
+dbBegin();
 $result = dbQuery('SELECT uid, users.name, role, question, users.rid, type FROM users LEFT JOIN rooms ON users.rid = rooms.rid WHERE uid = '
 	.dbMakeSafe($uid).' ;');
 if($row = dbFetch($result)) {
@@ -61,5 +62,6 @@ if($row = dbFetch($result)) {
     }
 }
 dbFree($result);
+dbCommit();
 echo '{"Status":"OK"}';
 ?> 

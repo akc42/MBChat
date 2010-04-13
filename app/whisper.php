@@ -28,6 +28,8 @@ $text = htmlentities(stripslashes($_POST['text']),ENT_QUOTES);   // we need to g
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
+
+dbBegin();
 $result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant LEFT JOIN users ON users.uid = participant.uid WHERE participant.uid = '
 	.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
 if($row = dbFetch($result)) {  //only insert into channel if still there
@@ -41,5 +43,6 @@ if($row = dbFetch($result)) {  //only insert into channel if still there
 	}
 }
 dbFree($result);
+dbCommit();
 echo '{"Status":"OK"}';
 ?> 

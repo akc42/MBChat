@@ -25,6 +25,7 @@ $rid = $_POST['rid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
 
+dbBegin();
 $result = dbQuery('SELECT uid, name, role, rid, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if($user = dbFetch($result)) {
 	dbFree($result);
@@ -39,4 +40,5 @@ if($user = dbFetch($result)) {
 
 	}
 }
+dbCommit();
 ?>

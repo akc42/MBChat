@@ -26,7 +26,7 @@ $txt = 'MBchat version - '.$_POST['mbchat'].', Mootools_Version - '.$_POST['vers
 $txt .=' Browser - '.$_POST['browser'].' on Platform - '.$_POST['platform'];
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('db.php');
-
+dbBegin();
 $result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
 if($row=dbFetch($result)) {
 	
@@ -43,6 +43,6 @@ if($row=dbFetch($result)) {
 		
 };
 dbFree($result);
-
+dbCommit();
 echo '{"Login" : '.$uid.', "lastid" : '.$lid.' }' ;
 ?> 
