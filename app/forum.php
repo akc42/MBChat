@@ -17,7 +17,7 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('db.php');
+include_once('./db.php');
 
 $db = new DB(Array());
 $go = $db->getParam('exit_location');

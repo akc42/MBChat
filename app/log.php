@@ -49,7 +49,7 @@ $l->transact();
 echo '{"messages":[';	
 	
 	$sql = "SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log";
-	$sql .= " WHERE time > "$_POST['start'])." AND time < ".$_POST['end']." AND ";
+	$sql .= " WHERE time > "$_POST['start']." AND time < ".$_POST['end']." AND ";
 	$sql .= "rid = ".$_POST['rid']." ORDER BY lid ;";
 
 	$result = $l->query($sql);
