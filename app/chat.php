@@ -73,7 +73,6 @@ class Chat extends Timeout {
         $this->bindChars('user','mod',$_POST['mod']);
         $this->post('user');
 
-        echo "Posted the USER uid ".$_POST['uid'];
     //Purge old messages
         $this->bindInt('purge','interval',time() - $this->getParam('purge_message_interval')*86400);
         $this->post('purge');
