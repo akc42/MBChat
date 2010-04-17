@@ -80,16 +80,7 @@ echo '{"messages" : [';
 //We do it this way because there could be a lot of messages and I don't want to fill up memory with them
 $e->bindInt('lid','t',time() - 60*$e->getParam('max_time'));
 $e->bindInt('lid','m',$e->getParam('max_messages'));
-$result = false;
-do {
-    try {
-        $result = $e->query('lid');
-        break;
-    } catch (DBCheck $ex) {
-        $e->checkBusy();
-    }
-} while(true);    
-
+$result = $e->query('lid');
 
 while($row = $e->fetch($result)) {
     $lid = $row['lid'];
@@ -102,15 +93,7 @@ $e->free($result);
 
 $donefirst = false;
 $e->bindInt('msg','lid',$lid);
-$result = false;
-do {
-    try {
-        $result = $e->query('msg');
-        break;
-    } catch (DBCheck $ex) {
-        $e->checkBusy();
-    }
-} while(true);    
+$result = $e->query('msg');
 
 while( $row = $e->fetch($result)) {
     if($donefirst) {

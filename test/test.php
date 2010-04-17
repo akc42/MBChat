@@ -151,9 +151,7 @@ function do_post_request($url, $data) {
     );
 
     $context  = stream_context_create($opts);
-    $fp = fopen(URL_BASE.$url,'r',false,$context);
-    sleep(2);
-    fclose($fp);
+    @file_get_contents(URL_BASE.$url, false, $context,-1,40);
 }
   
 ?>

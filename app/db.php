@@ -51,7 +51,8 @@ class DB {
     private $db;
     private $statements;
     private $sql;
-    private $in_t;
+
+    private $rollback;
     
     
     function __construct($statements) {
@@ -59,74 +60,51 @@ class DB {
         $this->retries = 0;
         $this->db = new SQLite3(DATABASE_NAME);
         $this->sql = $statements;
-        $this->in_t = false;
+
         $this->statements = Array();
+        $this->begin();
         foreach ($statements as $key => $statement) {
-            $this->statements[$key] = $this->statementPrepare($statement);
+            $this->statements[$key] = $this->db->prepare($statement);
         }
+        $this->db->exec("COMMIT");
     }
 
     function __destruct() {
         $this->db->close();
-        file_put_contents(STATS, "".$this->retries.",".(microtime(true)-$this->start)."\n",FILE_APPEND);
+//        file_put_contents(STATS, "".$this->retries.",".(microtime(true)-$this->start)."\n",FILE_APPEND);
     }
-    
-    private function statementPrepare ($statement) {
-        $return = 0;
-        while(!($return = $this->db->prepare($statement))) {
+
+    private function begin() {
+        while (!@$this->db->exec("BEGIN EXCLUSIVE")) {
             if($this->db->lastErrorCode() != SQLITE_BUSY) {
-                throw new DBError("Preparing Statement: $tatement <BR/>\nDatabase Error:".$this->db->lastErrorMsg());
+                throw new DBError("In trying to BEGIN EXCLUSIVE got Database Error:".$this->db->lastErrorMsg());
             }
             $this->retries++;
             usleep(LOCK_WAIT_TIME);
         }
-        return $return;
     }
+    
+    private function checkBusy ($sql) {
+        if($this->db->lastErrorCode() != SQLITE_BUSY) {
+            throw new DBError("SQL Statement: $sql <BR/>Database Error:".$this->db->lastErrorMsg());
+        }
+        $this->retries++;
+        usleep(LOCK_WAIT_TIME);
+    }
+    
+    
 
     function transact() {
-        $this->in_t = true;
+
         $return = false;
-        do {
+        $this->rollback = false;
+        $this->begin();  //gets exclusive lock on database - so
+        $return = $this->doWork();
 
-                try {
-                    if(!$this->db->exec("BEGIN")) throw new DBCheck("BEGIN");
-
-                    $return = $this->doWork();
+        if(!$this->rollback)  $this->db->exec("COMMIT");
+        $this->rollback = false;
                     
-                    while (!$this->db->exec("COMMIT")) {
-                        if($this->db->lastErrorCode() != SQLITE_BUSY) {
-                            throw new DBError();
-                        }
-                        $this->retries++;
-                        usleep(LOCK_WAIT_TIME);
-                    }
 
-                    break;
-                } catch(DBCheck $e) {
-                    if($this->db->lastErrorCode() != SQLITE_BUSY) {
-                        throw new DBError("SQL Statement:".$e->getMessage()>"<BR/>Database Error:".$this->db->lastErrorMsg());
-                    }
-                    usleep(LOCK_WAIT_TIME);
-                    $this->retries++;
-                    while(!$this->db->exec("ROLLBACK;")) {
-                        if($this->db->lastErrorCode() != SQLITE_BUSY) {
-                            throw new DBError();
-                        }
-                        $this->retries++;
-                        usleep(LOCK_WAIT_TIME);
-                    }
-                } catch(DBRollBack $e) {
-                    $this->db->exec("ROLLBACK;");
-                    break;
-                }
-                // we are about to go round again (we only get here if a busy exception occurred) so reset statements
-                $this->begin->reset();
-                foreach($this->statements as $statement) {
-                    $statement->reset();
-                }
-                
-        } while(true);
-        $this->in_t = false;
         return $return;
     }
     
@@ -136,42 +114,28 @@ class DB {
     
     
     function rollBack() {
-        throw new DBRollBack();
+        $this->rollback = true;
+        $this->db->exec("ROLLBACK");
     }
     
     
     function getValue($sql) {
-        if($return = $this->db->querySingle($sql)) return $return;
-        throw new DBCheck($sql); 
+        while(! $return = $this->db->querySingle($sql) ) {
+            $this->checkBusy($sql);
+        } 
+        return $return;
     }
     
     function getParam($name) {
-        $return = false;
-        do {
-            try {
-                $return = $this->getValue("SELECT value FROM parameters WHERE name = '".$name."';");
-                break;
-            } catch (DBCheck $e) {
-                $this->checkBusy();
-            }
-        } while(true) ;
-        return $return;
+        return $this->getValue("SELECT value FROM parameters WHERE name = '".$name."';");
     }
 
-    function checkBusy () {
-        if($this->in_t) throw new DBCheck($e); //We are already in a transaction so let it handle the rollback/retry
-        $this->db->exec("ROLLBACK;");
-        if($this->db->lastErrorCode() != SQLITE_BUSY) {
-            throw new DBError("SQL Statement:".$e->getMessage()>"<BR/>Database Error:".$this->db->lastErrorMsg());
-        }
-        $this->retries++;
-        usleep(LOCK_WAIT_TIME);
-    }
-    
     function getRow($sql,$maybezero = false) {
-        if($row = $this->db->querySingle($sql,true)) return $row;
-        if($maybezero) return false;
-        throw new DBCheck($sql); 
+        while(!$row = $this->db->querySingle($sql,true)) {
+            if($maybezero) return false;
+            $this->checkBusy($sql);
+        }
+        return $row;
     }
 
     function bindText($name,$key,$value) {
@@ -191,13 +155,18 @@ class DB {
     }
     
     function post($name) {
-        if(!($this->statements[$name]->execute())) throw new DBCheck($this->sql[$name]);
+        while (!($this->statements[$name]->execute())) {
+            $this->checkBusy($this->sql[$name]);
+        }
         $this->statements[$name]->reset();
         return $this->db->lastInsertRowID();
     }
     
     function query($name) {
-        if(!($result = $this->statements[$name]->execute())) throw new DBCheck($this->sql[$name]);
+        while (!($result = $this->statements[$name]->execute())) {
+            $this->checkBusy($this->sql[$name]);
+        }
+        $this->statements[$name]->reset();
         return $result;
     }
     function fetch($result) {

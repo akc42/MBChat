@@ -65,7 +65,7 @@ if (strlen($response) > 0 ) {
     //we need to make sure that the first lid of messages is not greater that we were expecting
     if(isset($_POST['lid']) && $lid > $_POST['lid']) {
 
-        $d = new Reader("SELECT * FROM log WHERE lid >= ".$_POST['lid']." AND lid < $lid ORDER BY lid DESC ;");
+        $d = new Reader("SELECT * FROM log WHERE lid >= ".$_POST['lid']." AND lid < $lid ORDER BY lid ASC ;");
         $lid = $d->transact(); 
         unset($d);
     }

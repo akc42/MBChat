@@ -90,16 +90,7 @@ echo ',"messages" : [';
 $r->bindInt('lid','t',time() - 60*$r->getParam('max_time'));
 $r->bindInt('lid','m',$r->getParam('max_messages'));
 
-$result = false;
-do {
-    try {
-        $result = $r->query('lid');
-        break;
-    } catch (DBCheck $e) {
-        $r->checkBusy();
-    }
-} while(true);    
-
+$result = $r->query('lid');
 
 while($row = $r->fetch($result)) {
     $lid = $row['lid'];
@@ -111,15 +102,7 @@ $r->free($result);
 
 $donefirst = false;
 $r->bindInt('msg','lid',$lid);
-$result = false;
-do {
-    try {
-        $result = $r->query('msg');
-        break;
-    } catch (DBCheck $e) {
-        $r->checkBusy();
-    }
-} while(true);    
+$result = $r->query('msg');
 
 while( $row = $r->fetch($result)) {
     if($donefirst) {
