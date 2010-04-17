@@ -23,23 +23,34 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
-$wid = $_POST['wid'];
-$text = htmlentities(stripslashes($_POST['text']),ENT_QUOTES);   // we need to get the text in an html pure form as possible
-
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('db.php');
-$result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant LEFT JOIN users ON users.uid = participant.uid WHERE participant.uid = '
-	.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-if($row = dbFetch($result)) {  //only insert into channel if still there
+include_once('./send.php');
 
-	dbQuery('UPDATE users SET time = '.time().' WHERE uid = '.dbMakeSafe($uid).';');
+class Whisper extends LogWriter {
 
-	if ($text != '') {  //only insert non blank text - ignore other
-		include_once('send.php');
-        send_to_all($uid, $row['name'],$role,"WH",$wid,$text);	
+    function __construct() {
+        parent::construct(Array('there' => "UPDATE users SET time = :time WHERE uid = :uid ;"));
+    }
 
-	}
+    function doWork() {
+        $uid = $_POST['user'];
+        $wid = $_POST['wid'];
+
+        if($row = $this->getRow("SELECT participant.uid, users.name, role, wid  FROM participant LEFT JOIN users ON users.uid = participant.uid WHERE
+                        participant.uid = $uid AND wid = $wid ;",true)) {
+            $this->bindInt('there','uid',$uid);
+            $this->bindInt('there','time',time());
+            $this->post('there');
+            if($_POST['text'] != '')
+                $this->sendLog($uid, $row['name'],$role,"WH",$wid,$_POST['text']);	
+            }
+        }
+    }
 }
-dbFree($result);
+        
+$w = new Whisper();
+$w->transact();
+unset($w);
+
 echo '{"Status":"OK"}';
 ?> 

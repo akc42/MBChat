@@ -20,28 +20,41 @@
 if (!defined('MBC'))
 	die('Hacking attempt...');
 require_once('./db.php');
-	
-function send_to_all($uid,$name,$role,$type,$rid,$text) {
-	dbQuery('INSERT INTO log (uid, name, role, type, rid, text) VALUES ('.
-			dbMakeSafe($uid).','.dbMakeSafe($name).','.dbMakeSafe($role).
-			', '.dbMakeSafe($type).' ,'.dbMakeSafe($rid).','.dbMakeSafe($text).');');
-    $lid = dbLastId();
 
-    $message = '<{"lid":'.$lid.',"user" :{"uid":'.$uid.',"name":"'.$name.'","role":"'.$role.'"},"type":"'.$type.'","rid":'.$rid.',';
-    $message .= '"message":"'.$text.'","time":'.time().'}>';
+class LogWriter extends DB {
 
-    if ($dh = opendir('./data/')) {
-        while (($file = readdir($dh)) !== false) {
-            if (filetype('./data/'.$file) == 'fifo') {
-                $writer=fopen ('./data/'.$file,'r+');
-                fwrite($writer,$message);
-                fclose($writer);  
-            }
-        }
-        closedir($dh);
+    private $sql;
+    
+    function __construct($statements) {
+        $statements['logger'] = "INSERT INTO log (uid,name,role,type,rid,text) VALUES (:uid,:name,:role,:type,:rid,:text);";
+        parent::__construct($statements);
     }
-    file_put_contents('./data/time.txt', ''.time()); //make a time file
-    return $lid;
+    
+    function sendLog ($uid,$name,$role,$type,$rid,$text) {
+        $this->bindInt('logger','uid',$uid);
+        $this->bindText('logger','name',$name);
+        $this->bindChars('logger','role',$role);
+        $this->bindChars('logger','type',$type);
+        $this->bindInt('logger','rid',$rid);
+        $this->bindText('logger','text',$text);
+        $lid = $this->post('logger',true);
+
+        $message = '<{"lid":'.$lid.',"user" :{"uid":'.$uid.',"name":"'.$name.'","role":"'.$role.'"},"type":"';
+        $message .= $type.'","rid":'.$rid.',"message":"'.$text.'","time":'.time().'}>';
+
+        if ($dh = opendir('./data/')) {
+            while (($file = readdir($dh)) !== false) {
+                if (filetype('./data/'.$file) == 'fifo') {
+                    $writer=fopen ('./data/'.$file,'r+');
+                    fwrite($writer,$message);
+                    fclose($writer);  
+                }
+            }
+            closedir($dh);
+        }
+        file_put_contents('./data/time.txt', ''.time()); //make a time file
+        return $lid;
+    }
 }
 ?>
 

@@ -18,20 +18,35 @@
 */
 if (!defined('MBC'))
 	die('Hacking attempt...');
+require_once('./send.php');
 
-$timedout = time() - $usertimeout;
+class Timeout extends LogWriter {
 
-foreach(dbQuery('SELECT uid, name, role, rid FROM users WHERE time < '.$timedout.' AND present = 1;') as $row) {
-    if(is_null($row['permanent'])) {
-    	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($row['uid']).' ;');
-    } else {
-        dbQuery('UPDATE users SET present = 0 WHERE uid = '.dbMakeSafe($row['uid']).' ;');
+    function __construct($statements) {
+        $statements['timeout'] = "SELECT uid, name, role, rid, permanent FROM users WHERE time < :time AND present = 1;";
+        $statements['delete_user'] = "DELETE FROM users WHERE uid = :uid ;";
+        $statements['set_absent'] = "UPDATE users SET present = 0 WHERE uid = :uid ;";
+        parent::__construct($statements);
     }
-    unlink("./data/msg".$row['uid']); //Loose FIFO
-		
-	include_once('send.php');
-    send_to_all($row['uid'], $row['name'],$row['role'],"LT",$row['rid'],'');	
-
+    
+    function doTimeout () {
+        $this->bindInt('timeout','time',time() - $this->getParam('user_timeout'));
+        $result = $this->query('timeout');
+        while($row = $this->fetch($result)) {
+            if(is_null($row['permanent'])) {
+                $this->bindInt('delete_user','uid',$row['uid']);
+                $this->post('delete_user',true);
+            } else {
+                $this->bindInt('set_absent','uid',$row['uid']);
+                $this->post('set_absent',true);
+            }
+            if(file_exists("./data/msg".$row['uid'])) {
+                unlink("./data/msg".$row['uid']); //Loose FIFO
+            }
+            $this->sendLog($row['uid'], $row['name'],$row['role'],"LT",$row['rid'],'');
+        }	
+        $this->free($result);
+    }
 };
 
 ?>

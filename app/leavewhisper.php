@@ -21,19 +21,31 @@ if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['wid']))
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$wid = $_POST['wid'];
+
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./send.php');
 
 
-$result = dbQuery('SELECT users.uid, name, role, wid FROM users JOIN participant ON users.uid = participant.uid 
-		WHERE users.uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-if($row=dbFetch($result)) {
-	dbQuery('DELETE FROM participant WHERE uid = '.dbmakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-	include_once('./send.php');
-    send_to_all($uid, $row['name'],$row['role'],"WL",$wid,'');	
+class Leave extends LogWriter {
 
+    function __construct() {
+        parent::__construct(Array('leave' => "DELETE FROM participant WHERE uid = :uid AND wid = :wid ;"));
+    }
+    
+    function doWork() {
+        $uid = $_POST['user'];
+        $wid = $_POST['wid'];
+        if($this->getRow("SELECT  name, role FROM users JOIN participant ON users.uid = participant.uid WHERE users.uid = $uid AND wid = $wid ;",
+                                                                                                            true)){
+            $this->bindInt('leave','uid',$uid);
+            $this->bindInt('leave','wid',$wid); 
+            $this->post('leave');
+            $this->sendLog($uid, $row['name'],$row['role'],"WL",$wid,'');	
+        }
+    }
 }
-dbFree($result);
+$l = new Leave();
+$l->transact();
+unset($l);
 echo '{ "Status" : "OK"}';
 ?>

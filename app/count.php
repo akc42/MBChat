@@ -24,12 +24,7 @@ error_reporting(E_ALL);
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('./db.php');
 
-$result = dbQuery('SELECT count(*) as chatters FROM users;');
-if ($row = dbFetch($result)) { 
-    echo $row['chatters'];
-} else {
-    echo '0';
-}
-dbFree($result);
-
+$db = new DB();
+echo db->getValue('SELECT count(*) as chatters FROM users;');
+unset($db);
 ?>

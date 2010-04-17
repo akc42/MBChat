@@ -404,7 +404,7 @@ return {
 				    } else {
                         displayErrorMessage("read.php failure:"+errorMessage);
 				    }
-				    if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
+				    if (fullPoll) pollRequest.post.delay(1,this,($merge(myRequestOptions,{'lid':nextLid}))); //Should chain (we are in previous still)
 				}});
 				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var pollPresence = function () {
@@ -614,7 +614,7 @@ return {
 							}
 						} 
 					}
-					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers
+					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers with adults and visa versa
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
@@ -704,225 +704,228 @@ return {
 						if (lastId < lid) {
 							lastId = lid;
 							userDiv = $('U'+msg.user.uid);
-							var whisperer;
-							switch (msg.type) {
-							case 'LO' : 
-							case 'LT' :
-								if (me.uid == msg.user.uid) {
-									//Trying to log me off - log in again
-									loginReq.transmit($merge({'mbchat':version},MooTools,
-										{'browser':Browser.Engine.name+Browser.Engine.version,
-										'platform':Browser.Platform.name}));
 
-								} else {
-									if (userDiv) {
-										removeUser(userDiv)
-									}
-								}
-								break;
-							case 'LX' :
+						    var whisperer;
+						    switch (msg.type) {
+						    case 'LO' : 
+						    case 'LT' :
 							    if (me.uid == msg.user.uid) {
-							        MBchat.logout();
-	            					 //and go back to the forum
-            						window.location = 'forum.php' ;
+								    //Trying to log me off - log in again
+								    loginReq.transmit($merge({'mbchat':version},MooTools,
+									    {'browser':Browser.Engine.name+Browser.Engine.version,
+									    'platform':Browser.Platform.name}));
+
+							    } else {
+								    if (userDiv) {
+									    removeUser(userDiv)
+								    }
 							    }
 							    break;
-							case 'RX' :
-								if (currentRid == 0) {
-									if (!userDiv) {
-										userDiv = addUser(msg.user);
-										if (privateRoom != 0) {
-											whisperer = $('W'+privateRoom+'U'+msg.user.uid);  //Are we in a whisper
-											if (whisperer) userDiv.addClass('priv');
-										}
-									}
-								} else {
-									if (userDiv) {
-										if (privateRoom == 0 ) {  
-											removeUser(userDiv);
-										} else  {
-											if (!userDiv.hasClass('priv')) {
-												removeUser(userDiv);  //Only remove if not in the private room with this person
-											}
-										}
-									} 
-								}			 
-								break;
-							case 'LI' : 
-								if (!userDiv && msg.rid == currentRid) {
-									addUser(msg.user); //Can't be in a whisper so don't look
-								}	
-								break;
-							case 'RE' :
-								if (currentRid != 0) {
-									if (!userDiv  && msg.rid == currentRid) {
-										var user = msg.user;
-										user.question = msg.message;
-										userDiv = addUser(user);
-										if (privateRoom != 0) {
-											whisperer = $('W'+privateRoom+'U'+user.uid);  //Are we in a whisper
-											if (whisperer) userDiv.addClass('priv');
-										}
-									}
-								} else {
-									if (userDiv) {
-										if (privateRoom == 0 ) {  
-											removeUser(userDiv);
-										} else  {
-											if (!userDiv.hasClass('priv')) {
-												removeUser(userDiv);  //Only remove if not in the private room with this person
-											}
-										}
-									} 
-								}
-								break;
-							case 'MQ' : // User asks a question
-								if(msg.rid == currentRid) {
-									if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-										var user = msg.user;
-										user.question = msg.message;
-										userDiv = addUser(user);
-									}
-									var span = userDiv.getElement('span');
-									span.addClass('ask');
-								}
-								break;
-							case 'MR' :
-							case 'ME' :
-								if(msg.rid == currentRid) {
-									//A message from a user must mean he no longer has a question outstanding
-									var span = userDiv.getElement('span');
-									span.removeClass('ask');
-									if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
-										addUser(msg.user); //there will be no question
-									}
-								}
-								break;
-							case 'RM' : // becomes moderator
-							case 'RN' : // stops being moderator
-								if(msg.rid == currentRid) {
-									if (me.uid == msg.user.uid) {
-										if (msg.user.role == 'M') {
-											me.mod = 'M'
-										} else {
-											me.mod = 'N'
-										}
-									}
-									// Given user is changing from mod to not or visa vera, need to remove and then re-add
-									addUser(msg.user);
-								}
-								break;
-							case 'PE' :
-								var whisperBox = $('W' + msg.rid);
-								if(userDiv) { //only relevent if we have this user
-									if (msg.user.uid != me.uid) {
-										//Not me, but I might be in a whisper with them
-										if (!whisperBox) {
-											MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
-											MBchat.sounds.roomMove();
-											removeUser(userDiv);
-										} else {
-											userDiv.addClass('priv');
-										}
-									} else {
-										if (room.rid == 0) {
-											var messageList=$('chatList');
-											//I'm in entrance hall so have to make it look like a room
-											messageList.removeClass('whisper');
-											messageList.addClass('chat');
-											$('inputContainer').set('styles',{ 'display':'block'});
-											$('emoticonContainer').set('styles',{ 'display':'block'});
-											$('entranceHall').set('styles',{'display':'none'});	
-											var exit = $('exit');
-											exit.addClass('exit-r');
-											exit.removeClass('exit-f');
-										}
-										$('roomNameContainer').empty();
-										var el = new Element('h1',{'class':'privateRoom'})
-											.set('text', 'Private Room')
-											.inject('roomNameContainer');
-										//remove P markers from all whisper boxes
-										var privateMarkers= $$('.private');
-										privateMarkers.addClass('nonprivate');
-										privateMarkers.removeClass('private');
-										privateRoom = msg.rid.toInt();
-										var fellowWhisperers = 	
-											whisperBox.getElement('.whisperList').getChildren();
-										var users = $('onlineList').getChildren();
-										users.each( function(user) {
-											if (fellowWhisperers.some(function(item){
-												return this.get('id').substr(1) 
-												== item.get('id').substr(whisperBox.get('id').length+1);
-											},user)) {
-												user.addClass('priv');
-											}
-										});
-										userDiv.addClass('priv');
-										$('messageText').focus();
-										MBchat.sounds.resetTimer();
-										whisperBox.setStyle('display','none');
-										$('content').setStyles(contentSize);
-										MBchat.sounds.roomMove();
-									}
-								} else {
-									// Add user to list if in a whisper (otherwise doesn't)
-									var user = msg.user;
-									user.wid = msg.rid;
-									addUser(user);
-								}
-								break;
-							case 'PX' :
-								if (msg.user.uid == me.uid) {
-									$('roomNameContainer').empty();
-									var el = new Element('h1')
-										.set('text', room.name)
-										.inject('roomNameContainer');
-									//Put private markers back on all whisper boxes
-									var privateMarkers= $$('.nonprivate');
-									privateMarkers.addClass('private');
-									privateMarkers.removeClass('nonprivate');
-									MBchat.updateables.online.show(room.rid); //reshow the online list from scratch
-									$('messageText').focus();
-									if (room.rid == 0) {
-										var messageList=$('chatList');
-										//need to restore entrance hall
-										messageList.removeClass('chat');
-										messageList.addClass('whisper');
-										$('inputContainer').set('styles',{ 'display':'none'});
-										$('emoticonContainer').set('styles',{ 'display':'none'});
-										$('entranceHall').set('styles',{'display':'block'});
-										var exit = $('exit');	
-										exit.addClass('exit-f');
-										exit.removeClass('exit-r');
-									}
-									MBchat.sounds.resetTimer();
-									if($('W'+privateRoom)) {
-								//need to make a whisper box with my whisperers in it (if not closed already)
-										$('W'+privateRoom).setStyle('display','block');
-									}
-									$('content').setStyles(contentSize);
-									privateRoom = 0;
-								} else {
-									MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
-									addUser(msg.user);
-								}
-								MBchat.sounds.roomMove();	
-								break;
-							case 'WJ' :
-								if(privateRoom == msg.rid) { //only interested in people joining my private room
-									userDiv = addUser(msg.user);
-									userDiv.addClass('priv');
-								}
-								break;
-							case 'WL' :
-								if(privateRoom == msg.rid) { //only interested in people leaving my private room
-									userDiv.removeClass('priv');
+						    case 'LX' :
+						        if (me.uid == msg.user.uid) {
+						            MBchat.logout();
+                					 //and go back to the forum
+            						window.location = 'forum.php' ;
+						        }
+						        break;
+						    case 'RX' :
+							    if (currentRid == 0) {
+								    if (!userDiv) {
+									    userDiv = addUser(msg.user);
+									    if (privateRoom != 0) {
+										    whisperer = $('W'+privateRoom+'U'+msg.user.uid);  //Are we in a whisper
+										    if (whisperer) userDiv.addClass('priv');
+									    }
+								    }
+							    } else {
+								    if (userDiv) {
+									    if (privateRoom == 0 ) {  
+										    removeUser(userDiv);
+									    } else  {
+										    if (!userDiv.hasClass('priv')) {
+											    removeUser(userDiv);  //Only remove if not in the private room with this person
+										    }
+									    }
+								    } 
+							    }			 
+							    break;
+						    case 'LI' : 
+							    if (!userDiv && msg.rid == currentRid) {
+								    addUser(msg.user); //Can't be in a whisper so don't look
+							    }	
+							    break;
+						    case 'RE' :
+							    if (currentRid != 0) {
+								    if (!userDiv  && msg.rid == currentRid) {
+									    var user = msg.user;
+									    user.question = msg.message;
+									    userDiv = addUser(user);
+									    if (privateRoom != 0) {
+										    whisperer = $('W'+privateRoom+'U'+user.uid);  //Are we in a whisper
+										    if (whisperer) userDiv.addClass('priv');
+									    }
+								    }
+							    } else {
+								    if (userDiv) {
+									    if (privateRoom == 0 ) {  
+										    removeUser(userDiv);
+									    } else  {
+										    if (!userDiv.hasClass('priv')) {
+											    removeUser(userDiv);  //Only remove if not in the private room with this person
+										    }
+									    }
+								    } 
+							    }
+							    break;
+						    case 'MQ' : // User asks a question
+							    if(msg.rid == currentRid) {
+								    if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
+									    var user = msg.user;
+									    user.question = msg.message;
+									    userDiv = addUser(user);
+								    }
+								    var span = userDiv.getElement('span');
+								    span.addClass('ask');
+							    }
+							    break;
+						    case 'MR' :
+						    case 'ME' :
+							    if(msg.rid == currentRid) {
+								    //A message from a user who is still here must mean he no longer has a question outstanding
+								    if(userDiv) {
+								        userDiv.getElement('span').removeClass('ask');
+								    }
+								    if (room.type == 'M' && (me.mod == 'M' || me.uid == msg.user.uid)) {
+									    addUser(msg.user); //there will be no question
+								    }
+							    }
+							    break;
+						    case 'RM' : // becomes moderator
+						    case 'RN' : // stops being moderator
+							    if(msg.rid == currentRid) {
+								    if (me.uid == msg.user.uid) {
+									    if (msg.user.role == 'M') {
+										    me.mod = 'M'
+									    } else {
+										    me.mod = 'N'
+									    }
+								    }
+								    // Given user is changing from mod to not or visa vera, need to remove and then re-add
+								    addUser(msg.user);
+							    }
+							    break;
+						    case 'PE' :
+							    var whisperBox = $('W' + msg.rid);
+							    if(userDiv) { //only relevent if we have this user
+								    if (msg.user.uid != me.uid) {
+									    //Not me, but I might be in a whisper with them
+									    if (!whisperBox) {
+										    MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Leaves the Room'));
+										    MBchat.sounds.roomMove();
+										    removeUser(userDiv);
+									    } else {
+										    userDiv.addClass('priv');
+									    }
+								    } else {
+									    if (room.rid == 0) {
+										    var messageList=$('chatList');
+										    //I'm in entrance hall so have to make it look like a room
+										    messageList.removeClass('whisper');
+										    messageList.addClass('chat');
+										    $('inputContainer').set('styles',{ 'display':'block'});
+										    $('emoticonContainer').set('styles',{ 'display':'block'});
+										    $('entranceHall').set('styles',{'display':'none'});	
+										    var exit = $('exit');
+										    exit.addClass('exit-r');
+										    exit.removeClass('exit-f');
+									    }
+									    $('roomNameContainer').empty();
+									    var el = new Element('h1',{'class':'privateRoom'})
+										    .set('text', 'Private Room')
+										    .inject('roomNameContainer');
+									    //remove P markers from all whisper boxes
+									    var privateMarkers= $$('.private');
+									    privateMarkers.addClass('nonprivate');
+									    privateMarkers.removeClass('private');
+									    privateRoom = msg.rid.toInt();
+									    var fellowWhisperers = 	
+										    whisperBox.getElement('.whisperList').getChildren();
+									    var users = $('onlineList').getChildren();
+									    users.each( function(user) {
+										    if (fellowWhisperers.some(function(item){
+											    return this.get('id').substr(1) 
+											    == item.get('id').substr(whisperBox.get('id').length+1);
+										    },user)) {
+											    user.addClass('priv');
+										    }
+									    });
+									    userDiv.addClass('priv');
+									    $('messageText').focus();
+									    MBchat.sounds.resetTimer();
+									    whisperBox.setStyle('display','none');
+									    $('content').setStyles(contentSize);
+									    MBchat.sounds.roomMove();
+								    }
+							    } else {
+								    // Add user to list if in a whisper (otherwise doesn't)
+								    var user = msg.user;
+								    user.wid = msg.rid;
+								    addUser(user);
+							    }
+							    break;
+						    case 'PX' :
+							    if (msg.user.uid == me.uid) {
+								    $('roomNameContainer').empty();
+								    var el = new Element('h1')
+									    .set('text', room.name)
+									    .inject('roomNameContainer');
+								    //Put private markers back on all whisper boxes
+								    var privateMarkers= $$('.nonprivate');
+								    privateMarkers.addClass('private');
+								    privateMarkers.removeClass('nonprivate');
+								    MBchat.updateables.online.show(room.rid); //reshow the online list from scratch
+								    $('messageText').focus();
+								    if (room.rid == 0) {
+									    var messageList=$('chatList');
+									    //need to restore entrance hall
+									    messageList.removeClass('chat');
+									    messageList.addClass('whisper');
+									    $('inputContainer').set('styles',{ 'display':'none'});
+									    $('emoticonContainer').set('styles',{ 'display':'none'});
+									    $('entranceHall').set('styles',{'display':'block'});
+									    var exit = $('exit');	
+									    exit.addClass('exit-f');
+									    exit.removeClass('exit-r');
+								    }
+								    MBchat.sounds.resetTimer();
+								    if($('W'+privateRoom)) {
+							    //need to make a whisper box with my whisperers in it (if not closed already)
+									    $('W'+privateRoom).setStyle('display','block');
+								    }
+								    $('content').setStyles(contentSize);
+								    privateRoom = 0;
+							    } else {
+								    MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
+								    addUser(msg.user);
+							    }
+							    MBchat.sounds.roomMove();	
+							    break;
+						    case 'WJ' :
+							    if(privateRoom == msg.rid) { //only interested in people joining my private room
+								    userDiv = addUser(msg.user);
+								    userDiv.addClass('priv');
+							    }
+							    break;
+						    case 'WL' :
+							    if(privateRoom == msg.rid) { //only interested in people leaving my private room
+								    userDiv.removeClass('priv');
 //TODO might need system that records with this user was only there because of the whisper and remove him completely
-								}
-								break;
-							default :  // ignore anything else
-								break;
-							}
+							    }
+							    break;
+						    default :  // ignore anything else
+							    break;
+						    }
+
 						}
 					}
 				};

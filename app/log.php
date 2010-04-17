@@ -21,26 +21,40 @@ if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid']) 
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Log - Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$rid = $_POST['rid'];
+
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./send.php');
 
-echo '{"messages" :[' ;
-$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if($user = dbFetch($result)) {
-    dbFree($result)	
-	dbQuery('UPDATE users SET time = NOW() WHERE uid = '.dbMakeSafe($uid).';');
+
+class Log extends LogWriter {
+
+    function __construct() {
+        parent::__construct(Array('log' => "UPDATE users SET time = :time WHERE uid = :uid ;"));
+    }
+    
+    function doWork () {
+        $uid = $_POST['user'];
+        $user = $this->getRow("SELECT name,role from USERS where uid = $uid ;");
+        $this->bindInt('log','uid',$uid);
+        $this->bindInt('log','time',time());
+        $this->post('log');
+        $this->sendLog($uid, $user['name'],$user['role'],"LH",$_POST['rid'],'');
+    }
+}
+
+$l = new Log();
+$l->transact();
 	
-    send_to_all($uid, $user['name'],$user['role'],"LH",$rid,'');	
+echo '{"messages":[';	
 	
-	
-	$sql = 'SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log';
-	$sql .= ' WHERE time > '.dbMakeSafe($_POST['start']).' AND time < '.dbMakeSafe($_POST['end']).' AND ';
-	$sql .= 'rid = '.dbMakeSafe($rid).' ORDER BY lid ;';
-	$result = dbQuery($sql);
+	$sql = "SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log";
+	$sql .= " WHERE time > "$_POST['start'])." AND time < ".$_POST['end']." AND ";
+	$sql .= "rid = ".$_POST['rid']." ORDER BY lid ;";
+
+	$result = $l->query($sql);
 	$i = 0 ;
-    foreach(dbQuery($sql) as $row) {
+    while($row = $l->fetch($result)) {
 			$user = array();
 			$item = array();
 			$item['lid'] = $row['lid'];
@@ -58,8 +72,7 @@ if($user = dbFetch($result)) {
 			$i++ ;
 			echo json_encode($item) ;
 	};
-}
-dbFree($result);
-
+    $l->free($result);
+unset($l);   
 echo ']}';
 ?>

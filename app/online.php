@@ -22,18 +22,38 @@ $uid = $_POST['user'];
 
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$rid = $_POST['rid'];
+
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
 
-$users = array();
-foreach(dbQuery('SELECT uid, name, role, question,private AS wid FROM users WHERE rid = '.dbMakeSafe($rid).' AND present = 1 ;') as $row) {
-    $users[] = $row;
-};
+class Online extends DB {
 
-$result = dbQuery('SELECT max(lid) AS lid FROM log;');
-$row = dbFetch($result);
-echo '{ "lastid":'.$row['lid'].', "online":'.json_encode($users).'}';
-dbFree($result);
+    function doWork() {
+        $uid = $_POST['user'];
+        $rid = $_POST['rid'];
+        $this->bindInt('o','rid',$rid);
+        $result = $this->query('o');
+        $lid = $this->getValue("SELECT max(lid) AS lid FROM log;");
+
+        //We have finished database queries that might fail, and therefore repeat so it doesn't matter now that we start outputing stuff
+        echo '{ "lastid":'.$lid.', "online":[' ;
+        $donefirst = false;
+
+        while($row = $this->fetch($result)) {
+            if($donefirst) {
+                echo ",\n";
+            }
+            $donefirst = true;
+            echo json_encode($row);
+        }
+        $this->free($result);
+        echo ']}';
+
+    }
+}
+
+$o = new Online(Array('o' => "SELECT uid, name, role, question,private AS wid FROM users WHERE rid = :rid AND present = 1 ;"));
+$o->transact();
+unset($o);
 ?> 

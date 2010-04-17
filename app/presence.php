@@ -23,26 +23,32 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('timeout.php');
 
-dbQuery('UPDATE users SET time = '.time().' WHERE uid ='.dbMakeSafe($uid).';');  //Mark me as being active
-$result = dbQuery("SELECT value FROM parameters WHERE name = 'user_timeout' ;");
-$row = dbFetch($result);
-$usertimeout = $row['value'];
-dbFree($result);
-$result = dbQuery("SELECT value FROM parameters WHERE name = 'wakeup_interval' ;");
-$row = dbFetch($result);
-$wakeup = $row['value'];
-dbFree($result);
+class Presence extends Timeout {
 
-include('timeout.php');		//Timeout inactive users 
+    function __construct() {
+        parent::__construct(Array('active' => "UPDATE users SET time = :t WHERE uid = :uid ;")); 
+    }
 
+    function doWork() {
+        $this->bindInt('active','uid',$_POST['user']);
+        $this->bindInt('active','t',time());
+        $this->post('active');
+        $this->doTimeout();        
+    }
+}
+
+$p = new Presence();
+$p->transact();
+$wakeup = $p->getParam('wakeup_interval');
+unset($p);
 /*
 If no one has been sent any messages in the last period then send a null message to wake them up - just to ensure timeouts
 do not kick in
 */
 
-if(file_get_contents('./data/time.txt') + $wakeup < time()) {
+if((int)file_get_contents('./data/time.txt') + $wakeup < time()) {
     if ($dh = opendir('./data/')) {
         while (($file = readdir($dh)) !== false) {
             if (filetype('./data/'.$file) == 'fifo') {

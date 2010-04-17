@@ -21,24 +21,33 @@ if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['wuid'])
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$wuid = $_POST['wuid'];
-$wid = $_POST['wid'];
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./send.php');
 
-//Check I am in this whisper group and therefore can add the new person
-$result = dbQuery('SELECT count(*) as num FROM participant WHERE uid = '.dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
-$row = dbFetch($result);
-dbFree($result);
-if($row['num'] != 0) {
-	$result = dbQuery('SELECT  uid, name, role FROM users WHERE uid = '.dbMakeSafe($wuid).' ;');
-	if($row = dbFetch($result)) {
-		dbQuery('INSERT INTO participant SET wid = '.dbMakeSafe($wid).', uid = '.dbmakeSafe($wuid).' ;');
-	    include_once('./send.php');
-        send_to_all($wuid, $row['name'],$row['role'],"WJ",$wid,'');	
-	}
-	dbFree($result);
-	
+class Join extends LogWriter {
+
+    function __construct() {
+        parent::__construct(Array('join' => "INSERT INTO participant (wid,uid) VALUES (:wid, :uid);"));
+    }
+    
+    function doWork() {
+        $uid = $_POST['user'];
+        $wuid = $_POST['wuid'];
+        $wid = $_POST['wid'];
+        $num = $this->getValue("SELECT count(*) FROM participant WHERE uid = $uid AND wid = $wid ;");
+        if($num != 0) {
+            //I am in this whisper group, so am entitiled to add the new person
+            if($row = $this->getRow("SELECT name, role FROM users WHERE uid = $wuid ;",true)) {
+                $this->bindInt('join','wid',$wid);
+                $this->bindInt('join','uid',$wuid);
+                $this->sendLog($wuid, $row['name'],$row['role'],"WJ",$wid,'');	
+            }
+        }
+    }
 }
+
+$j = new Join();
+$j->transact();
+unset($j);
 echo '{ "Status" : "OK"}';
 ?>

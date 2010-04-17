@@ -23,64 +23,87 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 $rid = $_POST['rid'];
 
-define('MBCHAT_MAX_TIME',	3);		//Max hours of message to display in a room
-define('MBCHAT_MAX_MESSAGES',	100);		//Max message to display in room initially
-
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+include('./send.php');
 
+class Leaver extends LogWriter {
 
-if ($rid != 0) {
-	$result = dbQuery('SELECT rid, name, type FROM rooms WHERE rid = '.dbMakeSafe($rid).';');
-	if ($room = dbFetch($result) ) {
-    	dbFree($result);
-
-
-	    $result = dbQuery('SELECT uid, name, role, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
-        if($user = dbFetch($result)) {
-    	    dbFree($result);
-	
-	        if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
-	        //This is a moderated room, and this person is not normal - so swap them out of moderated room role
-		        $role = $user['moderator'];
-		        $mod = $user['role'];
-	        } else {
-		        $role = $user['role'];
-		        $mod = $user['moderator'];
-	        }
-	
-	        dbQuery('UPDATE users SET rid = 0, time = '.time().', role = '.dbMakeSafe($role)
-				        .', moderator = '.dbMakeSafe($mod).' WHERE uid = '.dbMakeSafe($uid).';');
-	
-	
-	        include_once('./send.php');
-            send_to_all($uid, $user['name'],$role,"RX",$rid,'');	
+    function __construct($statements) {
+        parent::__construct($statements);
+    }
+    
+    function doWork() {
+        $uid = $_POST['user'];
+        $rid = $_POST['rid'];
+        
+        $room = $this->getRow("SELECT rid, name, type FROM rooms WHERE rid = $rid ;");
+        $user = $this->getRow("SELECT uid, name, role, moderator FROM users WHERE uid = $uid ;");
+        if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
+        //This is a moderated room, and this person is not normal - so swap them out of moderated room role
+	        $role = $user['moderator'];
+	        $mod = $user['role'];
+        } else {
+	        $role = $user['role'];
+	        $mod = $user['moderator'];
         }
+	    $this->bindChars('exit','role',$role);
+	    $this->bindChars('exit','mod',$mod);
+	    $this->bindInt('exit','uid',$uid);
+	    $this->bindInt('exit','time',time());
+	    $this->post('exit');
+	    $this->sendLog($uid, $user['name'],$role,"RX",$rid,'');	
     }
 }
+$sql = "SELECT lid  FROM log";
+$sql .= " LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = ".$uid ;
+$sql .= " AND type = 'WH' AND log.time > :t ORDER BY lid DESC LIMIT :m ";
 
-$params = Array();
-foreach(dbQuery("SELECT name, value FROM parameters WHERE name = 'max_time' OR name = 'max_messages' ;") as $row) {
-    $params[$row['name']] = $row['value'];
+
+
+$sql2 = "SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log LEFT JOIN participant ON participant.wid = rid";
+$sql2 .= " WHERE participant.uid = $uid AND type = 'WH' AND lid >= :lid ";
+
+
+$e = new Leaver(Array(
+                'lid' => $sql,
+                'msg' => $sql2,
+                'exit' => "UPDATE users SET rid = 0, time = :time, role = :role , moderator = :mod WHERE uid = :uid "));
+if ($rid != 0) {
+    $e->transact();
 }
 
+echo '{"messages" : [';
 
 //should only return the whispers
-$sql = 'SELECT lid, time AS time, type, rid, log.uid AS uid , name, role, text  FROM log';
-$sql .= ' LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = '.dbMakeSafe($uid) ;
-$sql .= ' AND type = "WH" AND log.time > '.(time() - 3600*$params['max_time']);
-$sql .= ' ORDER BY lid DESC LIMIT '.$params['max_messages'].';';
-$result = dbQuery($sql);
-$messages = array();
-$first = true;
-foreach(dbQuery($sql) as $row) {
-    if($first) {
-        $lid = $row['lid'];
-        $first = false;
+
+//First run just finds the lid to start the query in the correct order from
+//We do it this way because there could be a lot of messages and I don't want to fill up memory with them
+$e->bindInt('lid','t',time() - 60*$e->getParam('max_time'));
+$e->bindInt('lid','m',$e->getParam('max_messages'));
+$result = $e->query('lid');
+
+while($row = $e->fetch($result)) {
+    $lid = $row['lid'];
+}
+$e->free($result);
+
+//now we know where to start, actually collect the messages to display
+
+
+
+$donefirst = false;
+$e->bindInt('msg','lid',$lid);
+$result = $e->query('msg');
+
+while( $row = $e->fetch($result)) {
+    if($donefirst) {
+        echo ",\n";
     }
+    $donefirst = true;
 		$user = array();
 		$item = array();
 		$item['lid'] = $row['lid'];
+		$lid = $row['lid'];
 		$item['type'] = $row['type'];
 		$item['rid'] = $row['rid'];
 		$user['uid'] = $row['uid'];
@@ -89,7 +112,9 @@ foreach(dbQuery($sql) as $row) {
 		$item['user'] = $user;
 		$item['time'] = $row['time'];
 		$item['message'] = $row['text'];
-		$messages[]= $item;
-};
-echo '{"messages" :'.json_encode(array_reverse($messages)).', "lastid" :'.$lid.'}';
+		echo json_encode($item);
+}
+$e->free($result);
+unset($e);
+echo '], "lastid" :'.$lid.'}';
 ?>
