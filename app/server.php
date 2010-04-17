@@ -24,8 +24,12 @@
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
-define('DATABASE_NAME','./data/chat.db');
-define('STATS','/home/alan/dev/chat/app/data/stats.txt');
+define('DATABASE','./data/chat.db');
+define('CONFIG','./data/config.db');
+define('LID_FILE','./data/lid.txt');
+define('MSG_PIPE','./data/msg.pipe');
+define('INIT_FILE','./database.sql');
+
 define('LOCK_WAIT_TIME',rand(1000,10000));
 
 
@@ -38,48 +42,78 @@ class DBError extends Exception {
 	}
     
 };
-class DBCheck extends Exception {};
-class DBRollBack extends Exception {};
 
 class DB {
 
-/* Tem stats */
+/* Temp stats 
     private $start;
-    private $retries;
+    private $retries; */
 
-    
+    private $cf;
     private $db;
     private $statements;
     private $sql;
-
+    private $socket;
     private $rollback;
     
     
-    function __construct($statements) {
-        $this->start = microtime(true);
-        $this->retries = 0;
-        $this->db = new SQLite3(DATABASE_NAME);
-        $this->sql = $statements;
-
-        $this->statements = Array();
-        $this->begin();
-        foreach ($statements as $key => $statement) {
-            $this->statements[$key] = $this->db->prepare($statement);
+    function __construct() {
+        
+/*      $this->start = microtime(true);
+        $this->retries = 0; */
+        if(!file_exists(CONFIG) ) {
+            $this->cf = new SQLite3(CONFIG);
+            $this->begin($this->cf);
+            if(!$this->cf->exec(file_get_contents('./config.sql'))) {
+                echo "CONFIG Setup Failed: ".$db->lastErrorMsg();
+                $this->cf->exec("ROLLBACK");
+                die("Can't continue");
+            }
+            $this-cf->exec("COMMIT");
+        } else {
+            $this->cf = new SQLite3(CONFIG);
         }
-        $this->db->exec("COMMIT");
-    }
+
+        if(!file_exists(DATABASE) ) {
+            $this->db = new SQLite3(DATABASE);
+            $this->begin($this->db);
+            if(!$this->db->exec(file_get_contents('./database.sql'))) {
+                echo "DATABASE Setup Failed: ".$db->lastErrorMsg();
+                $this->db->exec("ROLLBACK");
+                die("Can't continue");
+            }
+            $this->db->exec("COMMIT");
+        } else {
+            $this->db = new SQLite3(DATABASE_NAME);
+        }
+
+
+        
+        //We need a socket regardless of whether we are creating the server or are just the client
+        $this->socket = socket_create(AF_UNIX,SOCK_STREAM,SOL_TCP);
+        socket_bind($this->socket,MSG_PIPE);
+
+        // We NOW NEED to see if we need to become the chat server or not
+
+        if($this->db->exec("BEGIN EXCLUSIVE")) {
+            //If we got here we know that at least there is a possibility that there is no chat server
+            $this->db->querySingle("SELECT 
+            
+        }
+        //That chat server may not be running yet, so we need to wait before opening the pipe to send to it
+        
 
     function __destruct() {
         $this->db->close();
 //        file_put_contents(STATS, "".$this->retries.",".(microtime(true)-$this->start)."\n",FILE_APPEND);
     }
 
-    private function begin() {
-        while (!@$this->db->exec("BEGIN EXCLUSIVE")) {
-            if($this->db->lastErrorCode() != SQLITE_BUSY) {
-                throw new DBError("In trying to BEGIN EXCLUSIVE got Database Error:".$this->db->lastErrorMsg());
+    private function begin($db) {
+        while (!@$db->exec("BEGIN IMMEDIATE")) {
+            if($db->lastErrorCode() != SQLITE_BUSY) {
+                throw new DBError("In trying to BEGIN IMMEDIATE got Database Error:".$this->db->lastErrorMsg());
             }
-            $this->retries++;
+//            $this->retries++;
             usleep(LOCK_WAIT_TIME);
         }
     }
