@@ -76,7 +76,7 @@ CREATE TABLE participant (
 CREATE TABLE log (
   lid integer primary key,
   time bigint DEFAULT (strftime('%s','now')) NOT NULL,
-  uid integer NOT NULL REFERENCES users(uid),
+  uid integer NOT NULL,
   name character varying NOT NULL,
   role char(1) NOT NULL,
   rid integer NOT NULL,
