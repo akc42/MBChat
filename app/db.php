@@ -120,7 +120,7 @@ class DB {
     
     
     function getValue($sql) {
-        while(! $return = $this->db->querySingle($sql) ) {
+        while(! $return = @$this->db->querySingle($sql) ) {
             $this->checkBusy($sql);
         } 
         return $return;
