@@ -44,6 +44,8 @@ INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (7, 'The Music R
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (8, 'The Africa Room', 'C', 16);
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (9, 'The News Room', 'C', 17);
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (10, 'The Spiders Lair', 'C', 18);
+INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (11, 'Moderators Den', 'C', 28);
+
 
 CREATE TABLE users (
   uid integer primary key NOT NULL,
