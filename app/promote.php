@@ -21,25 +21,39 @@ if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['puid'])
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$puid = $_POST['puid'];
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
 
-$result = dbQuery('SELECT uid, name, role, rid, moderator, question  FROM users WHERE uid = '.dbMakeSafe($puid).';');
-if($user = dbFetch($result)) {
-	
-	if ($user['role'] == 'M' || $user['role'] == 'S') {
-		//already someone special 
-		$mod =$user['moderator'];
-	} else {
-		$mod = $user['role'];
-	}
-	dbQuery('UPDATE users SET role = "M", moderator = '.dbMakeSafe($mod).', time = '.time().' , question = NULL WHERE uid = '.dbMakeSafe($puid).';');
-    include_once('send.php');
-	send_to_all($puid,$user['name'],"M","RM",$user['rid'],'');
-	if ($user['question'] != '' ) {
-        send_to_all(dbLastId(),$puid, $user['name'],"M","ME",$user['rid'],$user['question']);	
+define ('MBC',1);   //defined so we can control access to some of the files.
+require_once('./send.php');
+
+class Promote extends LogWriter {
+
+    function __construct() {
+        parent::__construct(Array('promote' => "UPDATE users SET role = 'M',
+                 moderator = :mod, time = :time. question = NULL where uid = ".$_POST['puid']." ;"));
+    }
+    
+    function doWork() {
+        $uid = $_POST['user'];
+        $puid = $_POST['puid'];
+        $user = $this->getRow("SELECT uid, name, role, rid, moderator, question  FROM users WHERE uid = $puid ;");
+
+	    if ($user['role'] == 'M' || $user['role'] == 'S') {
+		    //already someone special 
+		    $mod =$user['moderator'];
+	    } else {
+		    $mod = $user['role'];
+	    }
+	    
+	    $this->bindChars('promote','mod',$mod);
+	    $this->post('promote');
+	    $this->sendLog($puid,$user['name'],"M","RM",$user['rid'],'');
+	    if ($user['question'] != '' ) {
+            $this->sendLog($puid, $user['name'],"M","ME",$user['rid'],$user['question']);	
+	    }
 	}
 }
-dbFree($result);
+$p = new Promote();
+$p->transact();
+unset($p);
+echo '{"Status":"OK"}';
 ?>

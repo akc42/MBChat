@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -19,46 +19,63 @@
 
 
 error_reporting(E_ALL);
-
+file_put_contents('./data/time.txt', ''.time()); //make a time file
 define('MBC',1);
 include('./db.php');
 
+class Signin extends DB {
 
-$result = dbQuery("SELECT * FROM users WHERE name = ".dbMakeSafe($_POST['username'])." OR name = ".dbMakeSafe($_POST['username']." (G)").";");
-$row = dbFetch($result);
-if($row && $row['present'] == '0' && (is_null($row['permanent']) || $row['permanent'] == md5($_POST['password']))) {
-// We are in the database, not present and either a non permenant entry or a permenant entry with the correct password
-        $gp = $row['groups'];       
-        $groups = explode(":",$gp);
-        
-        $uid = $row['uid'];
-        $pass = sha1("Key".$uid);
-        $name = $row['name'];
-        $role = $row['role'];
-        $mod = $row['moderator'];
-        $whisperer = (in_array(23,$groups))?"false":"true";
-        $lite = (in_array(22,$groups))?'lite':'normal';
-} else {
-    $name = $_POST['username']." (G)";
-    $role = "R";
-    $mod = "N";
-    $whisperer = "true";
-    $gp = "12";  
-    $lite = (isset($_POST['lite']))?'lite':'normal';
-    dbQuery("INSERT INTO users (name,groups) VALUES (".dbPostSafe($name).",'12');");
-    $uid = dbLastId();
-    $pass = sha1("Key".$uid);
+    function __construct() {
+        parent::__construct(Array(
+            'users' => "SELECT * FROM users WHERE name = :permanent OR name = :guest ;",
+            'new' => "INSERT INTO users (name,groups) VALUES ( :name ,'12');"));
+    }
 
+    function doWork() {
+        global $uid,$pass,$name,$role,$mod,$whisperer,$lite,$gp;
+        $this->bindText('users','permanent',$_POST['username']);
+        $this->bindText('users','guest',$_POST['username']." (G)");
+
+        $result = $this->query('users');
+        $row = $this->fetch($result);
+        $this->free($result);
+
+        if($row && $row['present'] == '0' && (is_null($row['permanent']) || $row['permanent'] == md5($_POST['password']))) {
+        // We are in the database, not present and either a non permenant entry or a permenant entry with the correct password
+                $gp = $row['groups'];       
+                $groups = explode(":",$gp);
+                
+                $uid = $row['uid'];
+                $pass = sha1("Key".$uid);
+                $name = $row['name'];
+                $role = $row['role'];
+                $mod = $row['moderator'];
+                $whisperer = (in_array(23,$groups))?"false":"true";
+                $lite = (in_array(22,$groups))?'lite':'normal';
+        } else {
+            $name = $_POST['username']." (G)";
+            $role = "R";
+            $mod = "N";
+            $whisperer = "true";
+            $gp = "12";  
+            $lite = (isset($_POST['lite']))?'lite':'normal';
+            $this->bindText('new','name',$name);
+            $uid = $this->post('new');          
+            $pass = sha1("Key".$uid);
+
+        }
+    }
 }
-dbFree($result);
 
-
+$s=new Signin();
+$s->transact();
+unset($s);
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>Melinda's Backups Chat</title>
-	<script src="/static/scripts/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
 </head>
 <body>
 <script type="text/javascript">

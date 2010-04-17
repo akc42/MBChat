@@ -71,11 +71,6 @@ function sig_reader (){
     exit;
 }
 
-function sig_int() {
-    global $pid;
-    posix_kill($pid,SIGINT);
-    exit;
-}
 
 inc_child();
 while(true) {
@@ -98,8 +93,9 @@ while(true) {
 }
 
 $pid;
+$data;
 function child_main() {
-    global $pid;
+    global $pid,$data;
     if(($pid = pcntl_fork()) == 0) {
        exit(reader_main());
     } else {
@@ -107,39 +103,39 @@ function child_main() {
         pcntl_signal(SIGCHLD, "sig_reader");
         pcntl_signal(SIGINT,"sig_int");
         $data = Array('user' => $pid, 'password' => sha1("Key".$pid));
-        do_post_request('chattest.php',array('uid' => $pid, 'pass' => sha1("Key".$pid),'name' => "Test Process $pid",'mod'=>'N',
-                                                'role'=>'R','whi'=>'true','ctype'=>'normal','gp'=>'12'));
+        do_post_request('chat.php',array('uid' => $pid, 'pass' => sha1("Key".$pid),'name' => "Test Process $pid",'mod'=>'N',
+                                                'role'=>'R','whi'=>'true','ctype'=>'normal','gp'=>'12','test'=> 'true'));
         do_post_request('login.php',array_merge($data,array('mbchat'=>'vTEST','version'=>'1.2.4','build'=>'1','browser' => 'PHPcli','platform'=>'Linux')));
         do_post_request('online.php',array_merge($data,array('rid'=>0)));
-        sleep(3);
-        do_post_request('online.php',array_merge($data,array('rid'=>1)));
         sleep(1);
+        do_post_request('online.php',array_merge($data,array('rid'=>1)));
+
         do_post_request('room.php',array_merge($data,array('rid'=>1)));
         $i = 0;
         while(true) {
             $i++;
-            sleep(30);
+            sleep(28);
             do_post_request('message.php',array_merge($data,array('rid'=>1,'text' => "Child $pid sending Message $i" )));
             if($i%3 == 0) do_post_request('presence.php',$data) ;//Presence
         
         }
     }
 }
+function sig_int() {
+    global $pid,$data;
+    posix_kill($pid,SIGINT);
+    do_post_request('logout.php',array_merge($data,array('mbchat'=>'vTEST','version'=>'1.2.4','build'=>'1','browser' => 'PHPcli','platform'=>'Linux')));
+    exit;
+}
 
 function reader_main() {
     $pid = getmypid();
-    $lid = false;
     $data = Array('user' => $pid, 'password' => sha1("Key".$pid));
-    $i=0;
+
     while(true) {
-        $i++;
-        if($lid) {
-            $message = do_post_request('read.php',array_merge($data,array('lid'=>$lid+1)));
-        } else {
-            $message = do_post_request('read.php',$data);
-        }
-        $lid = substr(strstr(strstr($message,":"),",",TRUE),1);
-    }
+
+        do_post_request('read.php',$data);
+   }
 }    
     
     
@@ -155,8 +151,9 @@ function do_post_request($url, $data) {
     );
 
     $context  = stream_context_create($opts);
-    return file_get_contents(URL_BASE.$url, false, $context,-1,40);
-
+    $fp = fopen(URL_BASE.$url,'r',false,$context);
+    sleep(2);
+    fclose($fp);
 }
   
 ?>

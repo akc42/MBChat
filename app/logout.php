@@ -21,26 +21,39 @@ if(!(isset($_POST['user']) && isset($_POST['password']) ))
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-
-$txt = 'MBchat version: '.$_POST['mbchat'].', Mootools Version : '.$_POST['version'].' build '.$_POST['build'] ;
-$txt .=' Browser : '.$_POST['browser'].' on Platform : '.$_POST['platform'];
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./send.php');
 
-dbBegin();
-$result=dbQuery('SELECT uid, name, role, rid FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if($row = dbFetch($result)) {
-    if (is_null($row['permanent'])) {
-    	dbQuery('DELETE FROM users WHERE uid = '.dbMakeSafe($uid).' ;');
-    } else {
-        dbQuery('UPDATE users SET present = 0 WHERE uid = '.dbMakeSafe($uid).' ;');
+class Logout extends LogWriter {
+
+    function __construct() {
+        parent::__construct(Array(
+                    'delete' => "DELETE FROM users WHERE uid = :uid ;", 
+                    'update' => "UPDATE users SET present = 0 WHERE uid = :uid ;"));
     }
-	include_once('send.php');
-    send_to_all($uid, $row['name'],$row['role'],"LO",$row['rid'],'');	
-		
+    
+    function doWork() {
+    
+        $uid = $_POST['user'];
+        $row=$this->getRow("SELECT uid, name, role, rid FROM users WHERE uid = $uid ;");
+    
+        if(is_null($row['permanent'])) {
+            $this->bindInt('delete','uid',$uid);
+            $this->post('delete');
+        } else {
+            $this->bindInt('update','uid',$uid);
+            $this->post('update');
+        }
+        
+        $txt = 'MBchat version: '.$_POST['mbchat'].', Mootools Version : '.$_POST['version'].' build '.$_POST['build'] ;
+        $txt .=' Browser : '.$_POST['browser'].' on Platform : '.$_POST['platform'];
+        $this->sendLog($uid, $row['name'],$row['role'],"LO",$row['rid'],$txt);	
+	}
 };
-dbFree($result);
-dbCommit();
+$l = new Logout();
+$l->transact();
+unset($l);
+
 usleep(20000);
 unlink("./data/msg".$uid); //Loose FIFO
 

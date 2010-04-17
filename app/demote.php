@@ -21,24 +21,35 @@ if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid']))
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$rid = $_POST['rid'];
+
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./send.php');
 
-dbBegin();
-$result = dbQuery('SELECT uid, name, role, rid, moderator FROM users WHERE uid = '.dbMakeSafe($uid).';');
-if($user = dbFetch($result)) {
-	dbFree($result);
-	
-	if ($user['role'] == 'M' && $user['rid'] == $rid ) {
+class Demote extends LogWriter {
 
-		dbQuery('UPDATE users SET role = '.dbMakeSafe($user['moderator']).
-			', moderator = "N", time = '.time().' WHERE uid = '.dbMakeSafe($uid).';');
+    function __construct() {
+        parent::__construct(Array(
+                    'demote' => "UPDATE users SET role = :role , moderator = 'N' time = :time WHERE uid = :uid ;"));
+    }
 
-		include_once('send.php');
-        send_to_all($uid, $user['name'],$user['moderator'],"RN",$rid,"");	
+    function doWork() {
+        $uid = $_POST['user'];
+        $rid = $_POST['rid']; 
+        $user = $this->getRow('SELECT uid, name, role, rid, moderator FROM users WHERE uid = '.$uid.';');
 
-	}
+    	if ($user['role'] == 'M' && $user['rid'] == $rid ) {
+    	    $this->bindChars('demote','role',$user['moderator']);
+    	    $this->bindInt('demote','uid',$uid)
+            $this->bindInt('demote','time',time());
+            $this->post('demote');
+            $this->sendLog($uid, $user['name'],$user['moderator'],"RN",$rid,"");
+
+	    }
+    }
 }
-dbCommit();
+$d = new Demote();
+$d->transact();
+unset($d);
+echo '{"Status" : "OK"}' ;
+
 ?>

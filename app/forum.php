@@ -18,10 +18,10 @@
 */
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('db.php');
-$result = dbQuery("SELECT value FROM parameters WHERE name = 'exit_location' ;");
-$row = dbFetch($result);
 
-header("location: ".$row['value']);
-
+$db = new DB(Array());
+$go = $db->getParam('exit_location');
+unset($db);
+header("location: ".$go);
 ?>
 

@@ -19,36 +19,51 @@
 
 
 error_reporting(E_ALL);
-
 //Can't start if we haven't setup a database
 if (!file_exists('./data/chat.db')) {
-    try {
-        $db = new PDO('sqlite:./data/chat.db');  //This will create it
-        $db->exec(file_get_contents('./database.sql'));
-    } catch (PDOException $e) {
-        die('Database setup failed: ' . $e->getMessage());
-    }
-    unset($db); //I don't want problems since db.php uses it too.
-    file_put_contents('./data/time.txt', ''.time()); //make a time file
+    $db = new SQLite3('./data/chat.db');  //This will create it
+    if(!$db->exec(file_get_contents('./database.sql'))) die("Database Setup Failed: ".$db->lastErrorMsg());
+
+} else {
+    $db = new SQLite3('./data/chat.db'); //just open it to get template info
 }
+$template_url = $db->querySingle("SELECT value FROM parameters WHERE name= 'template_url' ;");
+$template = $db->querySingle("SELECT value FROM parameters WHERE name = 'template_dir' ;");
+unset($db);
+file_put_contents('./data/time.txt', ''.time()); //make a time file
+
 function head_content() {
 ?><title>Melinda's Backups Chat - Sign In Page</title>
+	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
+	<!--[if lt IE 7]>
+		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
+	<![endif]-->
+	<style type="text/css">
+	    #content, #content td {
+	        color:#ffffff;
+	   }
+	</style>
 <?php
 }
 
 function content() {
 ?>
+<div id="content">
 <h1>MB Chat Login</h1>
 <p>This is a dummy front end to MB Chat.  You can enter a username with which you will be known in chat.  You only need to enter a 
 password <strong>if you are already registered as a user</strong> as this will be used to check your credentials in the database.  Guest
 users should just enter the name they wish to be known as in chat</p>
+<p>The accessibility version (see checkbox at bottom of form) is for users of the Jaws screen reading system for blind users.  This version removes
+some of the graphics in exchange for an interface designed specifically to enable Jaws to provide access.</p>
+<p></p>
 <form action="signin.php" method="post">
     <table>
         <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
         <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
-        <tr><td><input type="submit" name="submit" value="Sign In"/></td><td>Try "lite" version: <input type="checkbox" name="lite" /></td></tr>
+        <tr><td><input type="submit" name="submit" value="Sign In"/></td><td>Use "Accessibilty" version: <input type="checkbox" name="lite" /></td></tr>
     </table>
 <form>
+</div>
 <?php
 }
 
@@ -57,6 +72,6 @@ function menu_items() {
 //Noop
 }
 
-include("./template/template.php");
+include($template.'/template.php');
 
 ?>

@@ -19,7 +19,7 @@
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-// Path to the chat directory:
+
 
 if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])
 	&& isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end']) && isset($_GET['tzo'])))
@@ -27,6 +27,7 @@ if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])
 $uid = $_GET['user'];
 if ($_GET['password'] != sha1("Key".$uid))
 	die('Log - Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
+	
 $rid = $_GET['rid'];
 
 $now = new DateTime();
@@ -34,18 +35,21 @@ $dtz = new DateTimeZone(date_default_timezone_get());
 $tzo = $_GET['tzo']+$dtz->getOffset($now);
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./db.php');
 
 $sql = 'SELECT time, type, rid, uid , name, role, text  FROM log';
-$sql .= ' WHERE time > '.dbMakeSafe($_GET['start']).' AND time < '.dbMakeSafe($_GET['end']).' AND rid ';
+$sql .= ' WHERE time > '.$_GET['start'].' AND time < '.$_GET['end'].' AND rid ';
 if ($rid == 99) {
 	$sql .= '> 98 ORDER BY rid,lid ;';
 	$room = 'Non Standard';
 } else {
-	$sql .= '= '.dbMakeSafe($rid).' ORDER BY lid ;';
+	$sql .= '= '.$rid.' ORDER BY lid ;';
 	$room = $_GET['room'];
 }
-$result = dbQuery($sql);
+
+$d = new DB(Array( 'list' => $sql));
+
+$result = $d->query('list');
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
@@ -74,7 +78,7 @@ global $row,$i;
 	$nomessages = false;
 }
 $nomessages = true;
-foreach(dbQuery($sql) as $row) {
+while($row = $d->fetch($result)) {
 		echo '<span class="time">'.date("h:i:s a",$row['time']-$tzo).'</span><span class=';
 		switch ($row['type']) {
 		case "LI" :
@@ -124,10 +128,9 @@ if($nomessages) {
 	echo "\n";
 }
 
-dbFree($result);
+$d->free($result);
+unset($d);
 ?>
-
-
 </body>
 
 </html>

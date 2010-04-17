@@ -25,16 +25,21 @@ if ($_POST['password'] != sha1("Key".$uid))
 $wid = $_POST['wid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('db.php');
+require_once('./db.php');
 
-$whisperers = array();
-foreach(dbQuery('SELECT users.uid,name,role, wid FROM participant JOIN users ON users.uid = participant.uid WHERE wid = '.
-            dbMakeSafe($wid).';') as $row){
-	$user = array();
-	$user['uid'] = $row['uid'];
-	$user['name'] = $row['name'];
-	$user['role'] = $row['role'];
-	$whisperers[]= $user;
-};
-echo '{"whisperers":'.json_encode($whisperers).'}';
+$db = new DB();
+
+echo '{"whisperers":[';
+$donefirst = false;
+$result = $db->query("SELECT users.uid,name,role FROM participant JOIN users ON users.uid = participant.uid WHERE wid = $wid ;");
+while($row = $db-fetch($result)) {
+    if($donefirst) {
+        echo ",\n";
+    }
+    $donefirst = true;
+	echo json_encode($row);
+}
+$db->free($result);
+unset($db);
+echo ']}';
 ?>

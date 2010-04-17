@@ -23,32 +23,40 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Private - Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
-$wid = $_POST['wid'];
-$rid = $_POST['rid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('db.php');
+include_once('./send.php');
 
+class Private extends LogWriter {
 
-if ($wid != 0 ) {
-	$result = dbQuery('SELECT participant.uid, users.name, role, wid  FROM participant 
-				JOIN users ON users.uid = participant.uid WHERE participant.uid = '.
-				dbMakeSafe($uid).' AND wid = '.dbMakeSafe($wid).' ;');
+    function __construct() {
+        parent::__construct(Array('priv' => "UPDATE users SET time = :time, private = :wid WHERE uid = ".$_POST['uid']" ;"));
+    }
+    
+    function doWork() {
+        $uid = $_POST['user'];
+        $wid = $_POST['wid'];
+        $rid = $_POST['rid'];
 
-	if($row = dbFetch($result)) {
-		dbQuery('UPDATE users SET time = '.time().' , private = '.dbMakeSafe($wid).' WHERE uid = '.dbMakeSafe($uid).';');
-		include_once('./send.php');
-        send_to_all($uid, $row['name'],$row['role'],"PE",$wid,'');	
-	}
-} else {
-
-	$result = dbQuery('SELECT uid, name, role FROM users WHERE uid = '.dbMakeSafe($uid).';');
-	if($row = dbFetch($result)) {
-		dbQuery('UPDATE users SET time = '.time().' , private = 0 WHERE uid = '.dbMakeSafe($uid).';');
-		include_once('./send.php');
-        send_to_all(dbLastId(),$uid, $row['name'],$row['role'],"PX",$rid,'');	
+        if ($wid != 0 ) {
+            $row = getRow("SELECT participant.uid, users.name, role, wid  FROM participant 
+				            JOIN users ON users.uid = participant.uid WHERE participant.uid =  $uid AND wid = $wid ;");
+			$this->bindInt('priv','wid',$wid);
+			$this->bindInt('priv','time',time());
+			$this->post('priv');
+			$this->sendLog($uid, $row['name'],$row['role'],"PE",$wid,'');	
+        } else {
+            $row = getRow("SELECT uid, name, role FROM users WHERE uid = $uid ;");
+			$this->bindInt('priv','wid',0);
+			$this->bindInt('priv','time',time());
+			$this->post('priv');
+			$this->sendLog($uid, $row['name'],$row['role'],"PX",$rid,'');
+		}
 	}
 }
-dbFree($result);
+
+$p = new Private();
+$p->transact();
+unset($p);
 echo '{"Status":"OK"}';
 ?> 

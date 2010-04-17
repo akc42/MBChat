@@ -30,30 +30,15 @@ if ($password != sha1("Key".$uid))
 
 
 error_reporting(E_ALL);
-
 //Can't start if we haven't setup a database
 if (!file_exists('./data/chat.db')) {
-    try {
-        $db = new PDO('sqlite:./data/chat.db');  //This will create it
-        $db->exec(file_get_contents('./database.sql'));
-    } catch (PDOException $e) {
-        die('Database setup failed: ' . $e->getMessage());
-    }
+    $db = new SQLite3('./data/chat.db');  //This will create it
+    if(!$db->exec(file_get_contents('./database.sql'))) die("Database Setup Failed: ".$db->lastErrorMsg());
     unset($db); //I don't want problems since db.php uses it too.
     file_put_contents('./data/time.txt', ''.time()); //make a time file
 }
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./db.php');
-
-/* Load up the parameters from the database so that they are conveniently accessible */
-
-$params = Array();
-foreach(dbQuery("SELECT * FROM parameters;") as $row) {
-    $params[$row['name']] = $row['value'];
-}
-
-//Make a pipe for this user - but before doing so kill anyother using this userID.  We can only have one chat at once.
+//Make a pipe for this user - but before doing so kill any other using this userID.  We can only have one chat at once.
 $old_umask = umask(0007);
 if(file_exists("./data/msg".$uid)) {
 // we have to kill other chat, in case it was stuck
@@ -67,19 +52,43 @@ posix_mkfifo("./data/msg".$uid,0660);
 umask($old_umask);
 
 
-$name=$_POST['name'];
-$role=$_POST['role'];
-$mod=$_POST['mod'];
-$whi=$_POST['whi'];
-$groups = explode(":",$_POST['gp']); //A ":" separated list of committees (groups) that the user belongs to.
-$lite = ($_POST['ctype'] == 'lite'); //if we need the special lite version (provides accessibility for blind people)
+define ('MBC',1);   //defined so we can control access to some of the files.
+require_once('./timeout.php');
+
+class Chat extends Timeout {
+
+    function __construct() {
+        parent::__construct(Array(
+            'user' => "REPLACE INTO users (uid,name,role,moderator, present) VALUES (:uid, :name , :role, :mod, 1);",
+            'rooms' => "SELECT * FROM rooms ORDER BY rid ASC;",
+            'purge' => "DELETE FROM log WHERE time < :interval ;"));
+    }
+
+    function doWork() {
+
+    //Just adds user to database
+        $this->bindInt('user','uid',$_POST['uid']);
+        $this->bindText('user','name',$_POST['name']);
+        $this->bindChars('user','role',$_POST['role']);
+        $this->bindChars('user','mod',$_POST['mod']);
+        $this->post('user');
+    //Purge old messages
+        $this->bindInt('purge','interval',time() - $this->getParam('purge_message_interval')*86400);
+        $this->post('purge');
+        
+    //Add timeout any other users who should not have been there
+        $this->doTimeout();
+    }
+}
+
+$c = new Chat();
+$c->transact();
 
 
-dbQuery('REPLACE INTO users (uid,name,role,moderator, present) VALUES ('.dbMakeSafe($uid).','.
-				dbMakeSafe($name).','.dbMakeSafe($role).','.dbMakeSafe($mod).', 1) ; ') ; //The last one indicates that the user is present
-				
+if(!isset($_POST['test'])) {
+
 function head_content() {
-    global $lite;
+
 ?><title>Melinda's Backups Chat</title>
 	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
 	<!--[if lt IE 7]>
@@ -88,12 +97,28 @@ function head_content() {
 	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="/js/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="<?php echo ($lite)?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
+	<script src="<?php echo ($_POST['ctype'] == 'lite')?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
 <?php
+
+}
+
+
+function menu_items() {
+//Noop
 }
 
 function content() {
-    global $uid,$name, $role, $mod, $whi, $params, $lite, $groups;
+    global $c;
+
+		$uid = $_POST['uid'];		
+        $name=$_POST['name'];
+        $role=$_POST['role'];
+        $mod=$_POST['mod'];
+        $whi=$_POST['whi'];
+        $groups = explode(":",$_POST['gp']); //A ":" separated list of committees (groups) that the user belongs to.
+        $lite = ($_POST['ctype'] == 'lite'); //if we need the special lite version (provides accessibility for blind people)
+
+
 ?><script type="text/javascript">
 	<!--
 
@@ -104,16 +129,16 @@ window.addEvent('domready', function() {
 				password : '<?php echo sha1("Key".$uid); ?>',
 				mod: <?php echo '"'.$mod.'"' ; ?> ,
 				whisperer: <?php echo $whi ; ?>  }, 
-				<?php echo $params['presence_interval'] ; ?>,
-				{fetchdelay: <?php echo $params['log_fetch_delay'] ; ?>,
-				spinrate: <?php echo $params['log_spin_rate'] ; ?>,
-				secondstep:<?php echo $params['log_step_seconds'] ; ?>,
-				minutestep:<?php echo $params['log_step_minutes'] ; ?>,
-				hourstep:<?php echo $params['log_step_hours'] ; ?>,
-				sixhourstep:<?php echo $params['log_step_6hours'] ; ?> },
-				"<?php echo $params['chatbot_name'] ; ?>",
-				"<?php echo $params['entrance_hall'] ?>",
-				<?php echo $params['max_messages'] ?>);
+				<?php echo $c->getParam('presence_interval') ; ?>,
+				{fetchdelay: <?php echo $c->getParam('log_fetch_delay') ; ?>,
+				spinrate: <?php echo $c->getParam('log_spin_rate') ; ?>,
+				secondstep:<?php echo $c->getParam('log_step_seconds') ; ?>,
+				minutestep:<?php echo $c->getParam('log_step_minutes') ; ?>,
+				hourstep:<?php echo $c->getParam('log_step_hours') ; ?>,
+				sixhourstep:<?php echo $c->getParam('log_step_6hours') ; ?> },
+				"<?php echo $c->getParam('chatbot_name') ; ?>",
+				"<?php echo $c->getParam('entrance_hall') ?>",
+				<?php echo $c->getParam('max_messages') ?>);
 });	
 window.addEvent('beforeunload', function() {
 	MBchat.logout();
@@ -128,31 +153,31 @@ soundManager.flashVersion = 9; // optional: shiny features (default = 8)
 soundManager.onload = function() {
 	soundManager.createSound({
 		id : 'whispers',
-		url : "<?php echo $params['sound_whisper'] ; ?>",
+		url : "<?php echo $c->getParam('sound_whisper') ; ?>",
 		autoLoad : true ,
 		autoPlay : false 
 	});
 	soundManager.createSound({
 		id : 'move',
-		url : "<?php echo $params['sound_move'] ; ?>",
+		url : "<?php echo $c->getParam('sound_move') ; ?>",
 		autoLoad : true ,
 		autoPlay : false 
 	});
 	soundManager.createSound({
 		id : 'speak',
-		url : "<?php echo $params['sound_speak'] ; ?>",
+		url : "<?php echo $c->getParam('sound_speak') ; ?>",
 		autoLoad : true ,
 		autoPlay : false 
 	});
 	soundManager.createSound({
 		id : 'creaky',
-		url : "<?php echo $params['sound_creaky'] ; ?>",
+		url : "<?php echo $c->getParam('sound_creaky') ; ?>",
 		autoLoad : true ,
 		autoPlay : false
 	});
 	soundManager.createSound({
 		id : 'music',
-		url : "<?php echo $params['sound_music'] ; ?>",
+		url : "<?php echo $c->getParam('sound_music') ; ?>",
 		autoLoad : true ,
 		autoPlay : false
 	});
@@ -165,7 +190,7 @@ soundManager.onload = function() {
 	// -->
 </script>
 <div id="roomNameContainer">
-    <h1><?php echo $params['entrance_hall']; ?></h1>
+    <h1><?php echo $c->getParam('entrance_hall'); ?></h1>
 </div>
 <div id="content">
     <div id="exit" class="exit-f"></div>
@@ -187,7 +212,16 @@ soundManager.onload = function() {
 	    <h3>Main Rooms</h3>
 <?php
 $i=0;
-foreach(dbQuery('SELECT * FROM rooms ORDER BY rid ASC;') as $row) {
+$result = false;
+do {
+    try {
+        $result = $c->query('rooms');
+        break;
+    } catch (DBCheck $e) {
+        $c->checkBusy();
+    }
+} while(true);    
+while ( $row = $c->fetch($result)) {
     $rid = $row['rid'];
     if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['smf_group'],$groups)))) {
         if($i > 0 && $i%4 == 0) {
@@ -208,7 +242,8 @@ foreach(dbQuery('SELECT * FROM rooms ORDER BY rid ASC;') as $row) {
 <?php 
         }
     }    
-} 
+}
+$c->free($result); 
 //If ended loop and hadn't just comleted div we will have to do it here
 if( ($i % 4) != 0 ) { 
 ?>      <div style="clear:both"></div>
@@ -244,7 +279,8 @@ if( ($i % 4) != 0 ) {
 if (!$lite) {
 ?><div id="emoticonContainer">
 <?php
-	$dir = $params['emoticon_dir'];
+	$dir = $c->getParam('emoticon_dir');
+	$urlbase = $c->getParam('emoticon_url');
 	$fns = scandir($dir);
 	foreach ($fns as $filename) {
 
@@ -255,7 +291,7 @@ if (!$lite) {
 			    $basename = substr($filename, 0, $pos);
 			    $extension = substr($filename, $pos+1);
 			    if($extension == 'gif') {
-				    echo '<img class="emoticon" src="'.$params['emoticon_url'].'/'.$filename.'" alt=":'.$basename.'" title="'.$basename.'" />';
+				    echo '<img class="emoticon" src="'.$urlbase.$filename.'" alt=":'.$basename.'" title="'.$basename.'" />';
 				    echo "\n";
 			    }
 			 }
@@ -282,17 +318,12 @@ if (!$lite) {
 ?><div id="copyright">MB Chat <span id="version"><?php include('./version.php');?></span> &copy; 2008-2010 Alan Chandler</div>
 </div>
 <?php
-}
 
-function menu_items() {
-//Noop
 }
-include("./template/template.php");
-dbBegin(); 
-	//purge messages that are too old from database
-	dbQuery("DELETE FROM log WHERE time < ".(time() - $params['purge_message_interval']*86400).";");
-//timeout any users that are too old
-$usertimeout = $params['user_timeout'];
-	include('./timeout.php');
-dbCommit();
+$template_url = $c->getParam('template_url');
+include($c->getParam('template_dir').'/template.php');
+
+
+}
+unset($c);
 ?>

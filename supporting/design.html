@@ -512,7 +512,7 @@ Also see [[AdvancedOptions]]</pre>
 </div>
 <!--POST-SHADOWAREA-->
 <div id="storeArea">
-<div title="Basic Operation" modifier="AlanChandler" created="200908270620" modified="201004092228" changecount="8">
+<div title="Basic Operation" modifier="AlanChandler" created="200908270620" modified="201004160957" changecount="9">
 <pre>The mode of initialisation is fractionally different dependent upon whether that application is being called across different domains (a restriction created by the limitations of the shared hosting service used by melindasbackups.com).  In the remote mode, there are two functions requiring cross domain support:-
 # Starting the application after getting the users credentials from the forum membership database
 # Getting the number of users currently in chat to display in the forum header.
@@ -528,38 +528,24 @@ Upon generating an event that would previously have been written to the log, as 
 
 (need to [[Prevent Multiple Presences]])
 
-(see [[DirectoryStructure]]</pre>
+(see [[DirectoryStructure]])
+
+(see [[Session Management]])</pre>
 </div>
-<div title="Database Design" modifier="AlanChandler" created="201004091340" modified="201004100819" changecount="8">
+<div title="Database Design" modifier="AlanChandler" created="201004091340" modified="201004160902" changecount="10">
 <pre>The database will used will be SQLite.  A text file used to build the database (named database.sql) will be shipped with the application, and this will be used during initialisation to create the database if its not already there.  If you wish to change the default values with which it is shipped, you can either edit the master copy (creating a backup first) before first run or edit the created database with the sqlite3 command line application afterwards.
 
 The database will contain the following tables:-
 * ''parameters'' is a table of parameter name, parameter value pairs with the values as defined in [[Parameters]]
 * ''rooms'' lists the rooms, main or committee - and for the committee which //smf group// is associated with it (if you are a member of the group you see the room)
-* ''users'' holds the users currently online.  There is a column for each user that allows for them to be marked online or offline.  This is so that the additional permanent column  can be set to not NULL (in fact it will hold the md5 has of the permanent users password) leaving the record in the database.  This is to support implementing the alternate log in system, with some permanent users, and a dynamic population of visitors whose records will be dynamically allocated as they sign in.
+* ''users'' holds the users currently online.  There is a column for each user that allows for them to be marked online or offline.  This is so that the additional permanent column  can be set to not NULL (in fact it will hold the md5 has of the permanent users password) leaving the record in the database.  This is to support implementing the alternate log in system, with some permanent users, and a dynamic population of visitors whose records will be dynamically allocated as they sign in.  Users have a //groups// field which is a colon separated list of //smf group// ids that they have.  This controls which committee rooms the user may enter.  In addition the user has [[Role and Moderator Codes]] which define the way he is seen by other users and also what capabilities (such as review logs of rooms).
 * ''wid_sequence'' is a table with a single record that is updated by the code when a new whisper is created.  It provides the //wid// or id for the whisper.
 * ''participant'' is a table that holds the user to whisper relationship.  Since multiple users can be in a whisper and a user can be in multiple whispers this table keeps track of it.
 
 There are three key differences with the use of sqlite:-
 # Many more of the parameters, currently coded in the pages (or as code in the pages) are now put into the database.  This makes for ease of updating.
 # There is not automatic sequence number generation with sqlite (other than to provide rowids), so we will have to emulate it for the generation of a whisper id 
-# PHP support is different, requiring the use of PDO Objects (the SQLite3 object seems to have flaws).  The differences will mainly be hidden within the db.php library that gets included in all scripts.  The main difference is a somewhat better way to loop round all records returned from SELECT query.  In the old mechanism the code was
-{{{
-$result = dbQuery(&quot;SELECT ...;&quot;);
-while($row = dbFetch($result)) {
-   Do Something
-}
-}}}
-
-The new mechanism will be 
-{{{
-
-foreach( dbQuery(&quot;SELECT ...;&quot;) as $row) {
-   Do Something
-}
-}}}
-
-Although this only works of $rows are only required to be accessed within the foreach loop.
+# Conflicting transaction cause an error rather than automatically sequencing themselves (a misunderstanding on this issue is why it appeared that SQLite3 had flaws).  As a result a more complex [[Transaction Retry Framework]] has had to have been built.
 
 </pre>
 </div>
@@ -662,12 +648,71 @@ The application uses [[Mootools]] as its core javascript library
 
 The issue however, is that its possible for older versions to become //stuck// and so if we do not find a way to get rid of them, newer versions will not be able to start.</pre>
 </div>
+<div title="Role and Moderator Codes" creator="AlanChandler" modifier="AlanChandler" created="201004160943" modified="201004160947" changecount="4">
+<pre>There are a set of codes which define how each user looks to the others, and which the facilities they have.  There are two such codes:-
+* A ''Role'' code which defines the underlying capabilities and of the user.  This is used to set the //class// in the various lists (online and the message) in which a user name appears and can be used to specify different colours for different class of user, but for some users it defines the ability to speak in a moderated room.  The currently defined roles are:
+** ''A'' is //administrator// - they can log the content of all rooms
+** ''L'' stands for //leadership// - they can log the content of all rooms
+** ''B'' stands for //baby// - differenciates from adults and means they can see //B// rooms (such as the Green Room) but not the //A// rooms (such as the Blue room). Adults can see the A rooms and not the B rooms.  Also adults cannot whisper with babies (and visa versa) although babies can whisper with each other as can adults (if the //separate// whisperer capability is granted)
+** ''H'' stands for //head// - allows automatic rights to speak in a moderated room (but could be used to grant other rights)
+** ''G'' stands for //honorary guest// - allows automatic rights to speak in a moderated room (but could be used to grant other rights)
+** ''R'' is a //regular// user with no special capabilities
+* A ''Moderator'' code which defines (in addition to the H and G roles listed above) rights to speak in a moderated room.  These are
+** ''M'' is the moderator - they can review and release questions asked by normal members
+** ''S'' is designed to be assigned to an existing member to become a //special// speaker - can talk without moderation in a moderated room
+** ''N'' is the normal user, who when they enter a message has it stored against their name - leaving the moderator to release it to the room at the requisite moment.
+ 
+These codes are designed to be extended as required to differenciate between users by capability and/or colour as required (although the //groups// capability should be used to define who has access to which committee room).</pre>
+</div>
 <div title="SiteSubtitle" modifier="AlanChandler" created="200908270606" changecount="1">
 <pre>Design Documentation for Pipe Version</pre>
 </div>
 <div title="SiteTitle" modifier="AlanChandler" created="200908270606" changecount="1">
 <pre>MBChat
 </pre>
+</div>
+<div title="Transaction Retry Framework" creator="AlanChandler" modifier="AlanChandler" created="201004160954" modified="201004160954" changecount="2">
+<pre>The transaction framework is designed to allow transactions to be rolled back and re-tried if the database reports a busy error.  The idea is that a base DB class calls a ''doWork'' method, and the derived classes include their transaction logic in it.  The transaction routine is called via the base classes ''transact''.
+
+The core of the transact method is
+
+{{{
+        do {
+
+                try {
+                    if(!$this-&gt;begin-&gt;execute()) throw DBCheck(&quot;BEGIN&quot;);
+                    $this-&gt;doWork();
+                    
+                    while (!$this-&gt;commit-&gt;execute()) {
+                        if($this-&gt;db-&gt;lastErrorCode() != SQLITE_BUSY) {
+                            throw DBError();
+                        }
+                        $this-&gt;commit-&gt;reset();
+                        usleep(LOCK_WAIT_TIME);
+                    }
+                    break;
+                } catch(DBCheck $e) {
+                    $this-&gt;db-&gt;exec(&quot;ROLLBACK;&quot;);
+                    if($this-&gt;db-&gt;lastErrorCode() != SQLITE_BUSY) {
+                        throw DBError($e-&gt;getMessage());
+                    }
+                } catch(DBError $e) {
+// Normally throw a full exception here info about the transaction that failed. 
+                } catch(DBRollBack $e) {
+                    $this-&gt;db-&gt;exec(&quot;ROLLBACK;&quot;);
+                    break;
+                }
+                // we are about to go round again (we only get here if a busy exception occurred) so reset statements
+                $this-&gt;begin-&gt;reset();
+                foreach($this-&gt;statements as $statement) {
+                    $statement-&gt;reset();
+                }
+                
+        } while(true);
+
+
+
+}}}</pre>
 </div>
 </div>
 <!--POST-STOREAREA-->
