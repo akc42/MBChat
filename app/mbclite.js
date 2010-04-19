@@ -216,23 +216,10 @@ return {
 
                 var nextLid;
 			    var pollRequest;
-			    if(Browser.Engine.trident && Browser.Engine.version == 5) {
-			        pollRequest = new ServerReq('poll.php', function(response) {
-				        if(response.messages) {
-                            if(response.lastlid) nextLid = response.lastlid + 1; //
-				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
-				        }
-				        if (fullPoll == 2) {
-				            pollRequest.transmit.delay(2000,pollRequest,{'lid':nextLid});
-				        } else {
-				            fullPoll = 0; //If stop was pending, it has now finished
-				        }
-			        });
-			    } else {
-    			    pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
-        			    readComplete.delay(10,this,[r,t]);
-	    			}}); 
-	    		}
+    			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
+    			    readComplete.delay(10,this,[r,t]);
+    			}}); 
+
 				var readComplete = function(response,errorMessage) {
 				    if(response) {
 				        if(response.messages) {
@@ -240,7 +227,7 @@ return {
 				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
 				        } 
 				    } else {
-				        if(errorMessage != '') displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
+				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
 				    if (fullPoll == 2) {
 				        pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
@@ -267,14 +254,10 @@ return {
 					},
 
 					start : function () {
-	        		    if (fullPoll < 2) {
-	        		        fullPoll= 2;
-			                if(Browser.Engine.trident && Browser.Engine.version == 5) {
-			                    pollRequest.transmit({'lid':lastId+1});
-                            } else {			                
-	        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
-	        		        }
+	        		    if (fullPoll == 0) {
+        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
 						 }
+                        fullPoll= 2;
 					},
 
 					pollResponse : function(messages) {
