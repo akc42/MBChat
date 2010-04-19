@@ -424,7 +424,7 @@ return {
 				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
 				        } 
 				    } else {
-				        if(errorMessage != '') displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
+				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
 				    if (fullPoll == 2) {
 				        pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
