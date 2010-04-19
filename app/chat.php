@@ -73,7 +73,6 @@ class Chat extends Timeout {
         $this->bindChars('user','mod',$_POST['mod']);
         $this->post('user');
 
-        echo "Posted the USER uid ".$_POST['uid'];
     //Purge old messages
         $this->bindInt('purge','interval',time() - $this->getParam('purge_message_interval')*86400);
         $this->post('purge');
@@ -97,7 +96,7 @@ function head_content() {
 		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
 	<![endif]-->
 	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="<?php echo ($_POST['ctype'] == 'lite')?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
 <?php

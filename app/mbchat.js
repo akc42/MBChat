@@ -43,20 +43,29 @@ MBchat = function () {
 	var logOptions;
 	var version;
 	var logged_in;
-	var reqQueue = new Request.Queue({stopOnFailure:false});
+
+	var reqQueue = new Chain();
+    var reqRunning = false;
+	
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url, onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url, link:'chain',onComplete: function(response,errorMessage) {
 				if(response) {
-					process(response);
+   					process(response);
 				} else {
 					displayErrorMessage(''+url+' failure:'+errorMessage);
 				}
+				reqRunning = false;
+				reqQueue.callChain();
 			}});
-			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
 		},
 		transmit: function (options) {
-			this.request.post($merge(myRequestOptions,options));
+            if (reqRunning) {
+                reqQueue.chain(arguments.callee.bind(this,options));
+            } else {
+                reqRunning = true;
+			    this.request.post.delay(20,this.request,$merge(myRequestOptions,options));
+			}
 		}		
 	});
 	var displayUser = function(user,container) {
@@ -85,9 +94,9 @@ MBchat = function () {
 	var pO;
 	var loginReq = new ServerReq('login.php',function(response) {
 	    logged_in = true;
-		MBchat.updateables.poller.init(pO); //These haven't been initiated with normal init sequence, but await successful login
-		MBchat.updateables.whispers.init(response.lastid.toInt());
+		MBchat.updateables.whispers.init(response.lastid);
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
+		MBchat.updateables.poller.init(response.lastid,pO); //These haven't been initiated with normal init sequence, but await successful login
 	});
 return {
 	init : function(user,presenceInterval,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
@@ -113,7 +122,7 @@ return {
 			rooms.each( function(door, i){
 				var request;
 				door.addEvent('mouseenter', function(e){
-					if (room.rid == 0) {
+    				if (room.rid == 0) {
 						//adjust width of room to be wide
 						var obj = {};
 						obj[i] = {'width': [door.getStyle('width').toInt(), 219]};
@@ -123,10 +132,12 @@ return {
 								if (w != 67) obj[j] = {'width': [w, 67]};
 							}
 						});
-						fx.start(obj);
-						// Set up online list for this room
-						MBchat.updateables.online.show(door.get('id').substr(1).toInt());
-					} else {
+				        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+       					    fx.start(obj);
+       					}
+						// Set up online list for this room 
+       					MBchat.updateables.online.show(door.get('id').substr(1).toInt());
+ 					} else {
 						displayErrorMessage('Debug - MouseEnter in Room');
 					}
 				});
@@ -135,15 +146,17 @@ return {
 					rooms.each(function(other, j){
 						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
 					});
-					fx.start(obj);
+			        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+   					    fx.start(obj);
+   					}
 					if(room.rid == 0 ) {
-						MBchat.updateables.online.show(0);  //get entrance hall list
+       					MBchat.updateables.online.show(0);
 					}
 				});
 				door.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
-					if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
-						MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
+    				if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || door.hasClass('committee'))) {
+    					MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
 					} else {
 						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
 					}
@@ -154,10 +167,14 @@ return {
 		var exit = $('exit');
 		var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
 		exit.addEvent('mouseenter',function(e) {
-			exitfx.start({width:100});
+	        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+			    exitfx.start({width:100});
+			}
 		});
 		exit.addEvent('mouseleave', function(e) {
-			exitfx.start({width:50});
+	        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+			    exitfx.start({width:50});
+			 }
 		});
 		exit.addEvent('click', function(e) {
 			e.stop();
@@ -170,7 +187,7 @@ return {
 				if (room.rid == 0 ) {
 					if (this.hasClass('exit-r')) {
 						// just exiting from logging
-						MBchat.updateables.logger.returnToEntranceHall(e);
+						MBchat.updateables.logger.returnToEntranceHall();
 					} else {
 						MBchat.logout();
 						 //and go back to the forum
@@ -390,49 +407,55 @@ return {
 			poller : function() {
 				var pollerId;
 				var lastId = null;
-				var fullPoll=false;
+				var fullPoll=0;   //0 = polling stopped, 1=polling requested to stop, but not yet done so, 2= polling running
 				var pollInterval;
 				var wid;
                 
-                var nextLid;
-				var pollRequest = new Request.JSON({url:'read.php',link:'chain',onComplete: function(response,errorMessage) {
+                var nextLid;    
+
+    			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
+    			    readComplete.delay(10,this,[r,t]);
+    			}}); 
+
+				var readComplete = function(response,errorMessage) {
 				    if(response) {
 				        if(response.messages) {
-				            nextLid = response.lastlid + 1;
+                            if(response.lastlid) nextLid = response.lastlid + 1; //
 				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
 				        } 
 				    } else {
-                        displayErrorMessage("read.php failure:"+errorMessage);
+				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
-				    if (fullPoll) pollRequest.post.delay(1,this,($merge(myRequestOptions,{'lid':nextLid}))); //Should chain (we are in previous still)
-				}});
+				    if (fullPoll == 2) {
+				        pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
+				    } else {
+				        fullPoll = 0; //If stop was pending, it has now finished
+				    }
+				}
 				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var pollPresence = function () {
 							presenceReq.transmit({});  //say here (also timeout others)
 				};
 				return {
-					init : function (presenceInterval) {
-						pollInterval = presenceInterval;	
-						fullPoll=true;	
+					init : function (lid,presenceInterval) {
+					    lastId = lid;
+						pollInterval = presenceInterval;
+						pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);	
+		                MBchat.updateables.poller.start();
 					},
 					setLastId : function(lid) {
-						if (!lastId) {
-							lastId = lid;
-							pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);
-		        		    if (fullPoll) pollRequest.post(myRequestOptions);		
-						} else {
-							lastId = (lastId > lid)? lid : lastId;  //set to earliest value
-						}
+						lastId = (lastId > lid)? lid : lastId;  //set to earliest value
+
 					},
 					getLastId: function() {
 						return lastId;
 					},
 
 					start : function () {
-	        		    if (!fullPoll) {
-	        		        fullPoll=true;
-	        		        pollRequest.post(myRequestOptions);		
-						}
+	        		    if (fullPoll == 0) {
+        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
+						 }
+                        fullPoll= 2;
 					},
 
 					pollResponse : function(messages) {
@@ -451,11 +474,11 @@ return {
 							} else {
 							    lastId = lid;  //wasn't there before, so now this message is the first one to set lastId
 							}
-							if ( fullPoll) MBchat.updateables.processMessage(item);
+							if ( fullPoll == 2) MBchat.updateables.processMessage(item);
 						});
 					},
 					stop : function() {
-						fullPoll=false;
+						fullPoll=1;
 					},
 					logout: function() {
 					    MBchat.updateables.poller.stop();
@@ -469,7 +492,7 @@ return {
 				var loadingRid;
 				var currentRid = -1;
 				var labelList = function() {
-					var node = onlineList.firstChild;
+					var node = onlineList.getFirst();
 					if (node) {
 						var i = 0;
 						do {	
@@ -481,8 +504,8 @@ return {
 								node.addClass('rowOdd');
 							}
 							i++;
-						} while (node = node.nextSibling);
-					}
+						} while (node = node.getNext());
+					} 
 				};
 				var addUser = function (user) {
 					var div =$('U'+user.uid);  // Does this already exist?
@@ -563,7 +586,7 @@ return {
 											}
 										}
 									});
-									div.firstChild.addClass('whisperer'); //Adds cursor pointer
+									div.getFirst().addClass('whisperer'); //Adds cursor pointer
 								} else {
 									div.addEvent('click', function(e) {
 										e.stop();
@@ -618,7 +641,7 @@ return {
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
-						div.firstChild.addClass('whisperer');
+						div.getFirst().addClass('whisperer');
 						div.addEvent('keydown', function(e) {
 							if(!e.control) return;
 							if(e.key == 'w') {
@@ -645,14 +668,14 @@ return {
 									getNewWhisperReq.transmit({'wuid':user.uid});
 								}
 							}
-						});
+						}); 
 					}
 					var qtext = div.retrieve('question');
 					if (qtext) {
 						div.inject(onlineList,'top')
 					} else {
-						div.inject(onlineList,'bottom'); 
-					}
+    					div.inject(onlineList,'bottom'); 
+                    }
 					labelList();
 					return div;
 				};
@@ -677,7 +700,7 @@ return {
 							user.uid = user.uid.toInt();
 							addUser(user);
 						});
-					}
+					} 
 					lastId = response.lastid.toInt();
 					MBchat.updateables.poller.setLastId(lastId);
 				});
@@ -967,7 +990,7 @@ return {
 								MBchat.updateables.processMessage(item);
 							});
 							$('soundEnabled').checked = soundEnabled; //turn it on again
-							lastId = response.lastid.toInt();
+							if(response.listid)lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
 							MBchat.updateables.poller.setLastId(lastId);
 						//Display room name at head of page
@@ -1001,7 +1024,7 @@ return {
 								if(!lastId) lastId = item.lid -1;
 								MBchat.updateables.processMessage(item);
 							});
-							lastId = response.lastid.toInt();
+							if(response.lastid)lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
 							MBchat.updateables.poller.setLastId(lastId);
 							MBchat.updateables.online.show(0);	//Show online list for entrance hall
@@ -1740,8 +1763,7 @@ return {
 						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 
 					},
-					returnToEntranceHall : function(e) {
-						e.stop();
+					returnToEntranceHall : function() {
 						logControls.addClass('hide');
 						messageList.removeClass('logging');
 						$('header').removeClass('hide');

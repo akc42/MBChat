@@ -29,8 +29,9 @@ require_once('./send.php');
 
 class Log extends LogWriter {
 
-    function __construct() {
-        parent::__construct(Array('log' => "UPDATE users SET time = :time WHERE uid = :uid ;"));
+    function __construct($sql) {
+        parent::__construct(Array('log' => "UPDATE users SET time = :time WHERE uid = :uid ;",
+                                    'getlog' => $sql));
     }
     
     function doWork () {
@@ -43,16 +44,17 @@ class Log extends LogWriter {
     }
 }
 
-$l = new Log();
+$sql = "SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log";
+$sql .= " WHERE time > ".$_POST['start']." AND time < ".$_POST['end']." AND ";
+$sql .= "rid = ".$_POST['rid']." ORDER BY lid ;";
+
+$l = new Log($sql);
 $l->transact();
 	
 echo '{"messages":[';	
 	
-	$sql = "SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log";
-	$sql .= " WHERE time > "$_POST['start'])." AND time < ".$_POST['end']." AND ";
-	$sql .= "rid = ".$_POST['rid']." ORDER BY lid ;";
 
-	$result = $l->query($sql);
+	$result = $l->query('getlog');
 	$i = 0 ;
     while($row = $l->fetch($result)) {
 			$user = array();

@@ -50,4 +50,4 @@ $l = new Login(null);
 $l->transact();
 unset($l);
 echo '{"Login" : '.$uid.', "lastid" : '.$lid.' }' ;
-?> 
+?>

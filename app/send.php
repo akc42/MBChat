@@ -57,4 +57,3 @@ class LogWriter extends DB {
     }
 }
 ?>
-

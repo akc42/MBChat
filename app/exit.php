@@ -33,34 +33,41 @@ class Leaver extends LogWriter {
     }
     
     function doWork() {
-        $uid = $_POST['user'];
-        $rid = $_POST['rid'];
-        
-        $room = $this->getRow("SELECT rid, name, type FROM rooms WHERE rid = $rid ;");
-        $user = $this->getRow("SELECT uid, name, role, moderator FROM users WHERE uid = $uid ;");
-        if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
-        //This is a moderated room, and this person is not normal - so swap them out of moderated room role
-	        $role = $user['moderator'];
-	        $mod = $user['role'];
-        } else {
-	        $role = $user['role'];
-	        $mod = $user['moderator'];
-        }
-	    $this->bindChars('exit','role',$role);
-	    $this->bindChars('exit','mod',$mod);
-	    $this->bindInt('exit','uid',$uid);
-	    $this->bindInt('exit','time',time());
-	    $this->post('exit');
-	    $this->sendLog($uid, $user['name'],$role,"RX",$rid,'');	
+        if( ($rid = $_POST['rid']) != 0) {
+
+            $uid = $_POST['user'];
+            
+            $room = $this->getRow("SELECT rid, name, type FROM rooms WHERE rid = $rid ;");
+            $user = $this->getRow("SELECT uid, name, role, moderator FROM users WHERE uid = $uid ;");
+            if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
+            //This is a moderated room, and this person is not normal - so swap them out of moderated room role
+	            $role = $user['moderator'];
+	            $mod = $user['role'];
+            } else {
+	            $role = $user['role'];
+	            $mod = $user['moderator'];
+            }
+	        $this->bindChars('exit','role',$role);
+	        $this->bindChars('exit','mod',$mod);
+	        $this->bindInt('exit','uid',$uid);
+	        $this->bindInt('exit','time',time());
+	        $this->post('exit');
+	        $lastid = $this->sendLog($uid, $user['name'],$role,"RX",$rid,'');
+
+	    } else {
+	        $lastid = $this->getValue("SELECT max(lid) FROM log");
+	    }
+	    return $lastid;
+	        	
     }
 }
 $sql = "SELECT lid  FROM log";
-$sql .= " LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = ".$uid ;
+$sql .= " JOIN participant ON participant.wid = rid WHERE participant.uid = ".$uid ;
 $sql .= " AND type = 'WH' AND log.time > :t ORDER BY lid DESC LIMIT :m ";
 
 
 
-$sql2 = "SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log LEFT JOIN participant ON participant.wid = rid";
+$sql2 = "SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log JOIN participant ON participant.wid = rid";
 $sql2 .= " WHERE participant.uid = $uid AND type = 'WH' AND lid >= :lid ";
 
 
@@ -68,9 +75,8 @@ $e = new Leaver(Array(
                 'lid' => $sql,
                 'msg' => $sql2,
                 'exit' => "UPDATE users SET rid = 0, time = :time, role = :role , moderator = :mod WHERE uid = :uid "));
-if ($rid != 0) {
-    $e->transact();
-}
+$lastlid = $e->transact();
+
 
 echo '{"messages" : [';
 
@@ -82,6 +88,7 @@ $e->bindInt('lid','t',time() - 60*$e->getParam('max_time'));
 $e->bindInt('lid','m',$e->getParam('max_messages'));
 $result = $e->query('lid');
 
+$lid = false;
 while($row = $e->fetch($result)) {
     $lid = $row['lid'];
 }
@@ -97,7 +104,7 @@ $result = $e->query('msg');
 
 while( $row = $e->fetch($result)) {
     if($donefirst) {
-        echo ",\n";
+        echo ",";
     }
     $donefirst = true;
 		$user = array();
@@ -116,5 +123,6 @@ while( $row = $e->fetch($result)) {
 }
 $e->free($result);
 unset($e);
-echo '], "lastid" :'.$lid.'}';
+echo '], "lastid" :'.(($lid && $lid < $lastid)?$lid:$lastlid).'}';
+
 ?>

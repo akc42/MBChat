@@ -42,20 +42,28 @@ MBchat = function () {
 	var emoticonRegExpStr;
 	var logOptions;
 	var logged_in = false;
-	var reqQueue = new Request.Queue({stopOnFailure:false});
+	var reqQueue = new Chain();
+    var reqRunning = false;
+	
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url,onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url, link:'chain',onComplete: function(response,errorMessage) {
 				if(response) {
-					process(response);
+   					process(response);
 				} else {
-					displayErrorMessage(errorMessage);
+					displayErrorMessage(''+url+' failure:'+errorMessage);
 				}
+				reqRunning = false;
+				reqQueue.callChain();
 			}});
-			reqQueue.addRequest(url,this.request);//Ensure all such requests are queued one after the other.
 		},
 		transmit: function (options) {
-			this.request.post($merge(myRequestOptions,options));
+            if (reqRunning) {
+                reqQueue.chain(arguments.callee.bind(this,options));
+            } else {
+                reqRunning = true;
+			    this.request.post.delay(20,this.request,$merge(myRequestOptions,options));
+			}
 		}		
 	});
 	var displayUser = function(user,container) {
@@ -84,9 +92,9 @@ MBchat = function () {
 	var pO;
 	var loginReq = new ServerReq('login.php',function(response) {
 	    logged_in = true;
-		MBchat.updateables.poller.init(pO);
-		MBchat.updateables.whispers.init(response.lastid.toInt());
+		MBchat.updateables.whispers.init(response.lastid);
 		MBchat.updateables.online.show(0);	//Show online list for entrance hall
+		MBchat.updateables.poller.init(response.lastid,pO); //These haven't been initiated with normal init sequence, but await successful login
 	});
 return {
 	init : function(user,presenceInterval,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
@@ -203,48 +211,53 @@ return {
 				var pollInterval;
 				var pollerId;
 				var lastId = null;
-				var fullPoll=false;
+				var fullPoll=0;   //0 = polling stopped, 1=polling requested to stop, but not yet done so, 2= polling running
 				var wid;
 
                 var nextLid;
-				var pollRequest = new Request.JSON({url:'read.php',link:'chain',onComplete: function(response) {
+			    var pollRequest;
+    			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
+    			    readComplete.delay(10,this,[r,t]);
+    			}}); 
+
+				var readComplete = function(response,errorMessage) {
 				    if(response) {
 				        if(response.messages) {
-				            nextLid = response.lastlid + 1;
+                            if(response.lastlid) nextLid = response.lastlid + 1; //
 				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
 				        } 
 				    } else {
-                        displayErrorMessage("read.php failure:"+errorMessage);
+				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
-				    if (fullPoll) pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
-				}});
+				    if (fullPoll == 2) {
+				        pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
+				    } else {
+				        fullPoll = 0; //If stop was pending, it has now finished
+				    }
+				}
 				var presenceReq = new ServerReq('presence.php', function(r) {});
 				var pollPresence = function () {
 							presenceReq.transmit({});  //say here (also timeout others)
 				};
 				return {
-					init : function (presenceInterval) {
-						pollInterval = presenceInterval;	
-						fullPoll=true;	
+					init : function (lid,presenceInterval) {
+					    lastId = lid;
+						pollInterval = presenceInterval;
+						pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);	
+		                MBchat.updateables.poller.start();
 					},
 					setLastId : function(lid) {
-						if (!lastId) {
-							lastId = lid;
-							pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);
-		        		    if (fullPoll) pollRequest.post(myRequestOptions);		
-						} else {
-							lastId = (lastId > lid)? lid : lastId;  //set to earliest value
-						}
+						lastId = (lastId > lid)? lid : lastId;  //set to earliest value
 					},
 					getLastId: function() {
 						return lastId;
 					},
 
 					start : function () {
-	        		    if (!fullPoll) {
-	        		        fullPoll=true;
-	        		        pollRequest.post(myRequestOptions);		
-						}
+	        		    if (fullPoll == 0) {
+        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
+						 }
+                        fullPoll= 2;
 					},
 
 					pollResponse : function(messages) {
@@ -253,12 +266,21 @@ return {
 							item.rid = item.rid.toInt();
 							item.user.uid = item.user.uid.toInt();
 							var lid = item.lid;
-							lastId = (lastId < lid)? lid : lastId; //This should throw away messages if lastId is null
-							if ( fullPoll) MBchat.updateables.processMessage(item);
+							if(lastId) {
+							    if (lid >= lastId) {
+							        if(lid > lastId+1) {
+							            displayErrorMessage("missed a log id, was "+lid+" expecting "+(lastId+1));//we've missed one?
+							        }
+							        lastId = lid;
+							     }
+							} else {
+							    lastId = lid;  //wasn't there before, so now this message is the first one to set lastId
+							}
+							if ( fullPoll == 2) MBchat.updateables.processMessage(item);
 						});
 					},
 					stop : function() {
-						fullPoll=false;
+						fullPoll=1;
 					},
 					logout: function() {
 					    MBchat.updateables.poller.stop();
@@ -272,7 +294,7 @@ return {
 				var loadingRid;
 				var currentRid = -1;
 				var labelList = function() {
-					var node = onlineList.firstChild;
+					var node = onlineList.getFirst();
 					if (node) {
 						var i = 0;
 						do {	
@@ -284,7 +306,7 @@ return {
 								node.addClass('rowOdd');
 							}
 							i++;
-						} while (node = node.nextSibling);
+						} while (node = node.getNext());
 					}
 				};
 				var addUser = function (user) {
@@ -318,7 +340,7 @@ return {
 						} 
 					}
 					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers
-						div.firstChild.addClass('whisperer');
+						div.getFirst().addClass('whisperer');
 						div.addEvent('keydown', function(e) {
 							if(!e.control) return;
 							if(e.key == 'w') {
@@ -349,9 +371,9 @@ return {
 					}
 					var qtext = div.retrieve('question');
 					if (qtext) {
-						div.inject(onlineList,'top')
+						div.inject.delay(10,div,[onlineList,'top']);
 					} else {
-						div.inject(onlineList,'bottom'); 
+						div.inject.delay(10,div,[onlineList,'bottom']); 
 					}
 					labelList();
 					return div;
@@ -644,7 +666,7 @@ return {
 								if(!lastId) lastId = item.lid - 1;
 								MBchat.updateables.processMessage(item);
 							});
-							lastId = response.lastid.toInt();
+							if(response.lastid) lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
 							MBchat.updateables.poller.setLastId(lastId);
 						//Display room name at head of page
@@ -677,7 +699,7 @@ return {
 								if(!lastId) lastId = item.lid -1;
 								MBchat.updateables.processMessage(item);
 							});
-							lastId = response.lastid.toInt();
+							if(response.lastid) lastId = response.lastid.toInt();
 						//Ensure we get all message from here on in
 							MBchat.updateables.poller.setLastId(lastId);
 							MBchat.updateables.online.show(0);	//Show online list for entrance hall
