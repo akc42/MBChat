@@ -32,7 +32,7 @@ define('LOCK_WAIT_TIME',rand(1000,10000));
 class DBError extends Exception {
 
     function __construct ($message) {
-        parent::__construct("<p> $messsage <br/></p>\n".
+        parent::__construct("<p> $message </p>\n".
 	                "<p>Please inform <i>alan@chandlerfamily.org.uk</i> that a database query failed and include the above text.\n".
 	                "<br/><br/>Thank You</p>");
 	}
@@ -86,7 +86,7 @@ class DB {
     
     private function checkBusy ($sql) {
         if($this->db->lastErrorCode() != SQLITE_BUSY) {
-            throw new DBError("SQL Statement: $sql <BR/>Database Error:".$this->db->lastErrorMsg());
+            throw new DBError("SQL Statement: $sql <br/>Database Error:".$this->db->lastErrorMsg()."<br/>Database Code:".$this->db->lastErrorCode());
         }
         $this->retries++;
         usleep(LOCK_WAIT_TIME);
@@ -131,7 +131,7 @@ class DB {
     }
 
     function getRow($sql,$maybezero = false) {
-        while(!$row = $this->db->querySingle($sql,true)) {
+        while(!$row = @$this->db->querySingle($sql,true)) {
             if($maybezero) return false;
             $this->checkBusy($sql);
         }
@@ -155,7 +155,7 @@ class DB {
     }
     
     function post($name) {
-        while (!($this->statements[$name]->execute())) {
+        while (!(@$this->statements[$name]->execute())) {
             $this->checkBusy($this->sql[$name]);
         }
         $this->statements[$name]->reset();
@@ -163,7 +163,7 @@ class DB {
     }
     
     function query($name) {
-        while (!($result = $this->statements[$name]->execute())) {
+        while (!($result = @$this->statements[$name]->execute())) {
             $this->checkBusy($this->sql[$name]);
         }
         $this->statements[$name]->reset();

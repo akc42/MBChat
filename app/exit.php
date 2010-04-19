@@ -51,16 +51,16 @@ class Leaver extends LogWriter {
 	    $this->bindInt('exit','uid',$uid);
 	    $this->bindInt('exit','time',time());
 	    $this->post('exit');
-	    $this->sendLog($uid, $user['name'],$role,"RX",$rid,'');	
+	    return $this->sendLog($uid, $user['name'],$role,"RX",$rid,'');	
     }
 }
 $sql = "SELECT lid  FROM log";
-$sql .= " LEFT JOIN participant ON participant.wid = rid WHERE participant.uid = ".$uid ;
+$sql .= " JOIN participant ON participant.wid = rid WHERE participant.uid = ".$uid ;
 $sql .= " AND type = 'WH' AND log.time > :t ORDER BY lid DESC LIMIT :m ";
 
 
 
-$sql2 = "SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log LEFT JOIN participant ON participant.wid = rid";
+$sql2 = "SELECT lid, time, type, rid, log.uid AS uid , name, role, text  FROM log JOIN participant ON participant.wid = rid";
 $sql2 .= " WHERE participant.uid = $uid AND type = 'WH' AND lid >= :lid ";
 
 
@@ -69,7 +69,7 @@ $e = new Leaver(Array(
                 'msg' => $sql2,
                 'exit' => "UPDATE users SET rid = 0, time = :time, role = :role , moderator = :mod WHERE uid = :uid "));
 if ($rid != 0) {
-    $e->transact();
+    $lastlid = $e->transact();
 }
 
 echo '{"messages" : [';
@@ -97,7 +97,7 @@ $result = $e->query('msg');
 
 while( $row = $e->fetch($result)) {
     if($donefirst) {
-        echo ",\n";
+        echo ",";
     }
     $donefirst = true;
 		$user = array();
@@ -116,5 +116,6 @@ while( $row = $e->fetch($result)) {
 }
 $e->free($result);
 unset($e);
-echo '], "lastid" :'.$lid.'}';
+echo '], "lastid" :'.(($rid == 0)?$lid:$lastlid).'}';
+
 ?>

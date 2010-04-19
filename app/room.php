@@ -106,7 +106,7 @@ $result = $r->query('msg');
 
 while( $row = $r->fetch($result)) {
     if($donefirst) {
-        echo ",\n";
+        echo ",";
     }
     $donefirst = true;
 		$user = array();
@@ -123,7 +123,13 @@ while( $row = $r->fetch($result)) {
 		$item['message'] = $row['text'];
 		echo json_encode($item);
 }
-echo '], "lastid" :'.$lid.'}';
+
 $r->free($result);
 unset($r);
+if($donefirst) {
+    echo '], "lastid" :'.$lid.'}';
+} else {
+    echo ']}';
+}
+
 ?>
