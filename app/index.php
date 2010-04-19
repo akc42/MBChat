@@ -32,8 +32,7 @@ while (!@$db->exec("BEGIN EXCLUSIVE")) {
     if($db->lastErrorCode() != SQLITE_BUSY) {
         die("In trying to BEGIN EXCLUSIVE got Database Error:".$this->db->lastErrorMsg());
     }
-    $this->retries++;
-    usleep(LOCK_WAIT_TIME);
+    usleep(rand(1000,10000));
 }
 
 $template_url = $db->querySingle("SELECT value FROM parameters WHERE name= 'template_url' ;");

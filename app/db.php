@@ -121,6 +121,7 @@ class DB {
     
     function getValue($sql) {
         while(! $return = @$this->db->querySingle($sql) ) {
+            if($this->db->lastErrorCode() == SQLITE_OK ) return false;
             $this->checkBusy($sql);
         } 
         return $return;
@@ -130,9 +131,9 @@ class DB {
         return $this->getValue("SELECT value FROM parameters WHERE name = '".$name."';");
     }
 
-    function getRow($sql,$maybezero = false) {
+    function getRow($sql) {
         while(!$row = @$this->db->querySingle($sql,true)) {
-            if($maybezero) return false;
+            if($this->db->lastErrorCode() == SQLITE_OK ) return false;
             $this->checkBusy($sql);
         }
         return $row;

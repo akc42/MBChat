@@ -51,12 +51,7 @@ MBchat = function () {
 		initialize: function(url,process) {
 			this.request = new Request.JSON({url:url, link:'chain',onComplete: function(response,errorMessage) {
 				if(response) {
-				    if(Browser.Engine.trident && Browser.Engine.version == 5) { 
-		                var myprocess = process;
-    					myprocess.delay(20,this,response);
-    				} else {
-    					process(response);
-   				}
+   					process(response);
 				} else {
 					displayErrorMessage(''+url+' failure:'+errorMessage);
 				}
@@ -417,24 +412,11 @@ return {
 				var wid;
                 
                 var nextLid;    
-			    var pollRequest;
-			    if(Browser.Engine.trident && Browser.Engine.version == 5) {
-			        pollRequest = new ServerReq('poll.php', function(response) {
-				        if(response.messages) {
-                            if(response.lastlid) nextLid = response.lastlid + 1; //
-				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
-				        }
-				        if (fullPoll == 2) {
-				            pollRequest.transmit.delay(2000,pollRequest,{'lid':nextLid});
-				        } else {
-				            fullPoll = 0; //If stop was pending, it has now finished
-				        }
-			        });
-			    } else {
-    			    pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
-        			    readComplete.delay(10,this,[r,t]);
-	    			}}); 
-	    		}
+
+    			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
+    			    readComplete.delay(10,this,[r,t]);
+    			}}); 
+
 				var readComplete = function(response,errorMessage) {
 				    if(response) {
 				        if(response.messages) {
@@ -472,11 +454,7 @@ return {
 					start : function () {
 	        		    if (fullPoll < 2) {
 	        		        fullPoll= 2;
-			                if(Browser.Engine.trident && Browser.Engine.version == 5) {
-			                    pollRequest.transmit({'lid':lastId+1});
-                            } else {			                
-	        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
-	        		        }
+        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
 						 }
 					},
 

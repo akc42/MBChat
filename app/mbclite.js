@@ -49,12 +49,7 @@ MBchat = function () {
 		initialize: function(url,process) {
 			this.request = new Request.JSON({url:url, link:'chain',onComplete: function(response,errorMessage) {
 				if(response) {
-				    if(Browser.Engine.trident && Browser.Engine.version == 5) { 
-		                var myprocess = process;
-    					myprocess.delay(50,this,response);
-    				} else {
-    					process(response);
-   				}
+   					process(response);
 				} else {
 					displayErrorMessage(''+url+' failure:'+errorMessage);
 				}
