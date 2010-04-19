@@ -27,8 +27,20 @@ if (!file_exists('./data/chat.db')) {
 } else {
     $db = new SQLite3('./data/chat.db'); //just open it to get template info
 }
+
+while (!@$db->exec("BEGIN EXCLUSIVE")) {
+    if($db->lastErrorCode() != SQLITE_BUSY) {
+        die("In trying to BEGIN EXCLUSIVE got Database Error:".$this->db->lastErrorMsg());
+    }
+    $this->retries++;
+    usleep(LOCK_WAIT_TIME);
+}
+
 $template_url = $db->querySingle("SELECT value FROM parameters WHERE name= 'template_url' ;");
 $template = $db->querySingle("SELECT value FROM parameters WHERE name = 'template_dir' ;");
+
+$db->exec("COMMIT");
+
 unset($db);
 file_put_contents('./data/time.txt', ''.time()); //make a time file
 

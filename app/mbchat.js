@@ -137,7 +137,9 @@ return {
 								if (w != 67) obj[j] = {'width': [w, 67]};
 							}
 						});
-   					    fx.start(obj);
+				        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+       					    fx.start(obj);
+       					}
 						// Set up online list for this room 
        					MBchat.updateables.online.show(door.get('id').substr(1).toInt());
  					} else {
@@ -149,7 +151,9 @@ return {
 					rooms.each(function(other, j){
 						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
 					});
-					fx.start(obj);
+			        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+   					    fx.start(obj);
+   					}
 					if(room.rid == 0 ) {
        					MBchat.updateables.online.show(0);
 					}
@@ -168,10 +172,14 @@ return {
 		var exit = $('exit');
 		var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
 		exit.addEvent('mouseenter',function(e) {
-			exitfx.start({width:100});
+	        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+			    exitfx.start({width:100});
+			}
 		});
 		exit.addEvent('mouseleave', function(e) {
-			exitfx.start({width:50});
+	        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+			    exitfx.start({width:50});
+			 }
 		});
 		exit.addEvent('click', function(e) {
 			e.stop();
