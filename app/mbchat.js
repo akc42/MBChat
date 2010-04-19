@@ -155,7 +155,7 @@ return {
 				});
 				door.addEvent('click', function(e) {
 					e.stop();			//browser should not follow link
-    				if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || room.hasClass('committee'))) {
+    				if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || door.hasClass('committee'))) {
     					MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
 					} else {
 						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
@@ -187,7 +187,7 @@ return {
 				if (room.rid == 0 ) {
 					if (this.hasClass('exit-r')) {
 						// just exiting from logging
-						MBchat.updateables.logger.returnToEntranceHall(e);
+						MBchat.updateables.logger.returnToEntranceHall();
 					} else {
 						MBchat.logout();
 						 //and go back to the forum
@@ -452,10 +452,10 @@ return {
 					},
 
 					start : function () {
-	        		    if (fullPoll < 2) {
-	        		        fullPoll= 2;
+	        		    if (fullPoll == 0) {
         		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
 						 }
+                        fullPoll= 2;
 					},
 
 					pollResponse : function(messages) {
@@ -1763,8 +1763,7 @@ return {
 						fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 
 					},
-					returnToEntranceHall : function(e) {
-						e.stop();
+					returnToEntranceHall : function() {
 						logControls.addClass('hide');
 						messageList.removeClass('logging');
 						$('header').removeClass('hide');
