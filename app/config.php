@@ -20,85 +20,73 @@
 
 
 
+//This is a convenient place to force everything we output to not be cached 
+header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 
-// This file has been altered and is not useable - just keeping it around for some reference at the moment
-
-
-
-
-
-
-
+define('DATABASE_NAME','./data/chat.db');
+define('STATS','/home/alan/dev/chat/app/data/stats.txt');
+define('LOCK_WAIT_TIME',rand(1000,10000));
 
 
+class DBError extends Exception {
+
+    function __construct ($message) {
+        parent::__construct("<p> $message </p>\n".
+	                "<p>Please inform <i>alan@chandlerfamily.org.uk</i> that a database query failed and include the above text.\n".
+	                "<br/><br/>Thank You</p>");
+	}
+    
+};
+class DBCheck extends Exception {};
+class DBRollBack extends Exception {};
 
 class DB {
 
-/* Temp stats 
+/* Tem stats */
     private $start;
-    private $retries; */
+    private $retries;
 
-    private $cf;
+    
     private $db;
     private $statements;
     private $sql;
-    private $socket;
+
     private $rollback;
     
     
-    function __construct() {
-        
-/*      $this->start = microtime(true);
-        $this->retries = 0; */
-        if(!file_exists(CONFIG) ) {
-            $this->cf = new SQLite3(CONFIG);
-            $this->begin($this->cf);
-            if(!$this->cf->exec(file_get_contents('./config.sql'))) {
-                echo "CONFIG Setup Failed: ".$db->lastErrorMsg();
-                $this->cf->exec("ROLLBACK");
-                die("Can't continue");
-            }
-            $this-cf->exec("COMMIT");
-        } else {
-            $this->cf = new SQLite3(CONFIG);
-        }
+    function __construct($statements) {
+        $this->start = microtime(true);
+        $this->retries = 0;
+        $this->db = new SQLite3(DATABASE_NAME);
+        $this->sql = $statements;
 
-        if(!file_exists(DATABASE) ) {
-            $this->db = new SQLite3(DATABASE);
-            $this->begin($this->db);
-            if(!$this->db->exec(file_get_contents('./database.sql'))) {
-                echo "DATABASE Setup Failed: ".$db->lastErrorMsg();
-                $this->db->exec("ROLLBACK");
-                die("Can't continue");
-            }
-            $this->db->exec("COMMIT");
-        } else {
-            $this->db = new SQLite3(DATABASE_NAME);
+        $this->statements = Array();
+        $this->begin();
+        foreach ($statements as $key => $statement) {
+            $this->statements[$key] = $this->db->prepare($statement);
         }
-
-            
+        $this->db->exec("COMMIT");
     }
-    
-        
 
     function __destruct() {
         $this->db->close();
 //        file_put_contents(STATS, "".$this->retries.",".(microtime(true)-$this->start)."\n",FILE_APPEND);
     }
 
-    private function begin($db) {
-        while (!@$db->exec("BEGIN IMMEDIATE")) {
-            if($db->lastErrorCode() != SQLITE_BUSY) {
-                throw new DBError("In trying to BEGIN IMMEDIATE got Database Error:".$this->db->lastErrorMsg());
+    private function begin() {
+        while (!@$this->db->exec("BEGIN EXCLUSIVE")) {
+            if($this->db->lastErrorCode() != SQLITE_BUSY) {
+                throw new DBError("In trying to BEGIN EXCLUSIVE got Database Error:".$this->db->lastErrorMsg());
             }
-//            $this->retries++;
+            $this->retries++;
             usleep(LOCK_WAIT_TIME);
         }
     }
     
     private function checkBusy ($sql) {
         if($this->db->lastErrorCode() != SQLITE_BUSY) {
-            throw new DBError("SQL Statement: $sql <BR/>Database Error:".$this->db->lastErrorMsg());
+            throw new DBError("SQL Statement: $sql <br/>Database Error:".$this->db->lastErrorMsg()."<br/>Database Code:".$this->db->lastErrorCode());
         }
         $this->retries++;
         usleep(LOCK_WAIT_TIME);
@@ -132,7 +120,8 @@ class DB {
     
     
     function getValue($sql) {
-        while(! $return = $this->db->querySingle($sql) ) {
+        while(! $return = @$this->db->querySingle($sql) ) {
+            if($this->db->lastErrorCode() == SQLITE_OK ) return false;
             $this->checkBusy($sql);
         } 
         return $return;
@@ -142,9 +131,9 @@ class DB {
         return $this->getValue("SELECT value FROM parameters WHERE name = '".$name."';");
     }
 
-    function getRow($sql,$maybezero = false) {
-        while(!$row = $this->db->querySingle($sql,true)) {
-            if($maybezero) return false;
+    function getRow($sql) {
+        while(!$row = @$this->db->querySingle($sql,true)) {
+            if($this->db->lastErrorCode() == SQLITE_OK ) return false;
             $this->checkBusy($sql);
         }
         return $row;
@@ -167,7 +156,7 @@ class DB {
     }
     
     function post($name) {
-        while (!($this->statements[$name]->execute())) {
+        while (!(@$this->statements[$name]->execute())) {
             $this->checkBusy($this->sql[$name]);
         }
         $this->statements[$name]->reset();
@@ -175,7 +164,7 @@ class DB {
     }
     
     function query($name) {
-        while (!($result = $this->statements[$name]->execute())) {
+        while (!($result = @$this->statements[$name]->execute())) {
             $this->checkBusy($this->sql[$name]);
         }
         $this->statements[$name]->reset();
