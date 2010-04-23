@@ -24,33 +24,9 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('./send.php');
+require_once('./client.php');
 
-class Whisper extends LogWriter {
+$c = new ChatServer();
 
-    function __construct() {
-        parent::construct(Array('there' => "UPDATE users SET time = :time WHERE uid = :uid ;"));
-    }
+echo '{"status": '.(($c->cmd('whisper',$uid,$_POST['wid'],$_POST['text']))?'true':'false').'}';
 
-    function doWork() {
-        $uid = $_POST['user'];
-        $wid = $_POST['wid'];
-
-        if($row = $this->getRow("SELECT participant.uid, users.name, role, wid  FROM participant LEFT JOIN users ON users.uid = participant.uid WHERE
-                        participant.uid = $uid AND wid = $wid ;",true)) {
-            $this->bindInt('there','uid',$uid);
-            $this->bindInt('there','time',time());
-            $this->post('there');
-            if($_POST['text'] != '')
-                $this->sendLog($uid, $row['name'],$role,"WH",$wid,$_POST['text']);	
-            }
-        }
-    }
-}
-        
-$w = new Whisper();
-$w->transact();
-unset($w);
-
-echo '{"Status":"OK"}';
-?> 

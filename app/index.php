@@ -21,14 +21,11 @@
 error_reporting(E_ALL);
 
 
-exec('php ./server.php');  //Start Server if not already going.
-
-
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('./client.php');
 
 $c = new ChatServer();
-
+$c->start_server(SERVER_KEY); //Start Server if not already going.
 
 $template_url = $c->getParam('template_url');
 $template = $c->getParam('template_dir');

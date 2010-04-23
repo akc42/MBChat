@@ -35,21 +35,22 @@ $dtz = new DateTimeZone(date_default_timezone_get());
 $tzo = $_GET['tzo']+$dtz->getOffset($now);
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./db.php');
+require_once('./client.php');
 
-$sql = 'SELECT time, type, rid, uid , name, role, text  FROM log';
-$sql .= ' WHERE time > '.$_GET['start'].' AND time < '.$_GET['end'].' AND rid ';
+$c = new ChatServer();
+
+$c->start_server(SERVER_KEY);
+
+$hephaestus = $c->getParam('chatbot_name');
+
+$rows = $c->query('print',$uid,$rid,$_GET['start'],$_GET['end']);
+
 if ($rid == 99) {
-	$sql .= '> 98 ORDER BY rid,lid ;';
 	$room = 'Non Standard';
 } else {
-	$sql .= '= '.$rid.' ORDER BY lid ;';
 	$room = $_GET['room'];
 }
 
-$d = new DB(Array( 'list' => $sql));
-
-$result = $d->query('list');
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
@@ -67,7 +68,7 @@ $result = $d->query('list');
 <?php
 function message($txt) {
 global $row, $i;
-	echo '"C">Hephaestus</span><span>'.$row['name'].' '.$txt.'</span><br/>';
+	echo '"C">'.$hephaestus.'</span><span>'.$row['name'].' '.$txt.'</span><br/>';
 	echo "\n";
 	$nomessages = false;
 }
@@ -78,7 +79,7 @@ global $row,$i;
 	$nomessages = false;
 }
 $nomessages = true;
-while($row = $d->fetch($result)) {
+foreach($rows as $row) {
 		echo '<span class="time">'.date("h:i:s a",$row['time']-$tzo).'</span><span class=';
 		switch ($row['type']) {
 		case "LI" :
@@ -124,13 +125,9 @@ while($row = $d->fetch($result)) {
 }		
 if($nomessages) {
 	echo '<span class="time">'.date("h:i:s a",$_GET['start']-$tzo).'</span><span class=';
-	echo '"C">Hephaestus</span><span><b>THERE ARE NO MESSAGES TO DISPLAY</b></span><br/>';
+	echo '"C">'.$hephaestus.'</span><span><b>THERE ARE NO MESSAGES TO DISPLAY</b></span><br/>';
 	echo "\n";
 }
-
-$d->free($result);
-unset($d);
-?>
-</body>
+?></body>
 
 </html>

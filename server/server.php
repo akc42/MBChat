@@ -19,26 +19,36 @@
 
 */
 error_reporting(E_ALL);
-define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
-define('SERVER_KEY',DATA_DIR.'server.name');
-define('SERVER_SOCKET',DATA_DIR.'message.sock');
+
+if($argc != 2) die("Chat Server usage wrong\n");
+$datadir = $argv[1];
+if(!is_dir($datadir)) die("Data Directory is missing\n");
+if(!is_writable($datadir)) die("Data Directory is not writeable\n");
+
+//ensure there is a slash at the end of the directory name
+if(strpos($datadir,'/',strlen($datadir)-1) === false) {
+    $datadir .="/";
+}
+
+define('DATA_DIR',$datadir);  //Should be outside of web space
 
 define('DATABASE',DATA_DIR.'chat.db');
 define('INIT_FILE',DATA_DIR.'database.sql');
 
 
 define('MAX_CMD_LENGTH',200); //It can be longer as we will loop until we have it all
-define('LOG_FILE','./data/server.log');
-define('SERVER_LOCK','./data/server.lock');
-define('SERVER_RUNNING','./data/server.run');
-define('SERVER_SOCKET','./data/message.sock');
-
+define('LOG_FILE',DATA_DIR.'server.log');
+define('SERVER_LOCK',DATA_DIR.'server.lock');
+define('SERVER_RUNNING',DATA_DIR.'server.run');
+define('SERVER_SOCKET',DATA_DIR.'message.sock');
 
 
 $handle = fopen(SERVER_LOCK,'w+');
 flock($handle,LOCK_EX);
-    
+
+
 if(file_exists(SERVER_RUNNING)) {
+
         flock($handle, LOCK_UN); //Aready running
         fclose($handle);
         exit(0);
@@ -97,7 +107,7 @@ function timeout ($signal) {
 
             $t = $statements['timeout'];
             $t->bindValue(':time',time() - $user_timeout,SQLITE3_INTEGER);
-            $result = $t['timeout']->execute();
+            $result = $t->execute();
             while($row = $result->fetchArray(SQLITE3_ASSOC)) {
                 if(is_null($row['permanent'])) {
                     $s = $statements['delete_user'];
@@ -164,6 +174,7 @@ function sendLog ($uid,$name,$role,$type,$rid,$text) {
 }
 
 function markActive($uid) {
+    global $statements;
     $s = $statements['active'];
     $s->bindValue(':uid',$uid,SQLITE3_INTEGER);
     $s->bindValue(':time',time(),SQLITE3_INTEGER);
@@ -248,11 +259,17 @@ $statements['exit'] = $db->prepare("UPDATE users SET rid = 0, time = :time, role
 //Message
 $statements['question'] = $db->prepare("UPDATE users SET time = :time, question = :q , rid = :rid WHERE uid = :uid ");
 //Managing Moderation
-$statements['demote'] = $db->prepare("UPDATE users SET role = :role , moderator = 'N' time = :time WHERE uid = :uid ");
+$statements['demote'] = $db->prepare("UPDATE users SET role = :role , moderator = 'N', time = :time WHERE uid = :uid ");
 $statements['promote'] = $db->prepare("UPDATE users SET role = 'M',  moderator = :mod, time = :time, question = NULL WHERE uid = :uid ");
+$statements['release'] = $db->prepare("UPDATE users SET question = NULL WHERE uid = :uid ");
 //Whispering
 $statements['join'] = $db->prepare("INSERT INTO participant (wid,uid) VALUES (:wid, :uid)");
 $statements['leave'] = $db->prepare("DELETE FROM participant WHERE uid = :uid AND wid = :wid ");
+$statements['seq'] = $db->prepare("UPDATE wid_sequence SET value = value + 1 ");
+$statements['new_whi'] = $db->prepare("INSERT into participant (wid,uid) VALUES (:wid,:uid)");
+$statements['priv_room'] = $db->prepare("UPDATE users SET time = :time, private = :wid WHERE uid = :uid ;"));
+
+
 //Print/Log
 $statements['getlog'] = $db->prepare("SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log
                                          WHERE time > :start AND time < :finish AND rid = :rid ORDER BY lid ");
@@ -328,6 +345,7 @@ while($running) {
                         $message .= json_encode($row);
                     }
                     $message .= ']}';
+                    $result->finalize();
                     break;
                 case 'param' :
                     $message = '{"value": "'.$db->querySingle("SELECT value FROM parameters WHERE name ='".$cmd['params'][0]."'").'"}';
@@ -638,6 +656,19 @@ while($running) {
                         sendLog($puid, $user['name'],"M","ME",$user['rid'],$user['question']);	
 	                }
                     $message = '{"status":true}';
+                    break;
+                case 'release':
+                    markActive($cmd['params'][0]);
+                    $quid = $cmd['params'][1];
+                    if($user = $db->querySingle("SELECT uid, name, role, rid, question FROM users WHERE uid = $quid ", true)) {
+                        $statements['release']->bindValue(':uid',$quid,SQLITE3_INTEGER);
+                        $statements['release']->execute();
+                        $statements['release']->reset();
+                        sendLog($quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
+                        $message = '{"status":true}';      
+                    } else {
+                        $message = '{"status":false}';
+                    }
                     break; 
                 case 'get':
                     $message = '{"whisperers":[';
@@ -654,6 +685,31 @@ while($running) {
                     }
                     $result->finalize();
                     $message .= ']}';
+                    break;
+                case 'newwhi':
+                    $uid = $cmd['params'][0];
+                    $wuid = $cmd['params'][1];
+                    if($wuser = $db->querySingle("SELECT uid,name,role,moderator FROM users WHERE uid = $wuid") &&
+                        $user = $db->querySingle("SELECT uid,name,role,moderator FROM users WHERE uid = $uid")) {
+                        markActive($uid);
+                        $statements['seq']->execute();
+                        $statements['seq']->reset();
+                        $wid = $db->querySingle("SELECT value FROM wid_sequence");
+
+                        $u = $statements['new-whi'];
+                        $u->bindValue(':wid',$wid,SQLITE3_INTEGER);
+                        $u->bindValue(':uid',$wuid,SQLITE3_INTEGER);
+                        $u->execute();
+                        $u->reset();
+                        $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
+                        $u->execute();
+                        $u->reset();
+                        sendLog($wuid, $wuser['name'],$wuser,"WJ",$wid,'');
+                        sendLog($uid, $user['name'],$user['role'],"WJ",$wid,'');
+                        $message = '{ "wid" :'.$wid.', "user" :'.json_encode($wuser).'}';
+                    } else {
+                        $message = '{ "wid" : 0 , "user" : 0 }';
+                    }
                     break;
                 case 'join':
                     $uid = $cmd['params'][0];
@@ -686,6 +742,43 @@ while($running) {
                         $u->execute();
                         $u->reset();
                         sendLog($uid, $row['name'],$row['role'],"WL",$wid,'');	
+                        $message = '{"status":true}';      
+                    } else {
+                        $message = '{"status":false}';
+                    }
+                    break;
+                case 'private':
+                    $uid = $cmd['params'][0];
+                    $rid = $cmd['params'][1];
+                    $wid = $cmd['params'][2];
+                    $p = $statements['priv_room']
+			        $p->bindValue(':time',time(),SQLITE3_INTEGER);
+                    if ($wid != 0 ) {
+                        $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
+				                        JOIN users ON users.uid = participant.uid WHERE participant.uid =  $uid AND wid = $wid ",true);
+			            $p->bindValue(':wid',$wid,SQLITE3_INTEGER);
+			            sendLog($uid, $row['name'],$row['role'],"PE",$wid,'');	
+                    } else {
+                        $row = $db->querySingle("SELECT uid, name, role FROM users WHERE uid = $uid ",true);
+			            $p->bindValue(':wid',0,SQLITE3_INTEGER);
+			            sendLog($uid, $row['name'],$row['role'],"PX",$rid,'');
+		            }
+		            $p->execute();
+		            $p->reset();
+                    $message = '{"status":true}';  
+                    break;
+                case 'whisper':
+                    $uid = $cmd['params'][0];
+                    $wid = $cmd['params'][1];
+                    $text = htmlentities(stripslashes($cmd['params'][2]),ENT_QUOTES,false);
+
+                    if($row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
+                                                LEFT JOIN users ON users.uid = participant.uid WHERE
+                                                    participant.uid = $uid AND wid = $wid ",true)) {
+                        markActive($uid);
+                        if($_POST['text'] != '')
+                            sendLog($uid, $row['name'],$role,"WH",$wid,$_POST['text']);	
+                        }
                         $message = '{"status":true}';      
                     } else {
                         $message = '{"status":false}';
@@ -727,7 +820,31 @@ while($running) {
                     $result->finalize();
                     $l->reset();
                     $message .= ']}';
-                    break;          
+                    break; 
+                case 'print':
+                    markActive($cmd['params'][0]);
+                    $rid = $cmd['params'][1];
+                    $sql = 'SELECT time, type, rid, uid , name, role, text  FROM log';
+                    $sql .= ' WHERE time > '.$cmd['params'][2].' AND time < '.$cmd['params'][3].' AND rid ';
+                    if ($rid == 99) {
+	                    $sql .= '> 98 ORDER BY rid,lid ;';
+
+                    } else {
+	                    $sql .= '= '.$rid.' ORDER BY lid ;';
+                    }
+                    $result = $db->query($sql);
+                    $message = '{"rows":[';
+                    $df=false;
+                    while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                        if($df) {
+                            $message .= ",";
+                        }
+                        $df = true;
+                        $message .= json_encode($row);
+                    }
+                    $message .= ']}';
+                    $result->finalize();
+                    break;         
 //TODO add in the commands we support
                 default:
                     logger("Command: ".$cmd['cmd']." :NOT IMPLEMENTED: Raw Message:$read");

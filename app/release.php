@@ -22,27 +22,11 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 $quid = $_POST['quid'];
+
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./send.php');
+require_once('./client.php');
 
-class Release extends LogWriter {
+$c = new ChatServer();
 
-    function __construct() {
-        parent::__construct(Array('release' => "UPDATE users SET question = NULL WHERE uid = :uid ;"));
-    }
+echo '{"status": '.(($c->cmd('release',$uid,$quid))?'true':'false').'}';
 
-    function doWork() {
-
-        if($user = $this->getRow("SELECT uid, name, role, rid, question FROM users WHERE uid = $quid ;", true)) {
-            $this->bindInt('release','uid',$quid);
-            $this->post('release');
-            $this->sendLog($quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
-        }
-    }
-}
-
-$r = new Release();
-$r->transact();
-unset($r);
-echo '{ "Status" : "OK"}';
-?>

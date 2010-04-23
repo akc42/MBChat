@@ -17,13 +17,13 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exec('php ./server.php');  //Start Server if not already going.
+
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('./client.php');
 
 $c = new ChatServer();
-
+$c->start_server(SERVER_KEY); //Start Server if not already going.
 $go = $c->getParam('exit_location');
 
 header("location: ".$go);

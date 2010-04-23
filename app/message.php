@@ -24,8 +24,6 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
 
-   // we need to get the text in an html pure form as possible
-
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('./client.php');
 

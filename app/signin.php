@@ -17,14 +17,16 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exec('php ./server.php');  //Start Server if not already going.
-
 error_reporting(E_ALL);
 
 define ('MBC',1);   //defined so we can control access to some of the files.
 require_once('./client.php');
 
 $c = new ChatServer();
+
+$c->start_server(SERVER_KEY); //Start Server if not already going.
+
+
 $row=$c->query('signin',$_POST['username'],$_POST['password'],(isset($_POST['lite']))?'lite':'normal');
 $gp = $row['groups'];
 $groups = explode("_",$gp);

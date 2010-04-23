@@ -17,11 +17,16 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
+//The following 3 keys need to be adjusted for each installation.  
+define('SERVER_KEY','hometest'); 
 define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web space
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
-define('SERVER_KEY',DATA_DIR.'server.name');
+
+
+define('SERVER_NAME',DATA_DIR.'server.name');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
+
+
 
 if (!defined('MBC'))
 	die('Hacking attempt...');
@@ -109,8 +114,7 @@ class ChatServer {
     }
 
     function start_server($key) {
-        $filekey = file_get_contents(SERVER_KEY);
-        if($key == $filekey) {
+        if(strstr(file_get_contents(SERVER_NAME),$key) !== false) {
             exec(SERVER_DIR.'server.php '.DATA_DIR);
         }
     }
