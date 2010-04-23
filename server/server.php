@@ -267,7 +267,7 @@ $statements['join'] = $db->prepare("INSERT INTO participant (wid,uid) VALUES (:w
 $statements['leave'] = $db->prepare("DELETE FROM participant WHERE uid = :uid AND wid = :wid ");
 $statements['seq'] = $db->prepare("UPDATE wid_sequence SET value = value + 1 ");
 $statements['new_whi'] = $db->prepare("INSERT into participant (wid,uid) VALUES (:wid,:uid)");
-$statements['priv_room'] = $db->prepare("UPDATE users SET time = :time, private = :wid WHERE uid = :uid ;"));
+$statements['priv_room'] = $db->prepare("UPDATE users SET time = :time, private = :wid WHERE uid = :uid ");
 
 
 //Print/Log
@@ -751,7 +751,7 @@ while($running) {
                     $uid = $cmd['params'][0];
                     $rid = $cmd['params'][1];
                     $wid = $cmd['params'][2];
-                    $p = $statements['priv_room']
+                    $p = $statements['priv_room'];
 			        $p->bindValue(':time',time(),SQLITE3_INTEGER);
                     if ($wid != 0 ) {
                         $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
@@ -776,9 +776,9 @@ while($running) {
                                                 LEFT JOIN users ON users.uid = participant.uid WHERE
                                                     participant.uid = $uid AND wid = $wid ",true)) {
                         markActive($uid);
-                        if($_POST['text'] != '')
-                            sendLog($uid, $row['name'],$role,"WH",$wid,$_POST['text']);	
-                        }
+                        
+                        if($text != '') sendLog($uid, $row['name'],$role,"WH",$wid,$text);	
+                        
                         $message = '{"status":true}';      
                     } else {
                         $message = '{"status":false}';
