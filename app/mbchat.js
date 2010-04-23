@@ -411,8 +411,6 @@ return {
 				var pollInterval;
 				var wid;
                 
-                var nextLid;    
-
     			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
     			    readComplete.delay(10,this,[r,t]);
     			}}); 
@@ -420,14 +418,20 @@ return {
 				var readComplete = function(response,errorMessage) {
 				    if(response) {
 				        if(response.messages) {
-                            if(response.lastlid) nextLid = response.lastlid + 1; //
-				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
+                            if(response.lastlid) lastId = response.lastlid; //
+                             if ( fullPoll == 2) {
+						        response.messages.each(function(item) {
+							        MBchat.updateables.processMessage(item);
+                                });
+				            }
+				        } else {
+				            if(response.reason) displayErrorMessage("read.php failure:"+response.reason);
 				        } 
 				    } else {
 				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
 				    if (fullPoll == 2) {
-				        pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
+				        pollRequest.post($merge(myRequestOptions,{'lid':lastId+1})); //Should chain (we are in previous still)
 				    } else {
 				        fullPoll = 0; //If stop was pending, it has now finished
 				    }
@@ -443,10 +447,6 @@ return {
 						pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);	
 		                MBchat.updateables.poller.start();
 					},
-					setLastId : function(lid) {
-						lastId = (lastId > lid)? lid : lastId;  //set to earliest value
-
-					},
 					getLastId: function() {
 						return lastId;
 					},
@@ -458,25 +458,6 @@ return {
                         fullPoll= 2;
 					},
 
-					pollResponse : function(messages) {
-						messages.each(function(item) {
-							item.lid = item.lid.toInt();
-							item.rid = item.rid.toInt();
-							item.user.uid = item.user.uid.toInt();
-							var lid = item.lid;
-							if(lastId) {
-							    if (lid >= lastId) {
-							        if(lid > lastId+1) {
-							            displayErrorMessage("missed a log id, was "+lid+" expecting "+(lastId+1));//we've missed one?
-							        }
-							        lastId = lid;
-							     }
-							} else {
-							    lastId = lid;  //wasn't there before, so now this message is the first one to set lastId
-							}
-							if ( fullPoll == 2) MBchat.updateables.processMessage(item);
-						});
-					},
 					stop : function() {
 						fullPoll=1;
 					},
@@ -539,7 +520,7 @@ return {
 											if (e.control) { //Promote to moderator
 												if (user.role != 'M') { //but only if not already one
 													var request = new ServerReq('promote.php', function (response) {
-														MBchat.updateables.poller.pollResponse(response);
+//														MBchat.updateables.poller.pollResponse(response);
 													}).transmit({
 														'lid':MBchat.updateables.poller.getLastId(),
 														'rid':room.rid,
@@ -549,7 +530,7 @@ return {
 												var qtext = div.retrieve('question');
 												if (qtext) { // only send one if there is one
 													var request = new ServerReq('release.php',function (response) {
-														MBchat.updateables.poller.pollResponse(response);
+//														MBchat.updateables.poller.pollResponse(response);
 													}).transmit({
 														'lid':MBchat.updateables.poller.getLastId(),
 														'rid':room.rid,
@@ -592,7 +573,7 @@ return {
 										e.stop();
 										if(e.control && e.alt) {
 											var request = new ServerReq('demote.php',function (response) {
-												MBchat.updateables.poller.pollResponse(response);
+//												MBchat.updateables.poller.pollResponse(response);
 											}).transmit({
 												'lid':MBchat.updateables.poller.getLastId(),
 												'rid':room.rid});
@@ -701,8 +682,7 @@ return {
 							addUser(user);
 						});
 					} 
-					lastId = response.lastid.toInt();
-					MBchat.updateables.poller.setLastId(lastId);
+					lastId = response.lastid;
 				});
 				return {
 					init: function () {
@@ -991,8 +971,6 @@ return {
 							});
 							$('soundEnabled').checked = soundEnabled; //turn it on again
 							if(response.listid)lastId = response.lastid.toInt();
-						//Ensure we get all message from here on in
-							MBchat.updateables.poller.setLastId(lastId);
 						//Display room name at head of page
 							var el = new Element('h1')
 								.set('text', room.name )
@@ -1025,8 +1003,6 @@ return {
 								MBchat.updateables.processMessage(item);
 							});
 							if(response.lastid)lastId = response.lastid.toInt();
-						//Ensure we get all message from here on in
-							MBchat.updateables.poller.setLastId(lastId);
 							MBchat.updateables.online.show(0);	//Show online list for entrance hall
 						}).transmit({'rid' : room.rid});
 						//we might have been in a room that stopped me going to private room

@@ -25,21 +25,8 @@ if ($_POST['password'] != sha1("Key".$uid))
 $wid = $_POST['wid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./db.php');
+require_once('./client.php');
 
-$db = new DB();
+$c = new ChatServer();
 
-echo '{"whisperers":[';
-$donefirst = false;
-$result = $db->query("SELECT users.uid,name,role FROM participant JOIN users ON users.uid = participant.uid WHERE wid = $wid ;");
-while($row = $db-fetch($result)) {
-    if($donefirst) {
-        echo ",\n";
-    }
-    $donefirst = true;
-	echo json_encode($row);
-}
-$db->free($result);
-unset($db);
-echo ']}';
-?>
+$c->fetch('get',$wid);

@@ -23,44 +23,9 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('timeout.php');
+require_once('./client.php');
 
-class Presence extends Timeout {
+$c = new ChatServer();
 
-    function __construct() {
-        parent::__construct(Array('active' => "UPDATE users SET time = :t WHERE uid = :uid ;")); 
-    }
+echo '{"status": '.(($c->cmd('presence',$uid))?'true':'false').'}';
 
-    function doWork() {
-        $this->bindInt('active','uid',$_POST['user']);
-        $this->bindInt('active','t',time());
-        $this->post('active');
-        $this->doTimeout();        
-    }
-}
-
-$p = new Presence();
-$p->transact();
-$wakeup = $p->getParam('wakeup_interval');
-unset($p);
-/*
-If no one has been sent any messages in the last period then send a null message to wake them up - just to ensure timeouts
-do not kick in
-*/
-
-if((int)file_get_contents('./data/time.txt') + $wakeup < time()) {
-    if ($dh = opendir('./data/')) {
-        while (($file = readdir($dh)) !== false) {
-            if (filetype('./data/'.$file) == 'fifo') {
-                $writer=fopen ('./data/'.$file,'r+');
-                fclose($writer);  //should cause an immediate EOF ON EVERY READ
-            }
-        }
-        closedir($dh);
-    }
-    file_put_contents('./data/time.txt', ''.time());
-}
-
-
-echo '{"Status" : "OK"}' ;
-?>

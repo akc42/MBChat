@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -19,8 +19,11 @@
 
 /* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
 
+define(SERVER_KEY,'hometest'); //to be defined separately for each installation
+
+
 if(!(isset($_POST['uid']) && isset($_POST['pass'])  && isset($_POST['name'])  && isset($_POST['mod']) && isset($_POST['role']) && isset($_POST['whi']) && isset($_POST['gp']) && isset($_POST['ctype']))) {
- header('Location: index.php');
+ header('Location: forum.php');
  exit;
 }
 $uid = $_POST['uid'];
@@ -29,62 +32,14 @@ if ($password != sha1("Key".$uid))
    die('Hacking attempt got: '.$password.' expected: '.sha1("Key".$uid));
 
 
-error_reporting(E_ALL);
-//Can't start if we haven't setup a database
-if (!file_exists('./data/chat.db')) {
-    $db = new SQLite3('./data/chat.db');  //This will create it
-    if(!$db->exec(file_get_contents('./database.sql'))) die("Database Setup Failed: ".$db->lastErrorMsg());
-    unset($db); //I don't want problems since db.php uses it too.
-    file_put_contents('./data/time.txt', ''.time()); //make a time file
-}
-
-//Make a pipe for this user - but before doing so kill any other using this userID.  We can only have one chat at once.
-$old_umask = umask(0007);
-if(file_exists("./data/msg".$uid)) {
-// we have to kill other chat, in case it was stuck
-    $sendpipe=fopen("./data/msg".$uid,'r+');
-    fwrite($sendpipe,'<LX>');
-    fclose($sendpipe);
-// Now sleep long enough for the other instance to go away
-    sleep(2);
-}
-posix_mkfifo("./data/msg".$uid,0660);
-umask($old_umask);
-
-
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./timeout.php');
+require_once('./client.php');
 
-class Chat extends Timeout {
+$c = new ChatServer();
 
-    function __construct() {
-        parent::__construct(Array(
-            'user' => "REPLACE INTO users (uid,name,role,moderator, present) VALUES (:uid, :name , :role, :mod, 1);",
-            'rooms' => "SELECT * FROM rooms ORDER BY rid ASC;",
-            'purge' => "DELETE FROM log WHERE time < :interval ;"));
-    }
+$c->start_server(SERVER_KEY); //Start Server if not already going.
 
-    function doWork() {
-
-    //Just adds user to database
-        $this->bindInt('user','uid',$_POST['uid']);
-        $this->bindText('user','name',$_POST['name']);
-        $this->bindChars('user','role',$_POST['role']);
-        $this->bindChars('user','mod',$_POST['mod']);
-        $this->post('user');
-
-    //Purge old messages
-        $this->bindInt('purge','interval',time() - $this->getParam('purge_message_interval')*86400);
-        $this->post('purge');
-        
-    //Add timeout any other users who should not have been there
-        $this->doTimeout();
-    }
-}
-
-$c = new Chat();
-$c->transact();
-
+$c->cmd('user',$uid,$_POST['name'],$_POST['role'],$_POST['mod']);
 
 if(!isset($_POST['test'])) {
 
@@ -116,7 +71,7 @@ function content() {
         $role=$_POST['role'];
         $mod=$_POST['mod'];
         $whi=$_POST['whi'];
-        $groups = explode(":",$_POST['gp']); //A ":" separated list of committees (groups) that the user belongs to.
+        $groups = explode("_",$_POST['gp']); //A "_" separated list of committees (groups) that the user belongs to.
         $lite = ($_POST['ctype'] == 'lite'); //if we need the special lite version (provides accessibility for blind people)
 
 
@@ -213,16 +168,9 @@ soundManager.onload = function() {
 	    <h3>Main Rooms</h3>
 <?php
 $i=0;
-$result = false;
-do {
-    try {
-        $result = $c->query('rooms');
-        break;
-    } catch (DBCheck $e) {
-        $c->checkBusy();
-    }
-} while(true);    
-while ( $row = $c->fetch($result)) {
+
+   
+foreach($c->query('rooms') as $row) {
     $rid = $row['rid'];
     if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['smf_group'],$groups)))) {
         if($i > 0 && $i%4 == 0) {
@@ -244,7 +192,7 @@ while ( $row = $c->fetch($result)) {
         }
     }    
 }
-$c->free($result); 
+
 //If ended loop and hadn't just comleted div we will have to do it here
 if( ($i % 4) != 0 ) { 
 ?>      <div style="clear:both"></div>

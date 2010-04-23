@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid']) && isset($_POST['start'])&& isset($_POST['end'])))
+if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid']) && isset($_POST['rid'])&& isset($_POST['end'])))
 	die('Log - Hacking attempt - wrong parameters');
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
@@ -24,57 +24,9 @@ if ($_POST['password'] != sha1("Key".$uid))
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./send.php');
+require_once('./client.php');
 
+$c = new ChatServer();
 
-class Log extends LogWriter {
+$c->fetch('getlog',$uid,$_POST['rid'],$_POST['start'],$_POST['end']);
 
-    function __construct($sql) {
-        parent::__construct(Array('log' => "UPDATE users SET time = :time WHERE uid = :uid ;",
-                                    'getlog' => $sql));
-    }
-    
-    function doWork () {
-        $uid = $_POST['user'];
-        $user = $this->getRow("SELECT name,role from USERS where uid = $uid ;");
-        $this->bindInt('log','uid',$uid);
-        $this->bindInt('log','time',time());
-        $this->post('log');
-        $this->sendLog($uid, $user['name'],$user['role'],"LH",$_POST['rid'],'');
-    }
-}
-
-$sql = "SELECT lid, time AS utime, type, rid, uid , name, role, text  FROM log";
-$sql .= " WHERE time > ".$_POST['start']." AND time < ".$_POST['end']." AND ";
-$sql .= "rid = ".$_POST['rid']." ORDER BY lid ;";
-
-$l = new Log($sql);
-$l->transact();
-	
-echo '{"messages":[';	
-	
-
-	$result = $l->query('getlog');
-	$i = 0 ;
-    while($row = $l->fetch($result)) {
-			$user = array();
-			$item = array();
-			$item['lid'] = $row['lid'];
-			$item['type'] = $row['type'];
-			$item['rid'] = $row['rid'];
-			$user['uid'] = $row['uid'];
-			$user['name'] = $row['name'];
-			$user['role'] = $row['role'];
-			$item['user'] = $user;
-			$item['time'] = $row['utime'];
-			$item['message'] = $row['text'];
-			if ($i != 0) {
-				echo ',';
-			}
-			$i++ ;
-			echo json_encode($item) ;
-	};
-    $l->free($result);
-unset($l);   
-echo ']}';
-?>

@@ -23,37 +23,9 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./send.php');
+require_once('./client.php');
 
-class Promote extends LogWriter {
+$c = new ChatServer();
 
-    function __construct() {
-        parent::__construct(Array('promote' => "UPDATE users SET role = 'M',
-                 moderator = :mod, time = :time. question = NULL where uid = ".$_POST['puid']." ;"));
-    }
-    
-    function doWork() {
-        $uid = $_POST['user'];
-        $puid = $_POST['puid'];
-        $user = $this->getRow("SELECT uid, name, role, rid, moderator, question  FROM users WHERE uid = $puid ;");
+echo '{"status": '.(($c->cmd('promote',$uid,$_POST['puid']))?'true':'false').'}';
 
-	    if ($user['role'] == 'M' || $user['role'] == 'S') {
-		    //already someone special 
-		    $mod =$user['moderator'];
-	    } else {
-		    $mod = $user['role'];
-	    }
-	    
-	    $this->bindChars('promote','mod',$mod);
-	    $this->post('promote');
-	    $this->sendLog($puid,$user['name'],"M","RM",$user['rid'],'');
-	    if ($user['question'] != '' ) {
-            $this->sendLog($puid, $user['name'],"M","ME",$user['rid'],$user['question']);	
-	    }
-	}
-}
-$p = new Promote();
-$p->transact();
-unset($p);
-echo '{"Status":"OK"}';
-?>

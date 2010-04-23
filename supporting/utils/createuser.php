@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009, 2010 Alan Chandler
+ 	Copyright (c) 2009 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -16,16 +16,20 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['wid'])))
-	die('Hacking attempt - wrong parameters');
-$uid = $_POST['user'];
-if ($_POST['password'] != sha1("Key".$uid))
-	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
+define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
+define('DATABASE',DATA_DIR.'chat.db');
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+error_reporting(E_ALL);
 
-$c = new ChatServer();
+$db = new SQLite3(DATABASE); 
 
-echo '{"status": '.(($c->cmd('leave',$uid,$wid))?'true':'false').'}';
+$no = $db->querySingle("SELECT count(*) FROM users WHERE name = '".$_POST['username']."'");
+
+if($no == 0) {
+    $db->exec("INSERT INTO users(name,permanent,groups) VALUES('".$_POST['username']."','".md5($_POST['password'])."','12')");
+    echo "INSERTED new user with UID = ".$db->lastInsertRowID()."<br/>\n";
+} else {
+    $db->exec("UPDATE users SET permanent = '".md5($_POST['password'])."' WHERE uid = $no");
+    echo "UPDATED user with UID = $no<br/>\n";
+}
 

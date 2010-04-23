@@ -23,31 +23,10 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./send.php');
-$lid = 0;
-class Login extends LogWriter {
+require_once('./client.php');
 
-    function doWork() {
-        global $lid;
-        $uid = $_POST['user'];
-        $row = $this->getRow("SELECT name,role, rid FROM users WHERE uid = $uid ;"); 
-	
-    
-//If FIFO doesn't exists (when trying to login after timeout for instance) create it
-	    if(!file_exists("./data/msg".$uid)) {
-	        $old_umask = umask(0007);
-        	posix_mkfifo("./data/msg".$uid,0660);
-            umask($old_umask);
-        }
-	    $txt = 'MBchat version - '.$_POST['mbchat'].', Mootools_Version - '.$_POST['version'].' - build - '.$_POST['build'] ;
-        $txt .=' Browser - '.$_POST['browser'].' on Platform - '.$_POST['platform'];
+$c = new ChatServer();
+$txt = 'MBchat version - '.$_POST['mbchat'].', Mootools_Version - '.$_POST['version'].' - build - '.$_POST['build'] ;
+$txt .=' Browser - '.$_POST['browser'].' on Platform - '.$_POST['platform'];
 
-	    $lid = $this->sendLog($uid, $row['name'],$row['role'],"LI",$row['rid'],$txt);	
-	}
-};
-
-$l = new Login(null);
-$l->transact();
-unset($l);
-echo '{"Login" : '.$uid.', "lastid" : '.$lid.' }' ;
-?>
+$c->fetch('login',$uid,$txt);

@@ -214,7 +214,7 @@ return {
 				var fullPoll=0;   //0 = polling stopped, 1=polling requested to stop, but not yet done so, 2= polling running
 				var wid;
 
-                var nextLid;
+
 			    var pollRequest;
     			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
     			    readComplete.delay(10,this,[r,t]);
@@ -223,14 +223,20 @@ return {
 				var readComplete = function(response,errorMessage) {
 				    if(response) {
 				        if(response.messages) {
-                            if(response.lastlid) nextLid = response.lastlid + 1; //
-				            MBchat.updateables.poller.pollResponse(response.messages); //only process valid messages
+                            if(response.lastlid) lastId = response.lastlid; //
+                             if ( fullPoll == 2) {
+						        response.messages.each(function(item) {
+							        MBchat.updateables.processMessage(item);
+                                });
+				            }
+				        } else {
+				            if(response.reason) displayErrorMessage("read.php failure:"+response.reason);
 				        } 
 				    } else {
 				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
 				    if (fullPoll == 2) {
-				        pollRequest.post($merge(myRequestOptions,{'lid':nextLid})); //Should chain (we are in previous still)
+				        pollRequest.post($merge(myRequestOptions,{'lid':lastId+1})); //Should chain (we are in previous still)
 				    } else {
 				        fullPoll = 0; //If stop was pending, it has now finished
 				    }
@@ -246,9 +252,6 @@ return {
 						pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);	
 		                MBchat.updateables.poller.start();
 					},
-					setLastId : function(lid) {
-						lastId = (lastId > lid)? lid : lastId;  //set to earliest value
-					},
 					getLastId: function() {
 						return lastId;
 					},
@@ -258,26 +261,6 @@ return {
         		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
 						 }
                         fullPoll= 2;
-					},
-
-					pollResponse : function(messages) {
-						messages.each(function(item) {
-							item.lid = item.lid.toInt();
-							item.rid = item.rid.toInt();
-							item.user.uid = item.user.uid.toInt();
-							var lid = item.lid;
-							if(lastId) {
-							    if (lid >= lastId) {
-							        if(lid > lastId+1) {
-							            displayErrorMessage("missed a log id, was "+lid+" expecting "+(lastId+1));//we've missed one?
-							        }
-							        lastId = lid;
-							     }
-							} else {
-							    lastId = lid;  //wasn't there before, so now this message is the first one to set lastId
-							}
-							if ( fullPoll == 2) MBchat.updateables.processMessage(item);
-						});
 					},
 					stop : function() {
 						fullPoll=1;

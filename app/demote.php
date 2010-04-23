@@ -23,33 +23,9 @@ if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./send.php');
+require_once('./client.php');
 
-class Demote extends LogWriter {
+$c = new ChatServer();
 
-    function __construct() {
-        parent::__construct(Array(
-                    'demote' => "UPDATE users SET role = :role , moderator = 'N' time = :time WHERE uid = :uid ;"));
-    }
+echo '{"status": '.(($c->cmd('demote',$uid,$_POST['rid']))?'true':'false').'}';
 
-    function doWork() {
-        $uid = $_POST['user'];
-        $rid = $_POST['rid']; 
-        $user = $this->getRow('SELECT uid, name, role, rid, moderator FROM users WHERE uid = '.$uid.';');
-
-    	if ($user['role'] == 'M' && $user['rid'] == $rid ) {
-    	    $this->bindChars('demote','role',$user['moderator']);
-    	    $this->bindInt('demote','uid',$uid)
-            $this->bindInt('demote','time',time());
-            $this->post('demote');
-            $this->sendLog($uid, $user['name'],$user['moderator'],"RN",$rid,"");
-
-	    }
-    }
-}
-$d = new Demote();
-$d->transact();
-unset($d);
-echo '{"Status" : "OK"}' ;
-
-?>

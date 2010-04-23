@@ -25,45 +25,9 @@ if ($_POST['password'] != sha1("Key".$uid))
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('db.php');
-$counter = 0;
-class Online extends DB {
+include_once('./client.php');
 
-    function doWork() {
-        global $counter;
-        $counter++;
-        $uid = $_POST['user'];
-        $rid = $_POST['rid'];
-        $this->bindInt('o','rid',$rid);
-        $lid = $this->getValue("SELECT max(lid) AS lid FROM log;");
-        $result = $this->query('o');
-        //We have finished database queries that might fail, and therefore repeat so it doesn't matter now that we start outputing stuff
-        
-        $donefirst = false;
-        echo '{ "lastid":'.$lid.', "online":[' ;
+$c = new ChatServer();
 
-        while($row = $this->fetch($result)) {
-            if($donefirst) {
-                echo ",";
-            } else {
-            }
-            $donefirst = true;
-            echo json_encode($row);
-        }
-        $this->free($result);
+$c->fetch('online',$_POST['rid']);
 
-
-    }
-}
-
-$o = new Online(Array('o' => "SELECT uid, name, role, question,private AS wid FROM users WHERE rid = :rid AND present = 1 ;"));
-$o->transact();
-unset($o);
-
-        echo ']}';
-
-if($counter != 1) {
-    echo "Something Strange Happenen - counter = $counter <br/>\n";
-}
-
-?>

@@ -16,12 +16,16 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('./db.php');
 
-$db = new DB(Array());
-$go = $db->getParam('exit_location');
-unset($db);
+exec('php ./server.php');  //Start Server if not already going.
+
+define ('MBC',1);   //defined so we can control access to some of the files.
+include_once('./client.php');
+
+$c = new ChatServer();
+
+$go = $c->getParam('exit_location');
+
 header("location: ".$go);
 ?>
 

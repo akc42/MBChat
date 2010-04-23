@@ -1,5 +1,5 @@
 --
--- 	Copyright (c) 2010 Alan Chandler
+-- 	Copyright (c) 2009,2010 Alan Chandler
 --    This file is part of MBChat.
 --
 --    MBChat is free software: you can redistribute it and/or modify
@@ -16,6 +16,7 @@
 --    along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 --
 
+BEGIN;
 
 CREATE TABLE rooms (
   rid integer primary key NOT NULL,
@@ -23,7 +24,6 @@ CREATE TABLE rooms (
   type room_type NOT NULL,
   smf_group smallint default NULL
 ) ;
-
 
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (1, 'Members Lounge', 'O', NULL);
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (2, 'The Blue Room', 'A', NULL);
@@ -35,7 +35,6 @@ INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (7, 'The Music R
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (8, 'The Africa Room', 'C', 16);
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (9, 'The News Room', 'C', 17);
 INSERT INTO `rooms` (`rid`, `name`, `type`, `smf_group`) VALUES (10, 'The Spiders Lair', 'C', 18);
-
 
 CREATE TABLE parameters (
     name text primary key,
@@ -55,6 +54,8 @@ INSERT INTO parameters VALUES ('presence_interval','90'); -- how frequently to s
 INSERT INTO parameters VALUES ('user_timeout','270'); -- how long (in seconds) to timeout a user as no longer present
 INSERT INTO parameters VALUES ('purge_message_interval','20'); -- messages older than this number of days will be purged from the database
 INSERT INTO parameters VALUES ('wakeup_interval','300'); --how long (in seconds) with no pipe traffic to force a wakeup on all listeners
+INSERT INTO parameters VALUES ('tick_interval','10'); -- how long (in seconds) that the server should check for exit
+INSERT INTO parameters VALUES ('check_ticks','6'); -- how long (in tick intervals) should the server wait before testing the database for timeout
 INSERT INTO parameters VALUES ('chatbot_name','Hephaestus'); --chatbot name - Hephaestus is a greek god - a coppersmith.
 INSERT INTO parameters VALUES ('max_messages','100'); -- maximum number of back messages to display when entering a room
 INSERT INTO parameters VALUES ('max_time','180'); -- maximum number of minutes of back messages to display when entering a room
@@ -67,6 +68,48 @@ INSERT INTO parameters VALUES ('log_step_6hours','6'); -- number of spin steps w
 INSERT INTO parameters VALUES ('entrance_hall','Entrance Hall'); -- entrance hall name
 INSERT INTO parameters VALUES ('exit_location','http://chat/index.php'); -- where to exit to.
 
+
+CREATE TABLE users (
+  uid integer primary key NOT NULL,
+  time bigint DEFAULT (strftime('%s','now')) NOT NULL,
+  name character varying NOT NULL,
+  role char(1) NOT NULL default 'R',
+  rid integer NOT NULL default 0,
+  moderator char(1) NOT NULL default 'N',
+  question character varying,
+  private integer NOT NULL default 0,
+  permanent text,                -- will be an md5 of the password
+  groups text, -- a colon separated list of "smf_groups" for the committee rooms they are allowed to see
+  present boolean NOT NULL DEFAULT 0
+);
+    
+CREATE table wid_sequence ( value integer);
+INSERT INTO wid_sequence (value) VALUES (1);
+
+CREATE TABLE participant (
+  uid integer NOT NULL REFERENCES users (uid) ON DELETE CASCADE ON UPDATE CASCADE,
+  wid integer NOT NULL,
+  primary key (uid,wid)
+);
+
+
+-- expect to do insert into participant values ('Some uid Value', (select value from wid_sequence));
+-- sequence is updated manually in the code (only needs to be increased when a completely new whisper box is generated - not 
+-- when a new participant is
+
+CREATE TABLE log (
+  lid integer primary key,
+  time bigint DEFAULT (strftime('%s','now')) NOT NULL,
+  uid integer NOT NULL,
+  name character varying NOT NULL,
+  role char(1) NOT NULL,
+  rid integer NOT NULL,
+  type char(2) NOT NULL,
+  text character varying
+);
+COMMIT;
+
+PRAGMA foreign_keys = true;
 VACUUM;
 
 

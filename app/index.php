@@ -19,29 +19,20 @@
 
 
 error_reporting(E_ALL);
-//Can't start if we haven't setup a database
-if (!file_exists('./data/chat.db')) {
-    $db = new SQLite3('./data/chat.db');  //This will create it
-    if(!$db->exec(file_get_contents('./database.sql'))) die("Database Setup Failed: ".$db->lastErrorMsg());
 
-} else {
-    $db = new SQLite3('./data/chat.db'); //just open it to get template info
-}
 
-while (!@$db->exec("BEGIN EXCLUSIVE")) {
-    if($db->lastErrorCode() != SQLITE_BUSY) {
-        die("In trying to BEGIN EXCLUSIVE got Database Error:".$this->db->lastErrorMsg());
-    }
-    usleep(rand(1000,10000));
-}
+exec('php ./server.php');  //Start Server if not already going.
 
-$template_url = $db->querySingle("SELECT value FROM parameters WHERE name= 'template_url' ;");
-$template = $db->querySingle("SELECT value FROM parameters WHERE name = 'template_dir' ;");
 
-$db->exec("COMMIT");
+define ('MBC',1);   //defined so we can control access to some of the files.
+require_once('./client.php');
 
-unset($db);
-file_put_contents('./data/time.txt', ''.time()); //make a time file
+$c = new ChatServer();
+
+
+$template_url = $c->getParam('template_url');
+$template = $c->getParam('template_dir');
+
 
 function head_content() {
 ?><title>Melinda's Backups Chat - Sign In Page</title>

@@ -22,40 +22,11 @@ $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./send.php');
+require_once('./client.php');
 
-class Logout extends LogWriter {
+$c = new ChatServer();
+$txt = 'MBchat version - '.$_POST['mbchat'].', Mootools_Version - '.$_POST['version'].' - build - '.$_POST['build'] ;
+$txt .=' Browser - '.$_POST['browser'].' on Platform - '.$_POST['platform'];
 
-    function __construct() {
-        parent::__construct(Array(
-                    'delete' => "DELETE FROM users WHERE uid = :uid ;", 
-                    'update' => "UPDATE users SET present = 0 WHERE uid = :uid ;"));
-    }
-    
-    function doWork() {
-    
-        $uid = $_POST['user'];
-        $row=$this->getRow("SELECT uid, name, role, rid FROM users WHERE uid = $uid ;");
-    
-        if(is_null($row['permanent'])) {
-            $this->bindInt('delete','uid',$uid);
-            $this->post('delete');
-        } else {
-            $this->bindInt('update','uid',$uid);
-            $this->post('update');
-        }
-        
-        $txt = 'MBchat version: '.$_POST['mbchat'].', Mootools Version : '.$_POST['version'].' build '.$_POST['build'] ;
-        $txt .=' Browser : '.$_POST['browser'].' on Platform : '.$_POST['platform'];
-        $this->sendLog($uid, $row['name'],$row['role'],"LO",$row['rid'],$txt);	
-	}
-};
-$l = new Logout();
-$l->transact();
-unset($l);
+echo '{"status": '.(($c->cmd('logout',$uid,$txt))?'true':'false').'}';
 
-usleep(20000);
-unlink("./data/msg".$uid); //Loose FIFO
-
-echo '{"Logout" : '.$txt.'}' ;
-?> 

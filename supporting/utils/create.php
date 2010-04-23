@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009, 2010 Alan Chandler
+ 	Copyright (c) 2009 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -16,16 +16,23 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['wid'])))
-	die('Hacking attempt - wrong parameters');
-$uid = $_POST['user'];
-if ($_POST['password'] != sha1("Key".$uid))
-	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
 
-$c = new ChatServer();
 
-echo '{"status": '.(($c->cmd('leave',$uid,$wid))?'true':'false').'}';
+
+?>
+<html>
+<body>
+<h1>MB Chat User</h1>
+
+<p></p>
+<form action="createuser.php" method="post">
+    <table>
+        <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
+        <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
+        <tr><td><input type="submit" name="submit" value="Create"/></td><td></td></tr>
+    </table>
+<form>
+</body>
+</html>
 
