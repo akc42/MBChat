@@ -20,7 +20,7 @@
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('./client.php');
+include_once('./client.inc');
 
 $c = new ChatServer();
 $c->start_server(SERVER_KEY); //Start Server if not already going.

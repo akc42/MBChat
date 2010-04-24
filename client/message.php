@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -16,17 +16,18 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['text']) && isset($_POST['wid'])))
+if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['text']) && isset($_POST['rid'])))
 	die('Hacking attempt - wrong parameters');
 $uid = $_POST['user'];
 
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
+
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
+
 
 $c = new ChatServer();
-
-echo '{"status": '.(($c->cmd('whisper',$uid,$_POST['wid'],$_POST['text']))?'true':'false').'}';
+echo '{"status": '.(($c->cmd('msg',$uid,$_POST['rid'],$_POST['text']))?'true':'false').'}';
 

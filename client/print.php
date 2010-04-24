@@ -35,7 +35,7 @@ $dtz = new DateTimeZone(date_default_timezone_get());
 $tzo = $_GET['tzo']+$dtz->getOffset($now);
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
 
 $c = new ChatServer();
 

@@ -16,16 +16,16 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['wuid']) && isset($_POST['wid'])))
+if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['puid'])))
 	die('Hacking attempt - wrong parameters');
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
 
 $c = new ChatServer();
 
-echo '{"status": '.(($c->cmd('join',$uid,$wuid,$wid))?'true':'false').'}';
+echo '{"status": '.(($c->cmd('promote',$uid,$_POST['puid']))?'true':'false').'}';
 

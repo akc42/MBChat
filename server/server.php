@@ -48,7 +48,7 @@ flock($handle,LOCK_EX);
 
 
 if(file_exists(SERVER_RUNNING)) {
-
+        file_put_contents(SERVER_RUNNING,''.time());
         flock($handle, LOCK_UN); //Aready running
         fclose($handle);
         exit(0);
@@ -61,8 +61,7 @@ if( $pid = pcntl_fork() != 0) {
         die("Cannot start Server");
     }
     //I am the parent
-    $fp = fopen(SERVER_RUNNING,'a');
-    fclose($fp);
+    file_put_contents(SERVER_RUNNING,''.time());
     flock($handle, LOCK_UN);
     fclose($handle);
     usleep(50000);
@@ -127,7 +126,11 @@ function timeout ($signal) {
             $handle = fopen(SERVER_LOCK,'r+');
             flock($handle,LOCK_EX);
 
-            if($db->querySingle("SELECT count(*) FROM users WHERE present = 1") == 0) {
+            if($db->querySingle("SELECT count(*) FROM users WHERE present = 1") == 0
+            // It could be that a request to start the server occurred just before we decided to shut down.  
+            //If a request occurred in the last two seconds then don't, as a new command will come shortly (if it hasn't already)
+                                        && file_get_contents(SERVER_RUNNING) < time() -2)) {
+
                 unlink(SERVER_RUNNING);
                 flock($handle, LOCK_UN);
                 fclose($handle);
@@ -181,13 +184,17 @@ function markActive($uid) {
     $s->execute();
     $s->reset();
 }
-
+$logfp = fopen(LOG_FILE,'a');
 $running = false; 
+declare(ticks = 1);
+date_default_timezone_set('Europe/London');
+try {
+
 if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
     if(socket_bind($socket,SERVER_SOCKET) && socket_listen($socket) &&
             pcntl_signal(SIGTERM,"sig_term") && pcntl_signal(SIGALRM,"timeout")) {
 
-        $logfp = fopen(LOG_FILE,'a');
+
         logger("STARTING");
 
         if(!file_exists(DATABASE) ) {
@@ -278,21 +285,17 @@ $statements['getlog'] = $db->prepare("SELECT lid, time AS utime, type, rid, uid 
         $minlid = $maxlid;
 
     } else {
-    $logfp = fopen(LOG_FILE,'a');
-    logger("Failed to bind to socket" ); 
+        throw new Exception("Failed to bind to socket" ); 
     }
 } else {
-    $logfp = fopen(LOG_FILE,'a');
-    logger("Failed to get socket"); 
+    throw new Exception("Failed to get socket"); 
 }
 
 
 
 
 
-declare(ticks = 1);
-date_default_timezone_set('Europe/London');
-try {
+
 //main loop
 while($running) {
 
@@ -316,6 +319,19 @@ while($running) {
                 switch($cmd['cmd']) {
                 case 'count':
                     $message = '{"status":'.$db->querySingle("SELECT count(*) FROM users WHERE present = 1").'}';
+                    break;
+                case 'check':
+                    $name = htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false);
+                    $row = $db->querySingle("SELECT * FROM users WHERE name = '$name'");
+                    if($row) {
+                        $message = '{"status":true,"user":'.json_encode($row).',"realm":"';
+                        $message .= $db->querySingle("SELECT value FROM parameters WHERE name = 'realm'");
+                        $message .= '","key":"';
+                        $message .= $db->querySingle("SELECT value FROM parameters WHERE name = 'auth_key'");
+                        $message .= '"}';
+                    } else {
+                        $message = '{"status":false}';
+                    }
                     break;
                 case 'user':
                     $no = $db->querySingle("SELECT count(*) FROM users WHERE uid = '".$cmd['params'][0]."'");

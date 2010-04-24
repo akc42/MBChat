@@ -20,15 +20,14 @@
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-define('SERVER_RUNNING','./data/server.run');
-if(file_exists(SERVER_RUNNING)) { //someone might be in chat
-    exec('php ./server.php');  //Make sure server is going to stay running for a while
-    define ('MBC',1);   //defined so we can control access to some of the files.
-    require_once('./client.php');
+define ('MBC',1);   //defined so we can control access to some of the files.
+require_once('./client.inc');
 
-    $c = new ChatServer();
-
+$c = new ChatServer();
+if($c->is_server_running() {
+    $c->start_server(SERVER_KEY);  //Just in case
     echo $c->cmd('count');
 } else {
-    echo '0';
+    echo 0;
 }
+

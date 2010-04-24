@@ -118,6 +118,10 @@ class ChatServer {
             exec(SERVER_DIR.'server.php '.DATA_DIR);
         }
     }
+
+    function is_server_running() {
+        return file_exists(DATA_DIR.'server.run');
+    }
             
 }
 

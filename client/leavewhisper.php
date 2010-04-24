@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009,2010 Alan Chandler
+ 	Copyright (c) 2009, 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -19,14 +19,13 @@
 if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['wid'])))
 	die('Hacking attempt - wrong parameters');
 $uid = $_POST['user'];
-
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
-$wid = $_POST['wid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
 
 $c = new ChatServer();
 
-$c->fetch('get',$wid);
+echo '{"status": '.(($c->cmd('leave',$uid,$wid))?'true':'false').'}';
+

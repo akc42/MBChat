@@ -19,11 +19,10 @@
 
 /* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
 
-define(SERVER_KEY,'hometest'); //to be defined separately for each installation
 
 
 if(!(isset($_POST['uid']) && isset($_POST['pass'])  && isset($_POST['name'])  && isset($_POST['mod']) && isset($_POST['role']) && isset($_POST['whi']) && isset($_POST['gp']) && isset($_POST['ctype']))) {
- header('Location: forum.php');
+ header('Location: index.php');
  exit;
 }
 $uid = $_POST['uid'];
@@ -33,7 +32,7 @@ if ($password != sha1("Key".$uid))
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
 
 $c = new ChatServer();
 
@@ -97,7 +96,7 @@ window.addEvent('domready', function() {
 				<?php echo $c->getParam('max_messages') ?>);
 });	
 window.addEvent('beforeunload', function() {
-	MBchat.logout();
+	MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
 	
 });
 
@@ -274,5 +273,5 @@ include($c->getParam('template_dir').'/template.php');
 
 
 }
-unset($c);
+
 ?>

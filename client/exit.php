@@ -21,11 +21,13 @@ if(!(isset($_POST['user']) && isset($_POST['password']) && isset($_POST['rid']))
 $uid = $_POST['user'];
 if ($_POST['password'] != sha1("Key".$uid))
 	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
+$rid = $_POST['rid'];
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
+
 
 $c = new ChatServer();
 
-echo '{"status": '.(($c->cmd('demote',$uid,$_POST['rid']))?'true':'false').'}';
+$c->fetch('exit',$uid,$rid);
 

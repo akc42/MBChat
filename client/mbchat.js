@@ -189,9 +189,8 @@ return {
 						// just exiting from logging
 						MBchat.updateables.logger.returnToEntranceHall();
 					} else {
-						MBchat.logout();
-						 //and go back to the forum
-						window.location = 'forum.php' ;
+						MBchat.logout(); //Go back from whence you came
+
 					}
 				} else {
 					MBchat.updateables.message.leaveRoom();
@@ -259,6 +258,7 @@ return {
     		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
 	    			{'mbchat':version},MooTools,
 	        		{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
+			window.location = 'index.php' ;
         }
         logged_in = false;
 	},
@@ -726,9 +726,7 @@ return {
 							    break;
 						    case 'LX' :
 						        if (me.uid == msg.user.uid) {
-						            MBchat.logout();
-                					 //and go back to the forum
-            						window.location = 'forum.php' ;
+						            MBchat.logout(); //Go back from whence you came
 						        }
 						        break;
 						    case 'RX' :

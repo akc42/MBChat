@@ -25,7 +25,7 @@ if ($_POST['password'] != sha1("Key".$uid))
 
 
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('./client.inc');
 
 $c = new ChatServer();
 
