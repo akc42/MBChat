@@ -20,7 +20,7 @@
 */
 error_reporting(E_ALL);
 
-if($argc != 2) die("Chat Server usage wrong\n");
+if($argc != 3) die("Chat Server usage wrong\n");
 $datadir = $argv[1];
 if(!is_dir($datadir)) die("Data Directory is missing\n");
 if(!is_writable($datadir)) die("Data Directory is not writeable\n");
@@ -41,7 +41,7 @@ define('LOG_FILE',DATA_DIR.'server.log');
 define('SERVER_LOCK',DATA_DIR.'server.lock');
 define('SERVER_RUNNING',DATA_DIR.'server.run');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
-
+define('SERVER_KEY',DATA_DIR.'server.key');
 
 $handle = fopen(SERVER_LOCK,'w+');
 flock($handle,LOCK_EX);
@@ -53,6 +53,13 @@ if(file_exists(SERVER_RUNNING)) {
         fclose($handle);
         exit(0);
 }
+/*  We generate the key used in UID to PASSPHRASE conversion - but we need to make it rapidly availble
+    to the authorization routines, so the easiest thing to do is write it to a file
+    We calculate it before the fork so we still have the variable $key available to the server, whilst
+    allow us to write it into a file in the parent before it releases the lock */
+$m1 = rand(0,9999);
+$m2 = rand(0,9999);
+$key = bcmod(bcadd(strval($m2),bcmul(strval($m1),"10000")),$argv[2]);
 
 if( $pid = pcntl_fork() != 0) {
     if($pid < 0) {
@@ -60,6 +67,7 @@ if( $pid = pcntl_fork() != 0) {
         fclose($handle);
         die("Cannot start Server");
     }
+    file_put_contents(SERVER_KEY,$key);
     //I am the parent
     file_put_contents(SERVER_RUNNING,''.time());
     flock($handle, LOCK_UN);

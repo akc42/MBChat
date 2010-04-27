@@ -30,62 +30,39 @@ SUCH DAMAGE.
 */
 
 /* subsequently modified by Alan Chandler change are Copyright (c) Alan Chandler 
-                                    and licenced as defined above */
+                                  and licenced as defined above */
+
+DEFINE('OPAQUE','a39ca9bb1783df434c38d8a86258e065'); // Chattering
+DEFINE('REALM','chat@hartley-consultants.com');
+DEFINE('PRIVATE_KEY','chandlers ZEN');
 
 /** HTTP Digest authentication class */
-class HTTPDigest
+abstract class HTTPDigest
 {
 
-    /** The Digest opaque value (any string will do, never sent in plain text over the wire).
-     * @var str
-     */
-    private $opaque = 'HChat';
+    private $domain;
+    private $nonceLife;  //in seconds
 
-    /** The authentication realm name.
-     * @var str
-     */    
-    private $realm;
-    
-    /** The base URL of the application, auth data will be used for all resources under this URL.
-     * @var str
-     */
-    private $baseURL;
-    
-    /** Are passwords stored as an a1 hash (username:realm:password) rather than plain text.
-     * @var str
-     */
-    private $passwordsHashed;
-    
-    /** The private key.
-     * @var str
-     */
-    private $privateKey;
-    
-    /** The life of the nonce value in seconds
-     * @var int
-     */
-    private $nonceLife;
-
-    function __construct($realm,$domain = '/',$nonceLife = 300,$passwordsHashed = true,$key = 'Hartley-Consultants') {
-        $this->realm = $realm;
-        $this->baseURL = $domain;
+    function __construct($domain = '/',$nonceLife = 300) {
+        $this->domain = $domain;
         $this->nonceLife = $nonceLife;
-        $this->privateKey = $key;
-        $this->passwordsHashed = $passwordsHashed;
-        if($passwordsHashed && ini_get('safe_mode')) trigger_error("Hashed passwords and safe mode do not work together");
+    }
+
+    function send() {
+        $this->refresh(false);
     }
 
     /** Send HTTP Auth header */
     function refresh($stale = true)
     {
         header('WWW-Authenticate: Digest '.
-            'realm="'.$this->realm.'", '.
-            'domain="'.$this->baseURL.'", '.
+            'realm="'.REALM.'", '.
+            'domain="'.$this->domain.'", '.
             'qop=auth, '.
             'algorithm=MD5, '.
             (($stale)?'stale=true,':'').
             'nonce="'.$this->getNonce().'", '.
-            'opaque="'.$this->getOpaque().'"'
+            'opaque="'.OPAQUE.'"'
         );
         header('HTTP/1.0 401 Unauthorized');
     }
@@ -103,9 +80,11 @@ class HTTPDigest
                 return $headers['Authorization'];
             }
         }
-        $this->refresh(false);
+        $this->noAthentication();
         return NULL;
     }
+
+    abstract protected function getPassphrase($username); //Return passphrase or false if user doesn't exist
 
     /** Authenticate the user and return username on success.
      * @param callback function with single parameter, username = should return with passphrase (or false if no user)
@@ -114,11 +93,7 @@ class HTTPDigest
      *      null    invalid user
      *      false   valid user, but the authetication is stale.  Call HTTPDigest::refresh() to ask browser to refresh it.   
      */
-    function authenticate($checkpasswordfunction) {
-        if(!is_callable($checkpasswordfunction)) {
-            trigger_error("Callback function invalid");
-            return null;
-        };
+    function authenticate() {
         $authorization = $this->getAuthHeader();
         if ($authorization) {
             if (substr($authorization, 0, 5) == 'Basic') {
@@ -133,22 +108,22 @@ class HTTPDigest
                 preg_match('/uri="([^"]+)"/', $authorization, $uri)
             ) {
                 $username = $username[1];
-                $passphrase = $checkpasswordfunction($username);
+                $passphrase = $this->getPassphrase($username);
                 $requestURI = $_SERVER['REQUEST_URI'];
                 if (strpos($requestURI, '?') !== FALSE) { // hack for IE which does not pass querystring in URI element of Digest string or in response hash
                     $requestURI = substr($requestURI, 0, strlen($uri[1]));
                 }
                 if (
                     $passphrase !== false &&
-                    $opaque[1] == $this->getOpaque() &&
+                    $opaque[1] == OPAQUE &&
                     $uri[1] == $requestURI 
                 ) {
 
-                    if ($this->passwordsHashed) {
+//                    if ($this->passwordsHashed) {
                         $a1 = $passphrase;
-                    } else {
-                        $a1 = md5($username.':'.$this->getRealm().':'.$passphrase);
-                    }
+//                    } else {
+//                        $a1 = md5($username.':'.$this->getRealm().':'.$passphrase);
+//                    }
                     $a2 = md5($_SERVER['REQUEST_METHOD'].':'.$requestURI);
                     if (
                         preg_match('/qop="?([^,\s"]+)/', $authorization, $qop) &&
@@ -172,16 +147,25 @@ class HTTPDigest
             trigger_error('HTTP Digest headers not being passed to PHP by the server, unable to authenticate user');
             exit;
         }
-        header('HTTP/1.0 400 Bad Request');
+        $this->badRequest();
         return NULL;
     }
+
+    function noAuthentication() {
+        header('HTTP/1.0 403 Forbidden');
+    }
+
+    function badRequest() {
+        header('HTTP/1.0 400 Bad Request');
+    }
+
     
     /** Get nonce value for HTTP Digest.
      * @return str
      */
     private function getNonce() {
         $time = ceil(time() / $this->nonceLife) * $this->nonceLife;
-        return md5(date('Y-m-d H:i', $time).':'.$_SERVER['REMOTE_ADDR'].':'.$this->privateKey);
+        return md5(date('Y-m-d H:i', $time).':'.$_SERVER['REMOTE_ADDR'].':'.PRIVATE_KEY);
     }
 
     /** Get opaque value for HTTP Digest.
@@ -207,11 +191,14 @@ class HTTPDigest
 }
 
 /* Example usage
-$digest = new HTTPDigest('MyRealm'[,'baseurl'][,noncelife][,passwordhashed][,'private-key']);
+$digest = new HTTPDigest(['domain'][,noncelife]);
 
 if(!$digest->getAuthHeader() {
+    //If you get to this point, the function will have (by default) returned the 'HTTP/1.0 403 Forbidden' status code.  If you want to 
+    // change this, extend the class and overide the function noAthentication().  For instance you might want to override it with 
+            $this->send() to ask for some credentials from the user.
     //This normally means that a user has tried to contact you without any authetication.  You can either reject immediately, or...
-    $digest->refresh(false);  //Ask the browser to send some authentication
+    ;  //Ask the browser to send some authentication
     //Even though the echo is not seen by the user, this code IS executed the first time through, so beware
     echo 'User Pressed Cancel'
     
@@ -219,14 +206,23 @@ if(!$digest->getAuthHeader() {
     echo sprintf('Logged in as "%s"', $username);      
 } else {
     if(is_null($username)) {
+        //If you get to this point the function will have (be default) returned the 'HTTP/1.0 400 Bad Request' status code.  If you want
+        // change this, override the $this->badRequest() method.
         echo 'Not logged in';
     } else {
-        $digest->refresh(); //Ask browser to refresh the authentication  
-        //Even thought the echo from the statement below is not seen, this code is still executed - so beware.
-        echo 'authentication is stale';  //user has not autheticated for longer than the nonce timer (y
+        //The nonce timer has timed out.  You can either do ...    
+        $digest->refresh(); //Ask browser to refresh the authentication
+          //Even thought the echo from the statement below is not seen, this code is still executed - so beware.
+        echo 'authentication is stale';  
+
+        //or you might want to issue a success and indicate failure some other way (for instance explain to the user he has to close
+        browser and log in again)      
         
     }
 }
-//*/
+
+*/
+
+
 
 

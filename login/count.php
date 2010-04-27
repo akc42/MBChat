@@ -21,7 +21,7 @@
 // Show all errors:
 error_reporting(E_ALL);
 define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.inc');
+require_once('../inc/client.inc');
 
 $c = new ChatServer();
 if($c->is_server_running() {
