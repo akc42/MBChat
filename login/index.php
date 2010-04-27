@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -17,60 +17,47 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 error_reporting(E_ALL);
 
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.php');
+require_once('../inc/client.inc');
 
 $c = new ChatServer();
+
 $c->start_server(SERVER_KEY); //Start Server if not already going.
 
-$template_url = $c->getParam('template_url');
-$template = $c->getParam('template_dir');
 
+$row=$c->query('signin',$_POST['username'],$_POST['password'],(isset($_POST['lite']))?'lite':'normal');
+$gp = $row['groups'];
+$groups = explode("_",$gp);
+$whisperer = (in_array(23,$groups))?"false":"true";
+$lite = (in_array(22,$groups))?'lite':'normal';
 
-function head_content() {
-?><title>Melinda's Backups Chat - Sign In Page</title>
-	<link rel="stylesheet" type="text/css" href="chat.css" title="mbstyle"/>
-	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="chat-ie.css"/>
-	<![endif]-->
-	<style type="text/css">
-	    #content, #content td {
-	        color:#ffffff;
-	   }
-	</style>
-<?php
-}
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Melinda's Backups Chat</title>
+	<script src="/js/mootools-1.2.4-core-yc.js" type="text/javascript" charset="UTF-8"></script>
+</head>
+<body>
+<script type="text/javascript">
+	<!--
 
-function content() {
-?>
-<div id="content">
-<h1>MB Chat Login</h1>
-<p>This is a dummy front end to MB Chat.  You can enter a username with which you will be known in chat.  You only need to enter a 
-password <strong>if you are already registered as a user</strong> as this will be used to check your credentials in the database.  Guest
-users should just enter the name they wish to be known as in chat</p>
-<p>The accessibility version (see checkbox at bottom of form) is for users of the Jaws screen reading system for blind users.  This version removes
-some of the graphics in exchange for an interface designed specifically to enable Jaws to provide access.</p>
-<p></p>
-<form action="signin.php" method="post">
-    <table>
-        <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
-        <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
-        <tr><td><input type="submit" name="submit" value="Sign In"/></td><td>Use "Accessibilty" version: <input type="checkbox" name="lite" /></td></tr>
-    </table>
-<form>
-</div>
-<?php
-}
-
-
-function menu_items() {
-//Noop
-}
-
-include($template.'/template.php');
-
-?>
+window.addEvent('domready', function() {
+    document.chatform.submit();
+});
+	// -->
+</script>
+<form name="chatform" action="<?php echo './chat.php';?>" method="post">
+<input type="hidden" name="uid" value="<?php echo $row['uid']; ?>" />
+<input type="hidden" name="pass" value="<?php echo sha1('Key'.$row['uid']); ?>" />
+<input type="hidden" name="name" value="<?php echo $row['name']; ?>" />
+<input type="hidden" name="role" value="<?php echo $row['role']; ?>" />
+<input type="hidden" name="mod" value="<?php echo $row['mod']; ?>" />
+<input type="hidden" name="whi" value="<?php echo $whisperer; ?>" />
+<input type="hidden" name="gp" value="<?php echo $gp; ?>" />
+<input type="hidden" name="ctype" value="<?php echo $lite; ?>" />
+</form>
+</body>
+</html>

@@ -17,19 +17,29 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
-define('DATABASE',DATA_DIR.'chat.db');
+define('DATABASE',DATA_DIR.'users.db');
+define('REALM','chat@hartley-consultants.com');
 
 error_reporting(E_ALL);
+if(!file_exists(DATABASE) ) {
+    $db = new SQLite3(DATABASE);
+    $db->exec(file_get_contents('./users.sql'));
+} else {
+    $db = new SQLite3(DATABASE);
+}
 
-$db = new SQLite3(DATABASE); 
+$username = $_POST['username'];
+$password = md5($username.":".REALM.":".$_POST['password']);
+echo "$password<br/>\n";
 
-$no = $db->querySingle("SELECT count(*) FROM users WHERE name = '".$_POST['username']."'");
+$no = $db->querySingle("SELECT count(*) FROM users WHERE name = '$username'");
 
 if($no == 0) {
-    $db->exec("INSERT INTO users(name,permanent,groups) VALUES('".$_POST['username']."','".md5($_POST['password'])."','12')");
+    $db->exec("INSERT INTO users(name,password,capability) VALUES('$username','$password','".$_POST['capabilities']."')");
     echo "INSERTED new user with UID = ".$db->lastInsertRowID()."<br/>\n";
 } else {
-    $db->exec("UPDATE users SET permanent = '".md5($_POST['password'])."' WHERE uid = $no");
+    $no = $db->querySingle("SELECT uid FROM users WHERE name  = '$username'");
+    $db->exec("UPDATE users SET ".(($_POST['password'] != '')?"password = '$password',":"")." capability = '".$_POST['capabilities']."' WHERE uid = $no");
     echo "UPDATED user with UID = $no<br/>\n";
 }
 

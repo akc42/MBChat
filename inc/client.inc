@@ -21,7 +21,7 @@
 define('SERVER_KEY','hometest'); 
 define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web space
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
-
+DEFINE('REALM','chat@hartley-consultants.com')
 
 define('SERVER_NAME',DATA_DIR.'server.name');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
@@ -30,6 +30,8 @@ define('SERVER_SOCKET',DATA_DIR.'message.sock');
 
 if (!defined('MBC'))
 	die('Hacking attempt...');
+
+require_once(dirname(__FILE__).'/digest.inc');
 
 
 //This is a convenient place to force everything we output to not be cached 

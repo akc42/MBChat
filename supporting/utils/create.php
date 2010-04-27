@@ -22,16 +22,46 @@
 
 ?>
 <html>
+<head>
+        <style type="text/css">
+body {
+    font-family: Arial;
+    color: #345;
+}
+h1 {
+    border-bottom: 3px solid #345;
+}
+a {
+    color: #666;
+}
+li {
+    padding: 2px;
+}
+sup.new {
+    text-transform: uppercase;
+    color: #f00;
+    font-weight: bold;
+}
+form label, form a {
+    display: block;
+    margin: 10px 0;
+}
+form label input {
+    margin-left: 5px;
+}
+        </style>
+</head>
 <body>
 <h1>MB Chat User</h1>
 
 <p></p>
 <form action="createuser.php" method="post">
-    <table>
-        <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
-        <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
-        <tr><td><input type="submit" name="submit" value="Create"/></td><td></td></tr>
-    </table>
+
+    <label>Username:<input type="text" name="username" value="" /></label>
+    <label>Password:<input type="password" name="password" value="" /></label>
+    <label>Capabilities:<input type="text" name="capabilities" value="" /></label>
+    <input type="submit" name="submit" value="Create"/>
+
 <form>
 </body>
 </html>

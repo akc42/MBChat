@@ -22,7 +22,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<link rel="stylesheet" type="text/css" href="<?php echo $template_url; ?>template.css" />
+	<link rel="stylesheet" type="text/css" href="/template/template.css" />
 <?php
 head_content();
 ?>
@@ -39,7 +39,7 @@ head_content();
 	<tr>
 	<td align="left" width="30" class="topbg_l" height="70">&nbsp;</td>
 	<td align="left" colspan="2" class="topbg_r" valign="top"><a href="/" alt="Main Site Home Page">
-		<img  style="margin-top: 24px;" src="<?php echo $template_url; ?>chandlerfamily_logo.png" alt="Chandler's Zen" border="0" /></a>	
+		<img  style="margin-top: 24px;" src="/template/chandlerfamily_logo.png" alt="Chandler's Zen" border="0" /></a>	
 	</td>
 	<td align="center" width="300" class="topbg_r" valign="middle">
 	MB Chat
