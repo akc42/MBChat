@@ -17,115 +17,169 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-//The following 3 keys need to be adjusted for each installation.  
-define('SERVER_KEY','hometest'); 
+//The following 2 keys need to be adjusted for each installation.  
+
 define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web space
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
-DEFINE('REALM','chat@hartley-consultants.com')
 
-define('SERVER_NAME',DATA_DIR.'server.name');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
-
-
-
-if (!defined('MBC'))
-	die('Hacking attempt...');
 
 require_once(dirname(__FILE__).'/digest.inc');
 
+cs_start_server() {
+    exec(SERVER_DIR.'server.php '.DATA_DIR);
+}
 
-//This is a convenient place to force everything we output to not be cached 
-header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+$socket = false; 
+function cs_server($args) {
+    global $socket;
+    if(!$socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
+        echo "Failed to get a socket, Error =".socket_strerror(socket_last_error());
+        exit;
+    }
+    if(!@socket_connect($socket,SERVER_SOCKET)) {
+         echo "Socket Error = ".socket_strerror(socket_last_error());
+         exit;
+    }
+    $message = '{"cmd":"'.$args[0].'","uid":'.$uid.',"params":'.json_encode(array_slice($args,1))."}\n";
+    socket_write($socket,$message);
+}
 
+function cs_decode_reply() {
+    global $socket;
+    if(!$socket) {
+        echo "Cannot read reply without having sent a command";
+        exit;
+    }
+    $message = '';
+    while($read = socket_read($socket,1024)) {
+        $message .= $read;
+    }
+    socket_close($socket);
+    if($read === false) {
+        echo "Socket Read Failed having read:$message";
+        exit;
+    }
+    $response = jason_decode($message,true);
+    if(!$response['status']) {
+        echo "Command Failed:".$response['reason'];
+        exit;
+    }
+    if($name != '') {
+        return $response[$name];
+    }
+}
 
-class ChatServer {
+function cs_cmd() {
+    cs_server(func_get_args());
+    cs_decode();
+}
 
-    private $socket;
-    private $debug;
-    private $error;
-    function __construct($debug=false) {
-        $this->debug = $debug;
-    }    
-    
-    private function server($args) {
-        if(!$this->socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
-            echo "Failed to get a socket, Error =".socket_strerror(socket_last_error());
-            sleep(1);
-            exit;
-        }
-        if($this->debug) var_dump($args);
-        $cmd = $args[0];
-      
-        if(!@socket_connect($this->socket,SERVER_SOCKET)) {
-             $message = '{"status":false,"reason":"Socket Error = '.socket_strerror(socket_last_error()).'"}';
-             sleep(2);
-             $this->error = $message;
-             return false;
-        }
-        $message = '{"cmd":"'.$cmd.'","params":'.json_encode(array_slice($args,1))."}\n";
-        socket_write($this->socket,$message);
-        return true;
+function cs_query() {
+    $args = func_get_args();
+    cs_server(array_slice($args,1));
+    return cs_decode($args[0]);
+}
+
+function cs_fetch() {
+    cs_server(func_get_args());
+    global $socket;
+    if(!$socket) {
+        echo "Cannot read reply without having sent a command";
+        exit;
     }
 
-    private function decode() {
-        $message = '';
-        while($read = socket_read($this->socket,1024)) {
-            $message .= $read;
-        }
-        if($this->debug) echo $message;
-        socket_close($this->socket);
-        if($read === false) die("Socket Read Failed\n");
-        return json_decode($message,true);
-    }
-
-    function getParam($name) {
-        if($this->server(Array('param',$name))){
-            $reply = $this->decode();
-            return $reply['value'];
-        }
-        return null;
-    }
-
-    function cmd() {
-        if($this->server(func_get_args()) ){
-            $reply = $this->decode();
-            return $reply['status'];
-        }
-        return false;
-    }
-
-    function query() {
-        if($this->server(func_get_args())){
-            $reply = $this->decode();
-            return $reply['rows'];
-        }
-        return $this->error;
-    }
-
-    function fetch() {
-        if($this->server(func_get_args())){
-            while($read = socket_read($this->socket,1024)) {
+    if($read = socket_read($socket,15)) {
+        //$read should contain either {"status":true, or {"status":false
+        if(strpos($read,'true') {
+            echo '{';
+            while($read = socket_read($socket,1024)) {
                 echo $read;
             }
-            socket_close($this->socket);
-            if($read === false) die("Socket Read Failed\n");
+            if($read === false) {
+                echo "} Socket Read Failed"
+            }
         } else {
-            echo $this->error;
+            $message = $read;
+            while($read = socket_read($socket,1024)) {
+                $message .= $read;
+            }
+            if($read === false) {
+                echo "Socket Read Failed having read:$message";
+            } else {
+                $response = json_decode($message,true);
+                echo "Command Failed:".$response['reason'];
+            }
         }
+        socket_close($socket);
+    } else {
+        echo "Failed to read anything"
     }
-
-    function start_server($key) {
-        if(strstr(file_get_contents(SERVER_NAME),$key) !== false) {
-            exec(SERVER_DIR.'server.php '.DATA_DIR);
-        }
-    }
-
-    function is_server_running() {
-        return file_exists(DATA_DIR.'server.run');
-    }
-            
 }
+
+cs_get_key() {
+    cs_query('key','key');
+}
+
+$uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
+
+function cs_forbidden() {
+    d_send_forbidden();
+?><html>
+    <head>
+        <style type="text/css">
+            body {
+                font-family: Arial;
+                color: #345;
+            }
+            h1 {
+                border-bottom: 3px solid #345;
+            }
+            a {
+                color: #666;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Forbidden</h1>
+        <p>This URL is intended to only be called by authorised personel</p>
+    </body>
+</html>
+<?php
+exit;
+}
+
+function cs_validate($username,$passphrase) {
+    if(!$header = d_get_header() {
+        cs_forbidden();
+    }
+    d_set_nonce_life(43200);  //12 Hours
+    if(!$u = d_authenticate($header,'cs_get_uid')) {
+        if(is_null($u)) 
+            cs_forbidden)();
+        } else {
+            d_refresh();
+            exit;
+        }
+    }
+    header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+}
+
+function cs_get_uid($username) {
+    global $uid
+    if(preg_match('/U([1-9][0-9]*|0)/',$username,$matches) == 0) return false;  //no matches so invalid
+    $uid = $matches[1];
+    return md5($username.":".REALM.":".md5($uid.cs_get_key()));
+}
+
+
+
+
+
+
+
+
 
 
 
