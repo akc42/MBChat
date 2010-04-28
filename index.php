@@ -19,10 +19,17 @@
 
 /* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
 
-
-
+define('EXTERNAL_AUTHORISATION',false); //Do we use the remote modules
+define('REMOTE_SERVER','http://mb.home/chat2/'); //If we use remotes, where are they;
 
 require_once('./inc/client.inc');
+
+
+if(EXTERNAL_AUTHORISATION) {
+    if(!(isset($_POST['name']) && isset($_POST['role']) && isset($_POST['mod']) && isset($_POST['
+
+
+
 
 $c = new ChatServer();
 
