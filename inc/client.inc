@@ -24,15 +24,19 @@ define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web spac
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 
+$uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
+
+
 require_once(dirname(__FILE__).'/digest.inc');
 
-cs_start_server() {
+
+function cs_start_server() {
     exec(SERVER_DIR.'server.php '.DATA_DIR);
 }
 
 $socket = false; 
 function cs_server($args) {
-    global $socket;
+    global $socket,$uid;
     if(!$socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         echo "Failed to get a socket, Error =".socket_strerror(socket_last_error());
         exit;
@@ -45,45 +49,29 @@ function cs_server($args) {
     socket_write($socket,$message);
 }
 
-function cs_decode_reply() {
+function cs_query() {
     global $socket;
+    cs_server(func_get_args());
     if(!$socket) {
         echo "Cannot read reply without having sent a command";
         exit;
     }
+
+    //$read should contain either {"status":true, or {"status":false
     $message = '';
     while($read = socket_read($socket,1024)) {
         $message .= $read;
     }
-    socket_close($socket);
     if($read === false) {
-        echo "Socket Read Failed having read:$message";
-        exit;
+        echo "$message: Socket Read Failed";
     }
-    $response = jason_decode($message,true);
-    if(!$response['status']) {
-        echo "Command Failed:".$response['reason'];
-        exit;
-    }
-    if($name != '') {
-        return $response[$name];
-    }
-}
-
-function cs_cmd() {
-    cs_server(func_get_args());
-    cs_decode();
-}
-
-function cs_query() {
-    $args = func_get_args();
-    cs_server(array_slice($args,1));
-    return cs_decode($args[0]);
+    return json_decode($message,true);
+    socket_close($socket);
 }
 
 function cs_fetch() {
-    cs_server(func_get_args());
     global $socket;
+    cs_server(func_get_args());
     if(!$socket) {
         echo "Cannot read reply without having sent a command";
         exit;
@@ -91,13 +79,13 @@ function cs_fetch() {
 
     if($read = socket_read($socket,15)) {
         //$read should contain either {"status":true, or {"status":false
-        if(strpos($read,'true') {
+        if(strpos($read,'true')) {
             echo '{';
             while($read = socket_read($socket,1024)) {
                 echo $read;
             }
             if($read === false) {
-                echo "} Socket Read Failed"
+                echo "} Socket Read Failed";
             }
         } else {
             $message = $read;
@@ -111,17 +99,13 @@ function cs_fetch() {
                 echo "Command Failed:".$response['reason'];
             }
         }
-        socket_close($socket);
     } else {
-        echo "Failed to read anything"
+        echo "Failed to read anything";
     }
+    socket_close($socket);
 }
 
-cs_get_key() {
-    cs_query('key','key');
-}
 
-$uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
 
 function cs_forbidden() {
     d_send_forbidden();
@@ -142,23 +126,26 @@ function cs_forbidden() {
     </head>
     <body>
         <h1>Forbidden</h1>
-        <p>This URL is intended to only be called by authorised personel</p>
+        <p>This URL is intended to only be called by authorised applications</p>
     </body>
 </html>
 <?php
 exit;
 }
 
-function cs_validate($username,$passphrase) {
-    if(!$header = d_get_header() {
+function cs_validate($domain) {
+    global $key,$realm;
+    if(!$header = d_get_header()) {
         cs_forbidden();
     }
-    d_set_nonce_life(43200);  //12 Hours
+    $return = cs_query('validate');
+    $key = $return['key'];
+    $realm = $return['realm'];
     if(!$u = d_authenticate($header,'cs_get_uid')) {
-        if(is_null($u)) 
-            cs_forbidden)();
+        if(is_null($u)) {
+            cs_forbidden();
         } else {
-            d_refresh();
+            d_refresh($realm,$domain);
             exit;
         }
     }
@@ -167,10 +154,10 @@ function cs_validate($username,$passphrase) {
 }
 
 function cs_get_uid($username) {
-    global $uid
+    global $uid,$realm,$key;
     if(preg_match('/U([1-9][0-9]*|0)/',$username,$matches) == 0) return false;  //no matches so invalid
     $uid = $matches[1];
-    return md5($username.":".REALM.":".md5($uid.cs_get_key()));
+    return md5($username.":".$realm.":U".$uid."P".$key);
 }
 
 

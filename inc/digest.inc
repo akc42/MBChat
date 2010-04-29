@@ -31,29 +31,21 @@ SUCH DAMAGE.
 
 /* subsequently modified by Alan Chandler change are Copyright (c) Alan Chandler 
                                   and licenced as defined above */
+define('OPAQUE','9aa2841bcbf7e319e28a964162db2081'); //md5('chattering');
+define('PRIVATE_KEY','Chandlers ZEN');
+define('NONCE_LIFE',43200);
 
-DEFINE('OPAQUE','a39ca9bb1783df434c38d8a86258e065'); // md5 of 'Chattering'
-DEFINE('REALM','chat@hartley-consultants.com');
-DEFINE('PRIVATE_KEY','chandlers ZEN');
 
-$nonceLife = false;
-
-d_set_nonce_life($nl) {
-    global $nonceLife;
-    $nonceLife = $nl;
+function d_send($realm,$domain) {
+    d_refresh($realm,$domain,false);
 }
 
 
-
-function d_send() {
-    d_refresh(false);
-}
-
-
-function d_refresh($stale = true) {
+function d_refresh($realm,$domain,$stale = true) {
+    global $digest;
     header('WWW-Authenticate: Digest '.
-        'realm="'.REALM.'", '.
-        'domain="'.$this->domain.'", '.
+        'realm="'.$realm.'", '.
+        'domain="'.$domain.'", '.
         'qop=auth, '.
         'algorithm=MD5, '.
         (($stale)?'stale=true,':'').
@@ -75,16 +67,23 @@ function d_get_header() {
     return NULL;
 }
 
+function d_get_username($header) {
+    if (preg_match('/username="([^"]+)"/', $header, $username)) {
+        return $username[1];
+    }
+    return false;
+}
+
 function d_authenticate($header,$getPassphrase) {
     if (substr($header, 0, 5) == 'Basic') {
         trigger_error('You are trying to use HTTP Basic authentication but I am expecting HTTP Digest');
         exit;
     }
-    if (preg_match('/username="([^"]+)"/', $authorization, $username) &&
-        preg_match('/nonce="([^"]+)"/', $authorization, $nonce) &&
-        preg_match('/response="([^"]+)"/', $authorization, $response) &&
-        preg_match('/opaque="([^"]+)"/', $authorization, $opaque) &&
-        preg_match('/uri="([^"]+)"/', $authorization, $uri)) {
+    if (preg_match('/username="([^"]+)"/', $header, $username) &&
+        preg_match('/nonce="([^"]+)"/', $header, $nonce) &&
+        preg_match('/response="([^"]+)"/', $header, $response) &&
+        preg_match('/opaque="([^"]+)"/', $header, $opaque) &&
+        preg_match('/uri="([^"]+)"/', $header, $uri)) {
         
         $username = $username[1];
         $passphrase = $getPassphrase($username);
@@ -135,8 +134,7 @@ function d_send_bad_request() {
 
     
 function d_get_nonce($nonceLife) {
-    global $nonceLife;
-    $time = ceil(time() / $nonceLife) * $nonceLife;
+    $time = ceil(time() / NONCE_LIFE) * NONCE_LIFE;
     return md5(date('Y-m-d H:i', $time).':'.$_SERVER['REMOTE_ADDR'].':'.PRIVATE_KEY);
 }
 

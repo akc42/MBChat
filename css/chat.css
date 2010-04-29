@@ -66,6 +66,11 @@ body
 	margin-left:auto;
 }
 
+#rsa_generator {
+    height:100px;
+    width:240px;
+    margin:auto;
+}
 
 #content {
 	position:absolute;
@@ -132,22 +137,22 @@ body
 
 /* rooms in entrance hall */
 #R1 {
-	background: #78ba91 url(members-lounge.gif) no-repeat;
+	background: #78ba91 url(../images/members-lounge.gif) no-repeat;
 }
 #R2 {
-	background: #7389ae url(blue-room.gif) no-repeat;
+	background: #7389ae url(../images/blue-room.gif) no-repeat;
 }
 #R3 {
-	background: #c17878 url(green-room.gif) no-repeat;
+	background: #c17878 url(../images/green-room.gif) no-repeat;
 }
 #R4 {
-	background: #c17878 url(vamp-club.gif) no-repeat;
+	background: #c17878 url(../images/vamp-club.gif) no-repeat;
 }
 #R5 {
-	background: #a87aad url(auditorium.gif) no-repeat;
+	background: #a87aad url(../images/auditorium.gif) no-repeat;
 }
 .committee {
-	background: #c17878 url(member-room.gif) no-repeat;
+	background: #c17878 url(../images/member-room.gif) no-repeat;
 }
 
 #exit {
@@ -160,53 +165,25 @@ body
 }
 
 .exit-f {	
-	background: #a87aad url(forum.gif) no-repeat; 
+	background: #a87aad url(../images/forum.gif) no-repeat; 
 }
 
 .exit-r {	
-	background: #a87aad url(exit.gif) no-repeat; 
+	background: #a87aad url(../images/exit.gif) no-repeat; 
 }
 
 .loading {
-	background: white url(spinner.gif) no-repeat center;
+	background: white url(../images/spinner.gif) no-repeat center;
 }
 
 .hide {
 	display:none;
 }
 
-/* these are the classes related to user types */
-/* admin/leadership team */
-span.L {
-	color:#036972;   
-}
-/* melinda - head of our club */
-span.H {
-	color:#6A00FF;
-}
-/* guests - such as Janet, Kelley or Chaz (life Members) or Special is ordinary members promoted */
-span.G, span.S {
-	color:#0000CD;
-}
-/* moderator */
-span.M {
-	color:#843B00;
-}
-/* baby backups */
-span.B {	
-	color:#414141;
-}
-/* regular members */
-span.A , span.R {
-	color:#414141;
-}
-/* chatbot */
-
 
 span.C {
 	font-style:italic;
 	font-weight: bold;
-	color:#476C8E;
 }
 
 span.chatBotMessage {
@@ -486,6 +463,17 @@ span.whisper {
 }
 .dragOver {
 	border:3px solid black;
+}
+
+#authblock {
+    color:white;
+    padding:50px;
+}
+#authblock a {
+    color:white;
+}
+#authblock td {
+    color:white;
 }
 
 #emoticonContainer {

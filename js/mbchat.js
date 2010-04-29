@@ -16,9 +16,7 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 MBchat = function () {
-	var version;
-	var me;
-	var myRequestOptions;
+
 	var Room = new Class({
 		initialize: function(rid,name,type) {
 			this.rid = rid || 0;
@@ -34,15 +32,15 @@ MBchat = function () {
 	var room;
 	var entranceHall;
 	var setRoom
-	var privateRoom;
+	var privateRoom 0;
 	var chatBot;
 	var messageListSize;
-	var hyperlinkRegExp;
-	var emoticonSubstitution;
-	var emoticonRegExpStr;
+	var hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');;
+	var emoticonSubstitution = new Hash({});
+	var emoticonRegExpStr; //dynamically calculated during init
 	var logOptions;
-	var version;
 	var logged_in;
+	var whisperRestriction = false;
 
 	var reqQueue = new Chain();
     var reqRunning = false;
@@ -64,7 +62,7 @@ MBchat = function () {
                 reqQueue.chain(arguments.callee.bind(this,options));
             } else {
                 reqRunning = true;
-			    this.request.post.delay(20,this.request,$merge(myRequestOptions,options));
+			    this.request.post.delay(20,this.request,options);
 			}
 		}		
 	});
@@ -81,9 +79,9 @@ MBchat = function () {
 	var chatBotMessage = function (msg) {
 		return '<span class="chatBotMessage">'+msg+'</span>';
 	};
-	var messageReq = new ServerReq('message.php',function (r) {});
-	var whisperReq = new ServerReq('whisper.php',function (r) {});
-	var privateReq = new ServerReq('private.php',function (r) {});
+	var messageReq = new ServerReq('client/message.php',function (r) {});
+	var whisperReq = new ServerReq('client/whisper.php',function (r) {});
+	var privateReq = new ServerReq('client/private.php',function (r) {});
 	var goPrivate = function() {
 		privateReq.transmit({
 			'wid': this.getParent().get('id').substr(1).toInt(),
@@ -92,28 +90,54 @@ MBchat = function () {
 	};
 	var contentSize;
 	var pO;
-	var loginReq = new ServerReq('login.php',function(response) {
-	    logged_in = true;
-		MBchat.updateables.whispers.init(response.lastid);
-		MBchat.updateables.online.show(0);	//Show online list for entrance hall
-		MBchat.updateables.poller.init(response.lastid,pO); //These haven't been initiated with normal init sequence, but await successful login
-	});
+
+
+
+    var auth = {};
+	var rsaKeys;
+    var loginReq = new Request.JSON({
+        url:'login/index.php',
+        link:'chain',
+        onSuccess: function(response,t) {
+            document.id('alternate').addClass('hide');
+            if(response.status) {
+                logged_in = true;
+                chatBot = {uid:0, name : response.params.chatbot_name, role: 'C'};  //Make chatBot like a user
+                messageListSize = response.params.max_messages;  //Size of message list
+                c = new BigInteger(response.key);
+                m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
+                auth.U = 'U'+response.uid;
+                auth.P = auth.U+'P'+m.toString(10);
+                entranceHall = new Room(0,response.params.entrance_hall,'O');
+                room = new Room();
+                room.set(entranceHall);
+	            MBchat.updateables.init(); //Start Rest
+                MBchat.updateables.whispers.init(response.lastid);
+                MBchat.updateables.online.show(0);	//Show online list for entrance hall
+                MBchat.updateables.poller.init(response.lastid,response.params.presence_interval);
+            } else {
+                var logout = Browser.request();
+                logout.open('post','login/logout.php',false,null,null);
+                logout.send();
+                windows.location = 'login/logout.php';
+            }
+        },
+        onFailure: function(xhr) {
+            document.id('alternate').addClass('hide');
+            document.id('authblock').removeCLass('hide');
+            document.id('login').password.value='';
+            loginError(true);
+        }
+	           
+    });
+
 return {
-	init : function(user,presenceInterval,logOptionParameters, chatBotName, entranceHallName, msgLstSz) {
+	init : function(user,pass,loginOptions,keys) {
+	    loginReq.xhr.open("post",'login/index.php',true,user,pass);
+        loginReq.transmit(loginOptions);
 	    logged_in = false;
-		logOptions = logOptionParameters;
-		pO = presenceInterval*1000;
-		version = $('version').get('text');
-// Save key data about me
-		me =  user; 
-		myRequestOptions = {'user': me.uid,'password': me.password};  //Used on every request to validate
-		privateRoom = 0;
-		chatBot = {uid:0, name : chatBotName, role: 'C'};  //Make chatBot like a user, so can be displayed where a user would be
-		messageListSize = msgLstSz;  //Size of message list
+        rsaKeys = keys;
 // We need to setup all the entrance hall
-		entranceHall = new Room(0,entranceHallName,'O');
-		room = new Room();
-		room.set(entranceHall);
 		var roomgroups = $$('.rooms');
 		var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
 		roomgroups.each( function (roomgroup,i) {
@@ -213,11 +237,10 @@ return {
 			}
 
 			$('messageText').value = '';
-			MBchat.sounds.resetTimer();
+			if(MBChat.sounds) MBchat.sounds.resetTimer();
 		}
-		hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');
+		
 		//Set up emoticons
-		emoticonSubstitution = new Hash({});
 		
 		var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)
 		var emoticons = $$('img.emoticon');
@@ -245,20 +268,12 @@ return {
 		window.addEvent('resize', function() {
 			contentSize = $('content').getCoordinates();
 		});
-		MBchat.sounds.init();		//start sound system
-		MBchat.updateables.init(); //Start Rest
-		// And logon
-		loginReq.transmit($merge({'mbchat':version},MooTools,
-			{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
-		
 	},
 	logout: function () {
 	    if(logged_in) {
 	        MBchat.updateables.poller.logout(); //Stop Poller Function completely
-    		var logoutRequest = new Request ({url: 'logout.php',autoCancel:true}).post($merge(myRequestOptions,
-	    			{'mbchat':version},MooTools,
-	        		{'browser':Browser.Engine.name+Browser.Engine.version,'platform':Browser.Platform.name}));
-			window.location = 'index.php' ;
+    		var logoutRequest = new Request ({url: 'login/logout.php',autoCancel:true}).post();
+			window.location = 'client/index.php' ;
         }
         logged_in = false;
 	},
@@ -618,7 +633,9 @@ return {
 							}
 						} 
 					}
-					if (user.uid != me.uid && me.whisperer && ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' ))) {  //BBs cannot be in whispers with adults and visa versa
+					if (user.uid != me.uid && me.whisperer 
+					              && (whisperRestriction ((me.role != 'B' && user.role != 'B') || ( me.role === 'B' && user.role === 'B' )))
+					                         ) { 
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});

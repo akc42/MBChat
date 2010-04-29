@@ -19,24 +19,23 @@
 
 /* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
 
-define('EXTERNAL_AUTHORISATION',false); //Do we use the remote modules
-define('REMOTE_SERVER','http://mb.home/chat2/'); //If we use remotes, where are they;
 
 require_once('./inc/client.inc');
 
+cs_start_server();
 
-if(EXTERNAL_AUTHORISATION) {
-    if(!(isset($_POST['name']) && isset($_POST['role']) && isset($_POST['mod']) && isset($_POST['
+$chatting = cs_query('chats');
 
-
-
-
-$c = new ChatServer();
-
-$c->start_server(SERVER_KEY); //Start Server if not already going.
-
-$c->cmd('user',$uid,$_POST['name'],$_POST['role'],$_POST['mod']);
-
+if($chatting['chat']['ext_user_auth'] == 'yes') {
+    if(!isset($_POST['uid'])) {
+        header("Location:".$chatting['chat']['remote_start']); //
+        exit;
+    }
+    if(!$header = d_get_header()) {
+        cs_forbidden();
+    }
+    if(!isset($_POST['name'])) exit;  //this was a "probe" call via ajax to set up the authentication
+}
 
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -49,10 +48,15 @@ $c->cmd('user',$uid,$_POST['name'],$_POST['role'],$_POST['mod']);
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="/css/chat-ie.css"/>
 	<![endif]-->
-	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="<?php echo ($_POST['ctype'] == 'lite')?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
+<?php
+if(!isset($_REQUEST['lite'])) {
+?>	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+<?php
+}
+?>	<script src="/js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="/js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
     <script src="/js/cipher/packages.js" type="text/javascript" charset="UTF-8"></script>
     <script src="/js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
     <script src="/js/cipher/isarray.js" type="text/javascript" charset="UTF-8"></script>
@@ -66,6 +70,55 @@ $c->cmd('user',$uid,$_POST['name'],$_POST['role'],$_POST['mod']);
     <script src="/js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
     <script src="/js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script>
     <script type="text/javascript">
+        var MBChatVersion = "<?php include('./inc/version.inc');?>";
+<?php
+/*
+    login request options will ultimately be passed by mbchat.js to the client/login.php routine.  For external
+    authorisation, we need the values that login would have looked up in its local database to be provided as post
+    parameters.  Since this is after an digest has been authorized we can assume them to be correctly setup
+*/
+if($chatting['chat']['ext_user_auth'] == 'yes') {
+?>
+        var loginRequestOptions = {
+            name:<?php echo $_POST['name']; ?>,
+            role:<?php echo $_POST['role']; ?>,
+            mod:<?php echo $_POST['mod'];?>,
+            whisperer:<?php echo $_POST['whi'];?>
+        }
+<?php            
+} else {
+?>
+        var loginRequestOptions = {};
+<?php
+}
+
+if(!isset($_REQUEST['lite'])) {
+?>
+        var soundcoord = new Coordinator(['sound','chat'],function(activity) {
+		    MBchat.sounds.init();		//start sound system
+        });
+<?php
+}
+?>
+        var coordinator = new Coordinator(['dom','rsa','login'],function(activity){
+            loginRequestOptions.e = activity.get('rsa').e.toString();
+            loginRequestOptions.n = activity.get('rsa').n.toString(10);
+            loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
+            loginRequestOptions.msg += ' on:'+Browser.Platform.name;
+            MBChat.init(activity.get('login').user,activity.get('login').pass,loginRequestOptions,activity.get('rsa'));
+            window.addEvent('beforeunload', function() {
+	            MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
+            });
+<?php
+if(!isset($_REQUEST['lite'])) {
+?>
+            soundcoord.done('chat',{});
+<?php
+}
+?>
+            document.id('chatblock').removeClass('hide');
+        });
+
 	    __uses( "BigInteger.init1.js" );
 	    __uses( "BigInteger.init2.js" );
 	    __uses( "RSA.init1.js" );
@@ -77,10 +130,9 @@ $c->cmd('user',$uid,$_POST['name'],$_POST['role'],$_POST['mod']);
 
         var rsa = new RSA();
 
-        var keyPair = null;  //When complete this object will hold a Public/Private Key Pair.
         
         var genResult = function (key,rsa) {
-            keyPair = key;
+            coordinator.done('rsa',key);
         };
         var progress = function(count){};
         var done = function(succeeded) {}
@@ -92,78 +144,118 @@ $c->cmd('user',$uid,$_POST['name'],$_POST['role'],$_POST['mod']);
             keyPair to become non null. 
         */
         var timerId = rsa.generateAsync(64,65537,progress,genResult,done);
-
-        var login = function(){
-            document.id('authblock').addClass('hide');
-            document.id('alternate').removeClass('hide');
-            var timerId;
-            var checkKey = function () {
-                if(keyPair) {
-                    $clear(timerId);
-                    proceed();
-                }
-            }; 
-            if(keyPair) {
-                //we have a key ready, so now we can use it
-                proceed();
-            } else {
-                timerId = checkKey.periodical(50);
-            }
-            return false;
+        var login = function(user,pass) {
+            var me = {};
+            me.user = user;
+            me.pass = pass;
+            coordinator.done('login',me);    
         };
 
-        /* this proceed function is reached when both the user has entered a username (and possible password) AND
-            the RSA generation has finished
-         */
-        var proceed = function() {
-            var req = new Request.JSON({
-                url:'/login/index.php',
-                onSuccess: function(r,t) {
-                    c = new BigInteger(r.c);
-                    m = c.modPow(keyPair.d,keyPair.n);// This decrypts the key we need for the next stage.
-  
-var i=0;
-            
-                
-                },
-                onFailure: function(xhr) {
-                    document.id('alternate').addClass('hide')
-                    document.id('authblock').removeCLass('hide');
-    
-                }
-            });
-            var requestOptions = {};
-            requestOptions.e = keyPair.e.toString(); //Add public key
-            requestOptions.n = keyPair.n.toString(10);
-            var user = document.id('login').username.value;
-            var pass = document.id('login').password.value;
-            if (pass == '') {
-                requestOptions.guest = 'guest';
-                pass = 'guest';
-            };
-            if (document.id('login').lite.checked) {
-                requestOptions.lite = 'lite';
+
+        window.addEvent('domready', function() {
+            coordinator.done('dom',{});
+
+        });
+        soundManager.url = '/js/';
+        soundManager.flashVersion = 9; // optional: shiny features (default = 8)
+
+        soundManager.onready (function() {
+            if (soundManager.supported()) {
+
+                soundManager.createSound({
+	                id : 'whispers',
+	                url : "sounds/<?php echo $chatting['sounds']['sound_whisper'] ; ?>",
+	                autoLoad : true ,
+	                autoPlay : false 
+                });
+                soundManager.createSound({
+	                id : 'move',
+	                url : "sounds/<?php echo $chatting['sounds']['sound_move'] ; ?>",
+	                autoLoad : true ,
+	                autoPlay : false 
+                });
+                soundManager.createSound({
+	                id : 'speak',
+	                url : "sounds/<?php echo $chatting['sounds']['sound_speak'] ; ?>",
+	                autoLoad : true ,
+	                autoPlay : false 
+                });
+                soundManager.createSound({
+	                id : 'creaky',
+	                url : "sounds/<?php echo $chatting['sounds']['sound_creaky'] ; ?>",
+	                autoLoad : true ,
+	                autoPlay : false
+                });
+                soundManager.createSound({
+	                id : 'music',
+	                url : "sounds/<?php echo $chatting['sounds']['sound_music'] ; ?>",
+	                autoLoad : true ,
+	                autoPlay : false
+                });
+                soundcoord.done('sound',{});
             }
-            
-            req.xhr.open("post",'/login/index.php',true,user,pass);
-            req.send(requestOptions);
+        });
+
+<?php
+if(!isset($_REQUEST['lite'])) {
+?>
+
+
+
+<?php
+}
+?>
+    </script>
+    <style type="text/css">
+    
+        /* these are the classes related to user types */
+        /* admin */
+        span.A {
+	        color:#<?php echo $chatting['colours']['A'];?>;   
         }
-   </script>
+
+        /*leadership team */
+        span.L {
+	        color:#<?php echo $chatting['colours']['L'];?>;   
+        }
+        /* head */
+        span.H {
+	        color:#<?php echo $chatting['colours']['H'];?>;
+        }
+        /* special guests */
+        span.G {
+	        color:#<?php echo $chatting['colours']['G'];?>;
+        } 
+        /* Special is ordinary members promoted */
+        span.S {
+	        color:#<?php echo $chatting['colours']['S'];?>;
+        }
+        /* moderator */
+        span.M {
+	        color:#<?php echo $chatting['colours']['M'];?>;
+        }
+        /* guests */
+        span.B {	
+	        color:#<?php echo $chatting['colours']['B'];?>;
+        }
+        /* regular members */
+        span.R {
+	        color:#<?php echo $chatting['colours']['R'];?>;
+        }
+        /* chatbot */
+        span.C {
+            color:#<?php echo $chatting['colours']['C'];?>;
+        }
+    </style>
 
 </head>
 <body>
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-6767755-1']);
-  _gaq.push(['_trackPageview']);
-</script>
-
 <table id="header" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" >
 <tbody>
 	<tr>
 	<td align="left" width="30" class="topbg_l" height="70">&nbsp;</td>
 	<td align="left" colspan="2" class="topbg_r" valign="top"><a href="/" alt="Main Site Home Page">
-		<img  style="margin-top: 24px;" src="/template/chandlerfamily_logo.png" alt="Chandler's Zen" border="0" /></a>	
+		<img  style="margin-top: 24px;" src="images/chandlerfamily_logo.png" alt="Chandler's Zen" border="0" /></a>	
 	</td>
 	<td align="center" width="300" class="topbg_r" valign="middle">
 	MB Chat
@@ -176,92 +268,42 @@ var i=0;
 		</td>
 	</tr>  </tbody>
 </table>
-<?php
-
-		$uid = $_POST['uid'];		
-        $name=$_POST['name'];
-        $role=$_POST['role'];
-        $mod=$_POST['mod'];
-        $whi=$_POST['whi'];
-        $groups = explode("_",$_POST['gp']); //A "_" separated list of committees (groups) that the user belongs to.
-        $lite = ($_POST['ctype'] == 'lite'); //if we need the special lite version (provides accessibility for blind people)
-
-
-?><script type="text/javascript">
-	<!--
-
-window.addEvent('domready', function() {
-	MBchat.init({uid: <?php echo $uid;?>, 
-				name: '<?php echo $name ; ?>',
-				 role: '<?php echo $role; ?>',
-				password : '<?php echo sha1("Key".$uid); ?>',
-				mod: <?php echo '"'.$mod.'"' ; ?> ,
-				whisperer: <?php echo $whi ; ?>  }, 
-				<?php echo $c->getParam('presence_interval') ; ?>,
-				{fetchdelay: <?php echo $c->getParam('log_fetch_delay') ; ?>,
-				spinrate: <?php echo $c->getParam('log_spin_rate') ; ?>,
-				secondstep:<?php echo $c->getParam('log_step_seconds') ; ?>,
-				minutestep:<?php echo $c->getParam('log_step_minutes') ; ?>,
-				hourstep:<?php echo $c->getParam('log_step_hours') ; ?>,
-				sixhourstep:<?php echo $c->getParam('log_step_6hours') ; ?> },
-				"<?php echo $c->getParam('chatbot_name') ; ?>",
-				"<?php echo $c->getParam('entrance_hall') ?>",
-				<?php echo $c->getParam('max_messages') ?>);
-});	
-window.addEvent('beforeunload', function() {
-	MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
-	
-});
-
-var soundReady = false;
-
-soundManager.url = '/js/';
-soundManager.flashVersion = 9; // optional: shiny features (default = 8)
-
-soundManager.onload = function() {
-	soundManager.createSound({
-		id : 'whispers',
-		url : "<?php echo $c->getParam('sound_whisper') ; ?>",
-		autoLoad : true ,
-		autoPlay : false 
-	});
-	soundManager.createSound({
-		id : 'move',
-		url : "<?php echo $c->getParam('sound_move') ; ?>",
-		autoLoad : true ,
-		autoPlay : false 
-	});
-	soundManager.createSound({
-		id : 'speak',
-		url : "<?php echo $c->getParam('sound_speak') ; ?>",
-		autoLoad : true ,
-		autoPlay : false 
-	});
-	soundManager.createSound({
-		id : 'creaky',
-		url : "<?php echo $c->getParam('sound_creaky') ; ?>",
-		autoLoad : true ,
-		autoPlay : false
-	});
-	soundManager.createSound({
-		id : 'music',
-		url : "<?php echo $c->getParam('sound_music') ; ?>",
-		autoLoad : true ,
-		autoPlay : false
-	});
-
-	soundReady=true;
-};
-
-
-
-	// -->
-</script>
-<div id="roomNameContainer">
-    <h1><?php echo $c->getParam('entrance_hall'); ?></h1>
-</div>
+<div id="roomNameContainer"></div>
 <div id="content">
-    <div id="loginblock">
+<?php
+if($header = d_get_header()) { 
+    if(isset($_REQUEST['login'])) {//setting this is used to FORCE login
+?>  <script type="text/javascript">
+        http = new Browser.Request();
+        http.open("post",'/logout.php',false,null,null); //send a syncronous request to force credentials to be cleared
+        http.send();
+        window.location.reload();
+    </script>
+    <h1>Reset</h1>
+    <p>Please Wait, we a reloading the page to allow you to login</p>
+</div>
+</body>
+</html>
+<?php
+        exit;
+    }
+?>  <script type="text/javascript">
+        login('','');
+    </script>
+    <div id="rsa_generator" class="loading"></div>
+<?php
+} else {
+?>  <div id="rsa_generator" class="hide loading"></div> 
+    <div id="authblock">
+<?php
+    if(!isset($_REQUEST['lite']) ){
+?>  <p>If you would like to use the lite version of chat please click <a href="index.php?lite=yes">here</a> and the page will reload with
+    that option selected</p>
+<?php
+    }
+    if($chatting['chat']['guests_allowed'] == 'yes') {
+     
+?>
     <p>Enter a username that you want to be known of in chat.  You only need to enter a  password <strong>if you are already
     registered as a user</strong> as this will be used to check your credentials in the database and will log you in as a normal
     user.</p>
@@ -270,30 +312,76 @@ soundManager.onload = function() {
 
     <p>Guest users should just enter the name they wish to be known as in chat and leave the password field <strong>empty</strong>.  There will
     be no check for whether you are already connected.</p>
+<?php
+    } else {
+?>
+    <p>Please Enter your username and password, but note, if you are already logged in 
+    in another window your connection will be <strong>refused</strong>.</p>
+<?php
+    }
+?>
+    <script type="text/javascript">
+        var login_step1 = function() {
+            var user = document.id('login').username.value;
+            var pass = document.id('login').password.value;
 
-    <p>The accessibility version (see checkbox at bottom of form) is for users of the Jaws screen reading system for blindusers.  This 
-    version removes some of the graphics in exchange for an interface designed specifically to enable Jaws to provide access. Only
-    guests need select this if they wish to try this function.  Information about regular users is already stored.</p>
-
-    <div id="authblock">
-        <form id="login" action="#" method="post" onsubmit="javascript:return login()">
+<?php
+    if($chatting['chat']['guests_allowed'] == 'yes') {
+?>
+            if(pass == '') {
+                user += ' (G)';
+                pass = 'guest';
+                loginReqestOptions.guest = true;  //Ultimately these will be included in the request to be sent to login.php
+            }
+<?php
+    } else {
+?>
+            if(pass == '') {
+                loginError(false);
+                return false
+            }
+<?php
+    }
+?>
+            document.id('rsa_generator').removeClass('hide');
+            document.id('authblock').addClass('hide');
+            document.id('login_error').addClass('hide');
+            document.id('login').username.removeClass('error');
+            document.id('login').password.removeClass('error');
+            login(user,pass);
+            return false;
+        }
+        var loginError = function() { 
+            document.id('login_error').removeClass('hide');
+            if(usernameError) {
+                document.id('login').username.addClass('error');
+                document.id('login').password.addClass('error');
+            } else {
+                document.id('login').password.addClass('error');
+            }
+        }
+    </script>
+        <div id="login_error" class="hide">Incorrect Credentials</div>
+        <form id="login" action="#" method="post" onsubmit="javascript:return login_step1()">
             <table>
                 <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
                 <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
-                <tr>
-                    <td><input type="submit" name="submit" value="Sign In"/></td>
-                    <td>Use "Accessibilty" version: <input type="checkbox" name="lite" /></td>
-                </tr>
+                <tr><td><input type="submit" name="submit" value="Sign In"/></td><td></td></tr>
             </table>
         <form>
     </div>
-    <div id="alternate" class="hide"></div>
 
+<?php
+}
+?><script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-6767755-1']);
+  _gaq.push(['_trackPageview']);
+</script>
 
-</div>
 <div id="chatblock" class="hide">
     <div id="exit" class="exit-f"></div>
-<?php if(!$lite) {
+<?php if(!isset($_REQUEST['lite'])) {
 ?>    <div id="logControls" class="hide">
 	    <div id="startTimeBlock">
 		    <div id="startTextLog">Log Start Time</div>
@@ -305,7 +393,8 @@ soundManager.onload = function() {
      	</div>
 	    <div id="printLog"></div>
     </div>
-<?php }
+<?php 
+}
 ?><div id="entranceHall">
 	<div  id="mainRooms" class="rooms">
 	    <h3>Main Rooms</h3>
@@ -313,14 +402,14 @@ soundManager.onload = function() {
 $i=0;
 
    
-foreach($c->query('rooms') as $row) {
+foreach($chatting['rooms'] as $row) {
     $rid = $row['rid'];
-    if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['smf_group'],$groups)))) {
+    if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['committee'],$groups)))) {
         if($i > 0 && $i%4 == 0) {
 ?>  <div class="rooms"> 
     	<h3>Committee Rooms</h3>
 <?php   }
-        if($lite) {
+        if(isset($_REQUEST['lite'])) {
 ?>    	<input id="R<?php echo $row['rid']; ?>" 
                 type="button" onclick="MBchat.goToRoom(<?php echo $row['rid']; ?>)" 
                 value="<?php echo $row['name']; ?>" /><br/>
@@ -368,11 +457,11 @@ if( ($i % 4) != 0 ) {
 	</form>
 </div>
 <?php
-if (!$lite) {
+if(!isset($_REQUEST['lite'])) {
 ?><div id="emoticonContainer">
 <?php
-	$dir = $c->getParam('emoticon_dir');
-	$urlbase = $c->getParam('emoticon_url');
+	$dir = $chatting['chat']['emoticon_dir'];
+	$urlbase = $chatting['chat']['emoticon_url'];
 	$fns = scandir($dir);
 	foreach ($fns as $filename) {
 
@@ -389,22 +478,23 @@ if (!$lite) {
 			 }
 		}
 	}
-?></div>
-
-<div id="userOptions">
-<form>
-	<input id="autoScroll" type="checkbox" checked="checked" />
-	<label for="autoScroll">Autoscroll</label>
-	<span id="soundOptions">
-		<input id="musicEnabled" type="checkbox" />
-		<label for="musicEnabled">Enable Music</label><br/>
-		<input id="soundEnabled" type="checkbox" checked="checked"/>
-		<label for="soundEnabled">Enable Sound</label><br/>
-		<input id="soundDelay" type="text" size="1" value="5" />
-		<label for="soundDelay">Minutes 'till sound</label>
-	</span>
-</form>
+?><div id="userOptions">
+    <form>
+	    <input id="autoScroll" type="checkbox" checked="checked" />
+	    <label for="autoScroll">Autoscroll</label>
+	    <span id="soundOptions">
+		    <input id="musicEnabled" type="checkbox" />
+		    <label for="musicEnabled">Enable Music</label><br/>
+		    <input id="soundEnabled" type="checkbox" checked="checked"/>
+		    <label for="soundEnabled">Enable Sound</label><br/>
+		    <input id="soundDelay" type="text" size="1" value="5" />
+		    <label for="soundDelay">Minutes 'till sound</label>
+	    </span>
+    </form>
 </div>
+<?php
+}
+?>
 </div>
 <div id="copyright">MB Chat <span id="version"><?php include('./version.php');?></span> &copy; 2008-2010 Alan Chandler</div>
 </div>
@@ -418,5 +508,4 @@ if (!$lite) {
   </script>
 </body>
 </html>
-
 

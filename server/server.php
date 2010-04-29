@@ -108,17 +108,13 @@ function timeout ($signal) {
             $t->bindValue(':time',time() - $user_timeout,SQLITE3_INTEGER);
             $result = $t->execute();
             while($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                if(is_null($row['permanent'])) {
-                    $s = $statements['delete_user'];
-                } else {
-                    $s = $statements['set_absent'];
-                }
+                $s = $statements['delete_user'];
                 $s->bindValue(':uid',$row['uid'],SQLITE3_INTEGER);
                 $s->execute();
                 $s->reset();
-                
-                sendLog($row['uid'], $row['name'],$row['role'],"LT",$row['rid'],(is_null($row['permanent']))?'guest':'permanent');
-         
+
+                sendLog($row['uid'], $row['name'],$row['role'],"LT",$row['rid'],'');
+
             }
             $result->finalize();
             $t->reset();
@@ -126,7 +122,7 @@ function timeout ($signal) {
             $handle = fopen(SERVER_LOCK,'r+');
             flock($handle,LOCK_EX);
 
-            if($db->querySingle("SELECT count(*) FROM users WHERE present = 1") == 0
+            if($db->querySingle("SELECT count(*) FROM users ") == 0
             // It could be that a request to start the server occurred just before we decided to shut down.  
             //If a request occurred in the last two seconds then don't, as a new command will come shortly (if it hasn't already)
                                         && file_get_contents(SERVER_RUNNING) < (time() -2)) {
@@ -208,13 +204,25 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
             $db = new SQLite3(DATABASE);
         }
 
+//Sets up the digest parameters so they can be returned rapidly whatever routine is called
+        $key = sprintf("%05u",rand(1,30000));  //key used in password - for user Uuid passworkd is UuidP$key
+//If there is no entry in for des_key encryption is not enabled. It is us, but is still 0 we have to make one
+        $des_key = $db->querySingle("SELECT count(*) FROM parameters WHERE name ='des_key'");
+        if($des_key !=0) {
+            if(($des_key = $db->querySingle("SELECT value FROM parameters WHERE name ='des_key'")) == '0') {
+                $des_key = sprintf("%05u",rand(1,30000));
+                $db->exec("INSERT INTO parameters VALUES('des_key','$des_key',6)");
+            }
+        }
+
         $user_timeout = $db->querySingle("SELECT value FROM parameters WHERE name ='user_timeout'");
         $purge_message_interval = $db->querySingle("SELECT value FROM parameters WHERE name ='purge_message_interval'");
-        $wakeup_interval = $db->querySingle("SELECT value FROM parameters WHERE name ='wakeup_interval'");
+
         $max_messages = $db->querySingle("SELECT value FROM parameters WHERE name ='max_messages'");
         $max_time = $db->querySingle("SELECT value FROM parameters WHERE name ='max_time'");
         $tick_interval = $db->querySingle("SELECT value FROM parameters WHERE name ='tick_interval'");
         $check_ticks = $db->querySingle("SELECT value FROM parameters WHERE name ='check_ticks'");
+        $realm = $db->querySingle("SELECT value FROM parameters WHERE name ='realm'");
 
         $running = true;
         $ticks = $check_ticks;
@@ -225,28 +233,22 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
 //These are all the prepared statements the system uses.
 
 //Timeout users and purge log
-$statements['timeout'] = $db->prepare("SELECT uid, name, role, rid, permanent FROM users WHERE time < :time AND present = 1");
+$statements['timeout'] = $db->prepare("SELECT uid, name, role, rid FROM users WHERE time < :time ");
 $statements['delete_user'] = $db->prepare("DELETE FROM users WHERE uid = :uid ");
-$statements['set_absent'] = $db->prepare("UPDATE users SET present = 0 WHERE uid = :uid ");
 $statements['read_log'] = $db->prepare("SELECT lid,time,uid,name,role,rid,type,text FROM log WHERE lid >= :lid ORDER BY lid ASC");
-$statements['new_user'] = $db->prepare("INSERT INTO users (uid,name,role,moderator, present) VALUES (:uid, :name , :role, :mod, 1)");
-$statements['old_user'] = $db->prepare("UPDATE users SET name = :name , role = :role , moderator = :mod , present = 1 , time = :time 
-                                            WHERE uid = :uid");
+$statements['new_user'] = $db->prepare("INSERT INTO users (uid,name,role,moderator) VALUES (:uid, :name , :role, :mod)");
 $statements['purge_log'] = $db->prepare("DELETE FROM log WHERE time < :interval ");
 
 //Sendlog
 $statements['logger'] = $db->prepare("INSERT INTO log (uid,name,role,type,rid,text) VALUES (:uid,:name,:role,:type,:rid,:text)");
 
-//Signin
-$statements['users'] = $db->prepare("SELECT * FROM users WHERE name = :permanent OR name = :guest ");
-$statements['new'] = $db->prepare("INSERT INTO users (name,groups) VALUES ( :name , :groups)");
 
 //Presence
 $statements['active'] = $db->prepare("UPDATE users SET time = :time WHERE uid = :uid ");
 
 //Online
 $statements['online'] = $db->prepare("SELECT uid, name, role, question,private AS wid 
-                                        FROM users WHERE rid = :rid AND present = 1 ORDER BY time ASC");
+                                        FROM users WHERE rid = :rid  ORDER BY time ASC");
 
 //Room Entry
 $statements['room_msg_start'] = $db->prepare("SELECT lid  FROM log LEFT JOIN participant ON participant.wid = rid 
@@ -295,9 +297,7 @@ $statements['getlog'] = $db->prepare("SELECT lid, time AS utime, type, rid, uid 
     throw new Exception("Failed to get socket"); 
 }
 
-
-$key = false;
-
+$stats = Array();
 
 //main loop
 while($running) {
@@ -309,6 +309,11 @@ while($running) {
 
             $cmd = json_decode($read,true);  //makes an array of the data
             $uid = $cmd['uid'];
+            if(isset($stats[$cmd['cmd']])) {
+                $stats[$cmd['cmd']]++;
+            } else {
+                $stats[$cmd['cmd']] = 1;
+            }
             if($cmd['cmd'] == "read") {
                 if(!($lid = $cmd['params'][0]) ) $lid = $maxlid;
                 $reader = Array();
@@ -321,99 +326,87 @@ while($running) {
                 begin();
                 switch($cmd['cmd']) {
                 case 'count':
-                    $message = '{"status":true,"count":'.$db->querySingle("SELECT count(*) FROM users WHERE present = 1").'}';
+                    $message = '{"status":true,"count":'.$db->querySingle("SELECT count(*) FROM users").'}';
                     break;
-                case 'key':
-                        if($key);
-                            $message = '{"status":true,"key":"'.$key.'"}';
-                        } else {
-                            $message = '{"status":false,"reason":"Need client public key to generate password key"}';
-                        }
+                case 'validate':
+                    $message = '{"status":true,"key":"'.$key.'","realm":"'.$realm.'"}';
                     break;
-                case 'user':
-                    $no = $db->querySingle("SELECT count(*) FROM users WHERE uid = '".$cmd['params'][0]."'");
+                case 'chats':
+                    $chats = Array();
+                    $result = $db->query("SELECT name,value FROM parameters WHERE grp = 1");
+                    while($row = $result->fetchArray(SQLITE3_ASSOC)){
+                        $chats[$row['name']] = $row['value'];
+                    }
+                    $result->finalize();
+                    $message = '{"status":true,"chat":'.json_encode($chats);
+                    $chats = Array();
+                    $result = $db->query("SELECT name,value FROM parameters WHERE grp = 2");
+                    while($row = $result->fetchArray(SQLITE3_ASSOC)){
+                        $chats[$row['name']] = $row['value'];
+                    }
+                    $result->finalize();
+                    $message .= ',"sounds":'.json_encode($chats);
+                    $chats = Array();
+                    $result = $db->query("SELECT name,value FROM parameters WHERE grp = 3");
+                    while($row = $result->fetchArray(SQLITE3_ASSOC)){
+                        $chats[$row['name']] = $row['value'];
+                    }
+                    $result->finalize();
+                    $message .= ',"colours":'.json_encode($chats);
+                    $chats = Array();
+                    $result = $db->query("SELECT * FROM rooms");
+                    while($row = $result->fetchArray(SQLITE3_ASSOC)){
+                        $chats[] = $row;
+                    }
+                    $result->finalize();
+                    $message .= ',"rooms":'.json_encode($chats).'}';
+                    break;
+                case 'location':
+                    $message = '{"status":true,"location":"'.$db->querySingle("SELECT value FROM parameters WHERE name = 'exit_location'").'"}';
+                    break;
+                case 'login':
+                    $no = $db->querySingle("SELECT count(*) FROM users WHERE uid = '".$uid."'");
                     if($no == 0) {
                         $u = $statements['new_user'];
                     } else {
-                        $u = $statements['old_user'];
+                        $message = '{"status":false,"reason":"Attempt to login a user that already exists"}';
+                        break;
                     }
-                    $u->bindValue(':uid',$cmd['params'][0],SQLITE3_INTEGER);
-                    $u->bindValue(':name',htmlentities($cmd['params'][1],ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
-                    $u->bindValue(':role',$cmd['params'][2],SQLITE3_TEXT);
-                    $u->bindValue(':mod',$cmd['params'][3],SQLITE3_TEXT);
+                    $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
+                    $u->bindValue(':name',htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
+                    $u->bindValue(':role',$cmd['params'][1],SQLITE3_TEXT);
+                    $u->bindValue(':mod',$cmd['params'][2],SQLITE3_TEXT);
                     $u->bindValue(':time',time(),SQLITE3_INTEGER);
                     $u->execute();
                     $u->reset();
-                    $message = '{"status":true}';
-                    break;
-                case 'rooms':
-                    $result = $db->query("SELECT * FROM rooms");
-                    $message = '{"rows":[';
-                    $df=false;
-                    while($row = $result->fetchArray(SQLITE3_ASSOC)) {
-                        if($df) {
-                            $message .= ",";
-                        }
-                        $df = true;
-                        $message .= json_encode($row);
+                    $lid = sendLog($uid, $cmd['params'][0],$cmd['params'][1],"LI",0,$cmd['params'][3]);
+
+                    $message = '{"status":true,"lid":'.$lid.',"key":"'.$key.'"';
+                    if($des_key != 0) {
+                        $message .= ',"des":"'.$des_key.'"';
                     }
-                    $message .= ']}';
+                    $chats = Array();
+                    $result = $db->query("SELECT name,value FROM parameters WHERE grp = 4");
+                    while($row = $result->fetchArray(SQLITE3_ASSOC)){
+                        $chats[$row['name']] = $row['value'];
+                    }
                     $result->finalize();
-                    break;
-                case 'param' :
-                    $message = '{"value": "'.$db->querySingle("SELECT value FROM parameters WHERE name ='".$cmd['params'][0]."'").'"}';
-                    break;
-                case 'signin':
-                    $name = htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false);
-                    $u = $statements['users'];
-                    $u->bindValue(':permanent',$name,SQLITE3_TEXT);
-                    $u->bindValue(':guest',$name." (G)",SQLITE3_TEXT);
-                    $result = $u->execute();
-                    $row = $result->fetchArray(SQLITE3_ASSOC);
-                    $u->reset();
-                    if($row && $row['present'] == '0' && (is_null($row['permanent']) || $row['permanent'] == md5($cmd['params'][1]))) {
-        // We are in the database, not present and either a non permenant entry or a permenant entry with the correct password
-                        $gp = $row['groups'];       
-                        $uid = $row['uid'];
-                        $name = $row['name'];
-                        $role = $row['role'];
-                        $mod = $row['moderator'];
-                    } else {
-                        $name = $name." (G)";
-                        $role = "R";
-                        $mod = "N";
-                        $whisperer = "true";
-                        $gp = "12".(($cmd['params'][2] == 'lite')?'_22':''); 
-                        $u = $statements['new'];
-                        $u->bindValue(':name',$name,SQLITE3_TEXT);
-                        $u->bindValue(':groups',$gp,SQLITE3_TEXT);
-                        $u->execute();
-                        $uid = $db->lastInsertRowID();
-                        $u->reset();
-                    }
-                    $message = '{"rows":{"uid":'.$uid.',"name":"'.$name.'","role":"'.$role.'","mod":"'.$mod.'","groups":"'.$gp.'"}}';
-                    break;
-                case 'login':
-                    markActive($cmd['params'][0]);
-                    $row = $db->querySingle("SELECT name,role, rid FROM users WHERE uid = ".$cmd['params'][0],true);
-                    $lid = sendLog($cmd['params'][0], $row['name'],$row['role'],"LI",$row['rid'],$cmd['params'][1]);
-                    $message = '{"Login" : '.$cmd['params'][0].', "lastid" : '.$lid.' }' ;
+                    $message .= ',"params":'.json_encode($chats).'}';
                     break;
                 case 'logout':
-                    $row = $db->querySingle("SELECT uid, name, role, rid, permanent FROM users WHERE uid = ".$cmd['params'][0],true);
-                    if(is_null($row['permanent'])) {
+                    if($row = $db->querySingle("SELECT uid, name, role, rid FROM users WHERE uid = ".$uid,true)) {
                         $u = $statements['delete_user'];
+                        $u->bindValue(':uid',$row['uid'],SQLITE3_INTEGER);
+                        $u->execute();
+                        $u->reset();
+                        sendLog($row['uid'], $row['name'],$row['role'],"LO",$row['rid'],$cmd['params'][1]);
+                        $message = '{"status":true}'; 
                     } else {
-                        $u=$statements['set_absent'];
+                        $message = '{"status":false,"reason":"Logout non-existent user"}';
                     }
-                    $u->bindValue(':uid',$row['uid'],SQLITE3_INTEGER);
-                    $u->execute();
-                    $u->reset();
-                    sendLog($row['uid'], $row['name'],$row['role'],"LO",$row['rid'],$cmd['params'][1]);
-                    $message = '{"status":true}'; 
                     break;
                 case 'presence':
-                    markActive($cmd['params'][0]);
+                    markActive($uid);
                     $message = '{"status":true}';
                     break;
                 case 'online':
@@ -434,9 +427,8 @@ while($running) {
                     $message .= ']}';
                     break;
                 case 'enter':
-                    $uid = $cmd['params'][0];
                     markActive($uid);
-                    $rid = $cmd['params'][1];
+                    $rid = $cmd['params'][0];
                     if($room = $db->querySingle("SELECT rid, name, type FROM rooms WHERE rid = $rid ",true)) { //validate room
                         $user = $db->querySingle("SELECT uid, name, role, moderator, question FROM users WHERE uid = $uid ",true);
 
@@ -460,13 +452,14 @@ while($running) {
 	                    $u->reset();
 	                    sendLog($uid, $name,$role,"RE",$rid,$question);
 
-                        $message = '{"room":'.json_encode($room);
+                        $message = '{"status":true,"room":'.json_encode($room);
 
 
 
 	                    
                     } else {
-                        $message = '{"room":{}';
+                        $message = '{"status:false,"reason":"Invalid Room on Entry"}';
+                        break;
                     }
                     $message .= ',"messages" : [';
                     $u = $statements['room_msg_start'];
@@ -520,10 +513,9 @@ while($running) {
                     }
                     break;
                 case 'exit':
-                    $uid = $cmd['params'][0];
                     markActive($uid);
-                    if(($rid = $cmd['params'][1]) != 0) {
-                        $room = $db->querySingle("SELECT rid, name, type FROM rooms where rid = $rid ",true);
+                    $rid = $cmd['params'][0];
+                    if(($room = $db->querySingle("SELECT rid, name, type FROM rooms where rid = $rid ",true)) != 0) {
                         $user = $db->querySingle("SELECT uid, name, role, moderator FROM users WHERE uid = $uid ",true);
 
                         if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
@@ -544,8 +536,12 @@ while($running) {
 	                    $u->execute();
 	                    $u->reset();
 	                    sendLog($uid, $name,$role,"RX",$rid,'');
+	                    
+                    } else {
+                        $message = '{"status":false,"reason":"Invalid Room on Exit"}';
+                        break;
                     }
-                    $message = '{"messages" : [';
+                    $message = '{"status":true,"messages" : [';
                     $u = $statements['room_whi_start'];
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
                     $u->bindValue(':time',time() - 60*$max_time,SQLITE3_INTEGER);
@@ -591,9 +587,8 @@ while($running) {
                     $message .= '], "lastid" :'.(($lid && $lid < $maxlid)?$lid:$maxlid).'}';
                     break;
                case 'msg':
-                    $uid = $cmd['params'][0];
                     markActive($uid);
-                    $rid = $cmd['params'][1];
+                    $rid = $cmd['params'][0];
                     $text = htmlentities(stripslashes($cmd['params'][2]),ENT_QUOTES,false);
 
                     $row = $db->querySingle("SELECT uid, users.name, role, question, users.rid, type ".
@@ -630,9 +625,8 @@ while($running) {
                     $message = '{"status":true}'; 
                     break;
                 case 'demote':
-                    $uid = $cmd['params'][0];
                     markActive($uid);
-                    $rid = $cmd['params'][1];
+                    $rid = $cmd['params'][0];
                     $u = $statements['demote'];
                     $user = $db->querySingle("SELECT uid, name, role, rid, moderator FROM users WHERE uid = $uid",true);
 
@@ -647,8 +641,8 @@ while($running) {
                     $message = '{"status":true}';
                     break; 
                 case 'promote':
-                    markActive($cmd['params'][0]);
-                    $puid = $cmd['params'][1];
+                    markActive($uid);
+                    $puid = $cmd['params'][0];
                     $user = $db->querySingle("SELECT uid, name, role, rid, moderator, question  FROM users WHERE uid = $puid ",true);
 
 	                if ($user['role'] == 'M' || $user['role'] == 'S') {
@@ -671,8 +665,8 @@ while($running) {
                     $message = '{"status":true}';
                     break;
                 case 'release':
-                    markActive($cmd['params'][0]);
-                    $quid = $cmd['params'][1];
+                    markActive($uid);
+                    $quid = $cmd['params'][0];
                     if($user = $db->querySingle("SELECT uid, name, role, rid, question FROM users WHERE uid = $quid ", true)) {
                         $statements['release']->bindValue(':uid',$quid,SQLITE3_INTEGER);
                         $statements['release']->execute();
@@ -684,7 +678,7 @@ while($running) {
                     }
                     break; 
                 case 'get':
-                    $message = '{"whisperers":[';
+                    $message = '{"status":true,"whisperers":[';
                     $f = false;
                     $result = $db->exec("SELECT users.uid,name,role FROM participant 
                                             JOIN users ON users.uid = participant.uid WHERE wid = ".$cmd['params'][0]);
@@ -700,8 +694,7 @@ while($running) {
                     $message .= ']}';
                     break;
                 case 'newwhi':
-                    $uid = $cmd['params'][0];
-                    $wuid = $cmd['params'][1];
+                    $wuid = $cmd['params'][0];
                     if($wuser = $db->querySingle("SELECT uid,name,role,moderator FROM users WHERE uid = $wuid") &&
                         $user = $db->querySingle("SELECT uid,name,role,moderator FROM users WHERE uid = $uid")) {
                         markActive($uid);
@@ -740,12 +733,11 @@ while($running) {
                         sendLog($wuid, $row['name'],$row['role'],"WJ",$wid,'');	
                         $message = '{"status":true}';      
                     } else {
-                        $message = '{"status":false}';
+                        $message = '{"status":false."reason":"Join:User has left"}';
                     }
                     break;
                 case 'leave':
-                    $uid = $cmd['params'][0];
-                    $wid = $cmd['params'][1];
+                    $wid = $cmd['params'][0];
                     if($row = $db->querySingle("SELECT  name, role FROM users JOIN participant ON users.uid = participant.uid 
                                                     WHERE users.uid = $uid AND wid = $wid ",true)){
                         markActive($uid);
@@ -757,13 +749,12 @@ while($running) {
                         sendLog($uid, $row['name'],$row['role'],"WL",$wid,'');	
                         $message = '{"status":true}';      
                     } else {
-                        $message = '{"status":false}';
+                        $message = '{"status":false,"reason":"Leave:User has left"}';
                     }
                     break;
                 case 'private':
-                    $uid = $cmd['params'][0];
-                    $rid = $cmd['params'][1];
-                    $wid = $cmd['params'][2];
+                    $rid = $cmd['params'][0];
+                    $wid = $cmd['params'][1];
                     $p = $statements['priv_room'];
 			        $p->bindValue(':time',time(),SQLITE3_INTEGER);
                     if ($wid != 0 ) {
@@ -781,9 +772,8 @@ while($running) {
                     $message = '{"status":true}';  
                     break;
                 case 'whisper':
-                    $uid = $cmd['params'][0];
-                    $wid = $cmd['params'][1];
-                    $text = htmlentities(stripslashes($cmd['params'][2]),ENT_QUOTES,false);
+                    $wid = $cmd['params'][0];
+                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
 
                     if($row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
                                                 LEFT JOIN users ON users.uid = participant.uid WHERE
@@ -798,20 +788,19 @@ while($running) {
                     }
                     break;
                 case 'getlog':
-                    $uid = $cmd['params'][0];
                     markActive($uid);
-                    $rid = $cmd['params'][1];
+                    $rid = $cmd['params'][0];
                     $user = $db->querySingle("SELECT name, role FROM user WHERE uid = $uid",true);
                     sendLog($uid, $user['name'],$user['role'],"LH",$rid,'');
 
                     $l = $statements['getlog'];
 	                $l->bindValue(':rid',$rid,SQLITE3_INTEGER);
-	                $l->bindValue(':start',$cmd['params'][2],SQLITE3_INTEGER);
-	                $l->bindValue(':end',$cmd['params'][3],SQLITE3_INTEGER);
+	                $l->bindValue(':start',$cmd['params'][1],SQLITE3_INTEGER);
+	                $l->bindValue(':end',$cmd['params'][2],SQLITE3_INTEGER);
                     $result = $l->execute();
 
                     $df = false;
-                    $message = '{"messages":[';	
+                    $message = '{"status":true,"messages":[';	
                     while( $row = $result->fetchArray(SQLITE3_ASSOC)) {
                         if($df) {
                             $message .= ",";
@@ -835,10 +824,10 @@ while($running) {
                     $message .= ']}';
                     break; 
                 case 'print':
-                    markActive($cmd['params'][0]);
-                    $rid = $cmd['params'][1];
+                    markActive($uid);
+                    $rid = $cmd['params'][0];
                     $sql = 'SELECT time, type, rid, uid , name, role, text  FROM log';
-                    $sql .= ' WHERE time > '.$cmd['params'][2].' AND time < '.$cmd['params'][3].' AND rid ';
+                    $sql .= ' WHERE time > '.$cmd['params'][1].' AND time < '.$cmd['params'][2].' AND rid ';
                     if ($rid == 99) {
 	                    $sql .= '> 98 ORDER BY rid,lid ;';
 
@@ -932,7 +921,7 @@ while($running) {
     $db_>exec("ROLLBACK");
 }
 
-logger("Shutting Down");
+logger("Shutting Down".print_r($stats,true));
 fclose($logfp); //close log file
 exit();
 

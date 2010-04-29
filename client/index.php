@@ -22,10 +22,11 @@
 define ('MBC',1);   //defined so we can control access to some of the files.
 include_once('./client.inc');
 
-$c = new ChatServer();
-$c->start_server(SERVER_KEY); //Start Server if not already going.
-$go = $c->getParam('exit_location');
-
-header("location: ".$go);
+if(!d_get_header()) {
+    d_forbidden();
+    exit;
+}
+$r = cs_query('location')
+header("location: ".$r['location']);
 ?>
 

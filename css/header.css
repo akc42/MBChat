@@ -51,7 +51,7 @@ td, th
 	padding-bottom: 7px;
 	padding-right:25px;
 	background-color: #efefef;
-	background-image: url(topbg_r.gif);
+	background-image: url(../images/topbg_r.gif);
 }
 
 .topbg_r
@@ -59,21 +59,21 @@ td, th
 	color: #737373;
 	font-size: 22px;
 	background-color: #efefef;
-	background-image: url(topbg.gif);
+	background-image: url(../images/topbg.gif);
 }
 
 .topbg_r2
 {
 	color: white;
 	background-color: #efefef;
-	background-image: url(topbg_r2.gif);
+	background-image: url(../images/topbg_r2.gif);
 }
 
 .topbg_l
 {
 	color: white;
 	background-color: #efefef;
-	background-image: url(topbg_l.gif);
+	background-image: url(../images/topbg_l.gif);
 }
 
 

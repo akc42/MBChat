@@ -80,8 +80,11 @@ window.addEvent('domready', function() {
 <input type="hidden" name="mod" value="<?php echo $mod; ?>" />
 <input type="hidden" name="whi" value="<?php echo $whisperer; ?>" />
 <input type="hidden" name="gp" value="<?php echo $gp; ?>" />
-<input type="hidden" name="ctype" value="<?php echo (in_array(SMF_CHAT_LITE,$groups))?'lite':'normal;'; ?>" />
-</form>
+<?php if(in_array(SMF_CHAT_LITE,$groups)) {
+?>    <input type="hidden" name="lite" value="lite" />
+<?php
+}
+?></form>
 </body>
 </html>
 
