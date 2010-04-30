@@ -90,6 +90,12 @@ body
 	position: absolute;
 	top:5px;
 	right:5px;
+	color:#FFF781;
+}
+#copyright a {
+	color:#FFF781;
+	cursor:pointer;
+	text-decoration:none;
 }
 
 #entranceHall {
@@ -468,6 +474,7 @@ span.whisper {
 #authblock {
     color:white;
     padding:50px;
+    font-size:1.2em;
 }
 #authblock a {
     color:white;

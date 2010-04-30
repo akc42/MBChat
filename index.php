@@ -42,9 +42,9 @@ if($chatting['chat']['ext_user_auth'] == 'yes') {
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<link rel="stylesheet" type="text/css" href="/css/header.css" />
+	<link rel="stylesheet" type="text/css" href="css/header.css" />
     <title>Hartley Chat</title>
-	<link rel="stylesheet" type="text/css" href="/css/chat.css" />
+	<link rel="stylesheet" type="text/css" href="css/chat.css" />
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="/css/chat-ie.css"/>
 	<![endif]-->
@@ -53,22 +53,22 @@ if(!isset($_REQUEST['lite'])) {
 ?>	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
-?>	<script src="/js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/packages.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/isarray.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/elapse.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="/js/cipher/BigInteger.init1.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/RSA.init1.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/SecureRandom.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/BigInteger.init2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/nonstructured.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script>
+?>	<script src="js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/packages.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/isarray.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/elapse.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/cipher/BigInteger.init1.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/RSA.init1.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/SecureRandom.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/BigInteger.init2.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/nonstructured.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script>
     <script type="text/javascript">
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
 <?php
@@ -266,7 +266,8 @@ if(!isset($_REQUEST['lite'])) {
 		<td align="right" width="25" class="topbg_r2" valign="top">
 		<!-- blank -->
 		</td>
-	</tr>  </tbody>
+	</tr>
+</tbody>
 </table>
 <div id="roomNameContainer"></div>
 <div id="content">
@@ -275,7 +276,7 @@ if($header = d_get_header()) {
     if(isset($_REQUEST['login'])) {//setting this is used to FORCE login
 ?>  <script type="text/javascript">
         http = new Browser.Request();
-        http.open("post",'/logout.php',false,null,null); //send a syncronous request to force credentials to be cleared
+        http.open("post",'login/logout.php',false,null,null); //send a syncronous request to force credentials to be cleared
         http.send();
         window.location.reload();
     </script>
@@ -496,7 +497,9 @@ if(!isset($_REQUEST['lite'])) {
 }
 ?>
 </div>
-<div id="copyright">MB Chat <span id="version"><?php include('./version.php');?></span> &copy; 2008-2010 Alan Chandler</div>
+</div>
+<div id="copyright">MB Chat <span id="version"><?php include('./inc/version.inc');?></span> &copy; 2008-2010
+    <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a></div>
 </div>
 <!-- Google Analytics Tracking Code -->
   <script type="text/javascript">

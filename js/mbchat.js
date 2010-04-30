@@ -31,8 +31,7 @@ MBchat = function () {
 	});
 	var room;
 	var entranceHall;
-	var setRoom
-	var privateRoom 0;
+	var privateRoom = 0;
 	var chatBot;
 	var messageListSize;
 	var hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');;
