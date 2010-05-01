@@ -96,10 +96,7 @@ function init( packageRoot ) {
 	var name = ( closure.__NAME == null ) 
 	    ? 'CLOSURE=' + (id==null?"unknown":id) 
 	    : 'CLOSURE=' + closure.__NAME + "/"+ (id==null?"unknown":id);
-	var et = ElapsedTime.create();
-	et.start( name );
 	var result = closure( scope, param, subparam );
-	et.stop();
 	return result;
     };
 
@@ -445,15 +442,12 @@ function init( packageRoot ) {
 	// 	log( "list["+i+"]="+closures[i] );
 	// }
 	
-	var et = ElapsedTime.create();
 	var first=true;
 
 	var enterProc = function(){
 	    first=false;
-	    et.start( 'CLOSURE='+closureName + "(total)" );
 	};
 	var exitProc = function(){
-	    et.stop();
 	    first=true;
 	    reset();
 	};

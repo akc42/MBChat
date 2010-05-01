@@ -25,12 +25,7 @@
  *     - Fixed Some trivial bugs.
  */
 
-function initBigInteger3( packages ) {
-    __unit( "BigInteger.init3.js" );
-    __uses( "packages.js" );
-    // __uses( "nonstructured.js" );  // See ... (1)
-    __uses( "BigInteger.init1.js" );
-    __uses( "BigInteger.init2.js" );
+(function () {
 
     // (1) nonstructured.js
     // This file relies on nonstructured.js
@@ -40,7 +35,6 @@ function initBigInteger3( packages ) {
     // import
     ////////////////////////////////////////
     // var BigInteger = __package( packages,path ).BigInteger;
-    var BigInteger = __import( packages, "titaniumcore.crypto.BigInteger" );
 
     var lowprimes  = BigInteger.lowprimes;
     var lplim      = BigInteger.lplim;
@@ -226,8 +220,6 @@ function initBigInteger3( packages ) {
 	BigInteger.log( "stepping_isProbablePrime:create" );
 	var self = this;
 	var x = self.abs();
-	var et1 = ElapsedTime.create();
-	var et2 = ElapsedTime.create();
 	return [
 	    function(scope,param,subparam) {
 		BigInteger.log("stepping_isProbablePrime No.1: " );
@@ -235,7 +227,6 @@ function initBigInteger3( packages ) {
 		// 	BigInteger.err("stepping_isProbablePrime No.1: WARNING param.result=null / param="+param );
 		// }
 
-		et1.start( "stepping_isProbablePrime" );
 
 		var i;
 		if( x.t == 1 && x[0] <= lowprimes[ lowprimes.length-1 ] ) {
@@ -298,14 +289,11 @@ function initBigInteger3( packages ) {
 	    // ver2>>
 	    function(scope,param,subparam) {
 		BigInteger.log( "stepping_isProbablePrime No.2: calling millerRabin : subparam.result=" + subparam.result );
-		et2.start("isProbablePrime.millerRabin");
 		subparam.result=null;
 		return x.stepping_millerRabin(t).BREAK();
 	    },
 	    function(scope,param,subparam) {
 		BigInteger.log( "stepping_isProbablePrime No.3: returning millerRabin : subparam.result=" + subparam.result );
-		et2.stop();
-		et1.stop();
 		param.result = subparam.result;
 		BigInteger.log( "stepping_isProbablePrime No.3: param.result=" + param.result );
 		return BREAK;
@@ -677,11 +665,6 @@ function initBigInteger3( packages ) {
 
     // ver2
     BigInteger.prototype.stepping_modPow = function (e,m) {
-	var et = ElapsedTime .create();
-	var et1 = ElapsedTime .create();
-	var et2 = ElapsedTime .create();
-	var et3 = ElapsedTime .create();
-	var et4 = ElapsedTime .create();
 	var self=this;
 
 	var i,k,r,z;
@@ -690,7 +673,6 @@ function initBigInteger3( packages ) {
 	return [
 	    function( scope, param, subparam ) {
 		BigInteger.log("stepping_modPow 1:" );
-		et.start( "modPow" );
 
 		// var i = e.bitLength(), k, r = new BigInteger(1), z;
 		i = e.bitLength(); r = new BigInteger(1);
@@ -743,7 +725,6 @@ function initBigInteger3( packages ) {
 		BigInteger.log("stepping_modPow 2: j="+j );
 		// while(j >= 0) {
 		if ( j >= 0 ) {
-		    et1.start( "modPow1" );
 		    if ( i >= k1) {
 			w = ( e[j] >> ( i - k1 ) ) & km;
 		    } else {
@@ -760,12 +741,6 @@ function initBigInteger3( packages ) {
 			i += BigInteger.DB;
 			--j; 
 		    }
-		    et1.stop();
-
-		    et2.start( "modPow2" );
-		    et2.stop();
-
-		    et3.start( "modPow3" );
 		    if( is1 ) {	// ret == 1, don't bother squaring or multiplying it
 			g[w].copyTo(r);
 			is1 = false;
@@ -784,9 +759,6 @@ function initBigInteger3( packages ) {
 			}
 			z.mulTo( r2, g[w], r );
 		    }
-		    et3.stop()
-	    
-		    et4.start( "modPow4" );
 		    while ( j >= 0 && ( e[j] & ( 1 << i ) ) == 0 ) {
 			z.sqrTo(r,r2);
 			t = r;
@@ -797,7 +769,6 @@ function initBigInteger3( packages ) {
 			    --j;
 			}
 		    }
-		    et4.stop();
 		    return CONTINUE;
 		} else {
 		    return BREAK;
@@ -806,7 +777,6 @@ function initBigInteger3( packages ) {
 		// return BREAK;
 	    },
 	    function(scope,param,subparam) {
-		et.stop();
 		// return z.revert(r);
 		param.result = z.revert(r);
 		BigInteger.log("stepping_modPow 3:result=" + param.result );
@@ -887,8 +857,6 @@ function initBigInteger3( packages ) {
 
 
 
-}
-initBigInteger3( this );
-
+})();
 
 // vim:ts=8 sw=4:noexpandtab:

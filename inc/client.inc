@@ -133,29 +133,32 @@ function cs_forbidden() {
 exit;
 }
 
-function cs_validate($domain) {
+function cs_validate() {
     global $key,$realm;
-    if(!$header = d_get_header()) {
-        cs_forbidden();
-    }
     $return = cs_query('validate');
     $key = $return['key'];
     $realm = $return['realm'];
+    if(!$header = d_get_header()) {
+        cs_forbidden();
+    }
     if(!$u = d_authenticate($header,'cs_get_uid')) {
         if(is_null($u)) {
             cs_forbidden();
         } else {
-            d_refresh($realm,$domain);
+            d_refresh($realm,'client/');
             exit;
         }
     }
     header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
     header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+    return $u;
 }
 
 function cs_get_uid($username) {
     global $uid,$realm,$key;
-    if(preg_match('/U([1-9][0-9]*|0)/',$username,$matches) == 0) return false;  //no matches so invalid
+    if(preg_match('/U([1-9][0-9]*|0)/',$username,$matches) == 0) {
+        return false;  //no matches so invalid
+    }
     $uid = $matches[1];
     return md5($username.":".$realm.":U".$uid."P".$key);
 }

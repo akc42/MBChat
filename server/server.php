@@ -205,7 +205,10 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         }
 
 //Sets up the digest parameters so they can be returned rapidly whatever routine is called
-        $key = sprintf("%05u",rand(1,30000));  //key used in password - for user Uuid passworkd is UuidP$key
+//        $key = sprintf("%05u",rand(1,30000));  //key used in password - for user Uuid passworkd is UuidP$key
+//TODO
+        $key = sprintf("%05u",rand(1,9000));  //TMP TO FORCE LEADING 0
+        logger("Key for this run:$key");
 //If there is no entry in for des_key encryption is not enabled. It is us, but is still 0 we have to make one
         $des_key = $db->querySingle("SELECT count(*) FROM parameters WHERE name ='des_key'");
         if($des_key !=0) {
@@ -236,7 +239,7 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
 $statements['timeout'] = $db->prepare("SELECT uid, name, role, rid FROM users WHERE time < :time ");
 $statements['delete_user'] = $db->prepare("DELETE FROM users WHERE uid = :uid ");
 $statements['read_log'] = $db->prepare("SELECT lid,time,uid,name,role,rid,type,text FROM log WHERE lid >= :lid ORDER BY lid ASC");
-$statements['new_user'] = $db->prepare("INSERT INTO users (uid,name,role,moderator) VALUES (:uid, :name , :role, :mod)");
+$statements['new_user'] = $db->prepare("INSERT INTO users (uid,name,role,moderator,capability) VALUES (:uid, :name , :role, :mod,:cap)");
 $statements['purge_log'] = $db->prepare("DELETE FROM log WHERE time < :interval ");
 
 //Sendlog
@@ -331,6 +334,11 @@ while($running) {
                 case 'validate':
                     $message = '{"status":true,"key":"'.$key.'","realm":"'.$realm.'"}';
                     break;
+                case 'auth':
+                    $message = '{"status":true,"remote_key":"';
+                    $message .= $db->querySingle("SELECT value FROM parameters WHERE name = 'remote_key'");
+                    $message .='","realm":"'.$realm.'","purge_message_interval":"'.$purge_message_interval.'"}';
+                    break;
                 case 'chats':
                     $chats = Array();
                     $result = $db->query("SELECT name,value FROM parameters WHERE grp = 1");
@@ -352,7 +360,11 @@ while($running) {
                         $chats[$row['name']] = $row['value'];
                     }
                     $result->finalize();
-                    $message .= ',"colours":'.json_encode($chats);
+                    $message .= ',"colours":'.json_encode($chats).'}';
+                    break;
+                case 'rooms':
+                    $cap = $db->querySingle("SELECT capability FROM users WHERE uid = $uid");
+                    $message = '{"status":true,"cap":"'.$cap.'"';
                     $chats = Array();
                     $result = $db->query("SELECT * FROM rooms");
                     while($row = $result->fetchArray(SQLITE3_ASSOC)){
@@ -376,10 +388,11 @@ while($running) {
                     $u->bindValue(':name',htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
                     $u->bindValue(':role',$cmd['params'][1],SQLITE3_TEXT);
                     $u->bindValue(':mod',$cmd['params'][2],SQLITE3_TEXT);
+                    $u->bindValue(':cap',$cmd['params'][3],SQLITE3_TEXT);
                     $u->bindValue(':time',time(),SQLITE3_INTEGER);
                     $u->execute();
                     $u->reset();
-                    $lid = sendLog($uid, $cmd['params'][0],$cmd['params'][1],"LI",0,$cmd['params'][3]);
+                    $lid = sendLog($uid, $cmd['params'][0],$cmd['params'][1],"LI",0,$cmd['params'][4]);
 
                     $message = '{"status":true,"lid":'.$lid.',"key":"'.$key.'"';
                     if($des_key != 0) {

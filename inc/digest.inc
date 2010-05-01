@@ -33,7 +33,7 @@ SUCH DAMAGE.
                                   and licenced as defined above */
 define('OPAQUE','9aa2841bcbf7e319e28a964162db2081'); //md5('chattering');
 define('PRIVATE_KEY','Chandlers ZEN');
-define('NONCE_LIFE',43200);
+define('NONCE_LIFE',1800);  //About 30 minutes - most people come in to chat and stay for about that long, so it prevents too many refreshes
 
 
 function d_send($realm,$domain) {
@@ -104,9 +104,9 @@ function d_authenticate($header,$getPassphrase) {
 //                    }
             $a2 = md5($_SERVER['REQUEST_METHOD'].':'.$requestURI);
             if (
-                preg_match('/qop="?([^,\s"]+)/', $authorization, $qop) &&
-                preg_match('/nc=([^,\s"]+)/', $authorization, $nc) &&
-                preg_match('/cnonce="([^"]+)"/', $authorization, $cnonce)
+                preg_match('/qop="?([^,\s"]+)/', $header, $qop) &&
+                preg_match('/nc=([^,\s"]+)/', $header, $nc) &&
+                preg_match('/cnonce="([^"]+)"/', $header, $cnonce)
             ) {
                 $expectedResponse = md5($a1.':'.$nonce[1].':'.$nc[1].':'.$cnonce[1].':'.$qop[1].':'.$a2);
             } else {
@@ -133,7 +133,7 @@ function d_send_bad_request() {
 }
 
     
-function d_get_nonce($nonceLife) {
+function d_get_nonce() {
     $time = ceil(time() / NONCE_LIFE) * NONCE_LIFE;
     return md5(date('Y-m-d H:i', $time).':'.$_SERVER['REMOTE_ADDR'].':'.PRIVATE_KEY);
 }

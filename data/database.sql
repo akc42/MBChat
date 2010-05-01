@@ -49,6 +49,7 @@ INSERT INTO parameters VALUES ('remote_start','http://mb.home/chat2',1); --for r
 INSERT INTO parameters VALUES ('guests_allowed','yes',1); -- if we are allowing guests?  yes if we are, anything else means no.
 INSERT INTO parameters VALUES ('emoticon_dir','./emoticons',1); -- emoticon directory (either absolute or relative to the application)
 INSERT INTO parameters VALUES ('emoticon_url','/emoticons/',1); -- emoticon url 
+INSERT INTO parameters VALUES ('remote_key','MB.COM',1); -- emoticon url 
 
 -- Same as the first group, but separated out for easy of use - they will be returned in the same request under different json object (sounds)
 
@@ -59,15 +60,15 @@ INSERT INTO parameters VALUES ('speak','poptop.mp3',2); -- file path (absolute o
 INSERT INTO parameters VALUES ('music','iyl.mp3',2); -- file path (absolute or relative) to background music
 
 -- Colours of different roles separated out for easy of use uses the colours json object - name represents the role id.
-INSERT INTO parameters VALUES ('A','C00000',3);
-INSERT INTO parameters VALUES ('L','036972',3);
-INSERT INTO parameters VALUES ('H','6A00FF',3);
-INSERT INTO parameters VALUES ('G','0000CD',3);
-INSERT INTO parameters VALUES ('S','0000CD',3);
-INSERT INTO parameters VALUES ('M','843B00',3);
-INSERT INTO parameters VALUES ('B','009700',3);
-INSERT INTO parameters VALUES ('R','414141',3);
-INSERT INTO parameters VALUES ('C','476C8E',3);
+INSERT INTO parameters VALUES ('A','843B00',3); -- brown CEO (Not Used)
+INSERT INTO parameters VALUES ('L','036972',3); -- teal DIRECTOR (Kelley, Cherry)
+INSERT INTO parameters VALUES ('H','6A00FF',3); -- purple SPONSOR (Melinda)
+INSERT INTO parameters VALUES ('G','808000',3); -- olive DEPT HEAD (Janet)
+INSERT INTO parameters VALUES ('S','0000CD',3); -- blue (speaker in auditorium if previously a REG)
+INSERT INTO parameters VALUES ('M','C00000',3); -- red (mod in auditorium) regardless of normal role
+INSERT INTO parameters VALUES ('B','009700',3); -- green GUESTS
+INSERT INTO parameters VALUES ('R','414141',3); -- grey REGULAR
+INSERT INTO parameters VALUES ('C','476C8E',3); -- RAF blue (chatbot).
 
 
 -- these are needed within the javascript chat program to set things up.  We will provide them during the login process
@@ -81,7 +82,7 @@ INSERT INTO parameters VALUES ('log_step_minutes','4',4); -- number of spin step
 INSERT INTO parameters VALUES ('log_step_hours','12',4); -- number of spin steps where time varies by one hour
 INSERT INTO parameters VALUES ('log_step_6hours','6',4); -- number of spin steps where time varies by 6 hours (before switching to days)
 INSERT INTO parameters VALUES ('entrance_hall','Entrance Hall',4); -- entrance hall name
-INSERT INTO parameters VALUES ('whisper_restrict','true',4);  -- if true, then none B's and Bs can't whisper to each other
+INSERT INTO parameters VALUES ('whisper_restrict','true',4);  -- if true, then non B's and B's can't whisper to each other
 INSERT INTO parameters VALUES ('max_messages','100',4); -- maximum number of back messages to display when entering a room
 
 
@@ -110,7 +111,8 @@ CREATE TABLE users (
   rid integer NOT NULL default 0,
   moderator char(1) NOT NULL default 'N',
   question character varying,
-  private integer NOT NULL default 0
+  private integer NOT NULL default 0,
+  capability character varying 
 );
     
 CREATE table wid_sequence ( value integer);

@@ -26,17 +26,7 @@
  *     - Added Asynchronous Execution Feauture.
  */
 
-function initRSA3( packages ) {
-    __unit( "RSA.init3.js" );
-    __uses( "packages.js" );
-    __uses( "SecureRandom.js" );
-    __uses( "BigInteger.init1.js" );
-    __uses( "BigInteger.init2.js" );
-    __uses( "nonstructured.js" ); // See ... (1)
-    __uses( "BigInteger.init3.js" );
-    __uses( "RSA.init1.js" );
-    __uses( "RSA.init2.js" );
-
+(function (){
     // (1) nonstructured.js
     // This file relies on nonstructured.js
     // See http://oka.nu/lib/nonstructured/nonstructured.readme.txt
@@ -47,9 +37,6 @@ function initRSA3( packages ) {
     // var RSA = __package( packages, id ).RSA;
     // var BigInteger = __package( packages, id ).BigInteger;
     // var SecureRandom = __package( packages, id ).SecureRandom;
-    var RSA = __import( packages, "titaniumcore.crypto.RSA" );
-    var BigInteger = __import( packages, "titaniumcore.crypto.BigInteger" );
-    var SecureRandom = __import( packages, "titaniumcore.crypto.SecureRandom" );
 
     /////////////////////////////////////////// 
     // implementation
@@ -62,10 +49,10 @@ function initRSA3( packages ) {
 	    result( self );
 	    return BREAK;
 	};
-	return ( [ generator, _result, EXIT ] ).ready().frequency(1).timeout(1).progress(progress).done(done).go();
+	return ( [ generator, _result, EXIT ]).ready().frequency(1).timeout(1).progress(progress).done(done).go();
     };
     
-    RSA.prototype.processPublicAsync = function(message,progress,result,done){
+/*    RSA.prototype.processPublicAsync = function(message,progress,result,done){
 	var closure= this.stepping_processPublic(message);
 	var receiver = function(scope,param,subparam) {
 	    result( subparam.result.toByteArray() );
@@ -97,7 +84,7 @@ function initRSA3( packages ) {
 	return this.messageFormat.privateDecryptAsync( this, message,progress,result,done );
     };
 
-
+*/
     /////////////////////////////////////////// 
     // implementation
     /////////////////////////////////////////// 
@@ -131,13 +118,9 @@ function initRSA3( packages ) {
 	    var q1; 
 	    var phi;
 
-	    var et1 = ElapsedTime.create();
-	    var et2 = ElapsedTime.create();
-	    var et3 = ElapsedTime.create();
 	    return [
 		function() {
 		    RSA.log("RSAEngine:0.0");
-		    et1.start("Step1");
 		    return BREAK;
 		},
 		// // Step1.ver1
@@ -215,13 +198,12 @@ function initRSA3( packages ) {
 		    EXIT
 		].NAME("stepping_generate.Step1"),
 		function() {
-		    et1.stop();
 		    RSA.log("RSAEngine:1.4");
 		    return BREAK;
 		},
 		function() {
 		    RSA.log("RSAEngine:2.0");
-		    et2.start("Step2");
+
 		    return BREAK;
 		},
 		// // Step2.ver1
@@ -300,7 +282,6 @@ function initRSA3( packages ) {
 		    EXIT
 		].NAME("stepping_generate.Step2"),
 		function() {
-		    et2.stop();
 		    RSA.log("RSAEngine:2.3");
 		    return BREAK;
 		},
@@ -316,7 +297,7 @@ function initRSA3( packages ) {
 		    RSA.log("RSAEngine:3.1");
 		    RSA.log( "p=" + self.p.toString(16) );
 		    RSA.log( "q=" + self.q.toString(16) );
-		    et3.start("Step3");
+
 		    return BREAK;
 		},
 		// //Step3.2 ver1
@@ -393,12 +374,9 @@ function initRSA3( packages ) {
 		function() {
 		    RSA.log("RSAEngine:3.3.1");
 
-		    var et4 =ElapsedTime.create();
 
 		    RSA.log("RSAEngine:3.3.1(1)");
-		    et4.start("modInverse1");
 		    self.d = ee.modInverse( phi );
-		    et4.stop();
 		    RSA.log("RSAEngine:3.3.2(2)");
 
 		    self._ksize(B); // added Jan15,2009
@@ -407,27 +385,20 @@ function initRSA3( packages ) {
 		function() {
 		    RSA.log("RSAEngine:3.3.2");
 
-		    var et4 =ElapsedTime.create();
-		    et4.start("modInverse2");
 		    self.dmp1 = self.d.mod(p1);
 		    self.dmq1 = self.d.mod(q1);
-		    et4.stop();
 
 		    return BREAK;
 		},
 		function() {
 		    RSA.log("RSAEngine:3.3.3");
 
-		    var et4 =ElapsedTime.create();
-		    et4.start("modInverse3");
 		    self.coeff = self.q.modInverse(self.p);
-		    et4.stop();
-
 		    return BREAK;
 		},
 
 		function() {
-		    et3.stop();
+
 		    RSA.log("RSAEngine:3.5");
 		    return BREAK;
 		},
@@ -437,7 +408,7 @@ function initRSA3( packages ) {
 	};
 
     /////////////////////////////////////////// 
-	
+/*	
 	RSA.prototype.stepping_processPublic = function(m){
 	    return m.stepping_modPow( new BigInteger(this.e), this.n);
 	};
@@ -446,8 +417,8 @@ function initRSA3( packages ) {
 	    return m.stepping_modPow( this.d, this.n );
 	};
 	
-    
-};
-initRSA3( this );
+*/  
+})();
+
 
 // vim:ts=8 sw=4:noexpandtab:

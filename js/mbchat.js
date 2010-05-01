@@ -17,6 +17,15 @@
 */
 MBchat = function () {
 
+    function padDigits(n, totalDigits) {  
+        var pd = ''; 
+        if (totalDigits > n.length) { 
+            for (i=0; i < (totalDigits-n.length); i++) { 
+                pd += '0'; 
+            } 
+        } 
+        return pd + n; 
+    }
 	var Room = new Class({
 		initialize: function(rid,name,type) {
 			this.rid = rid || 0;
@@ -37,7 +46,7 @@ MBchat = function () {
 	var hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');;
 	var emoticonSubstitution = new Hash({});
 	var emoticonRegExpStr; //dynamically calculated during init
-	var logOptions;
+	var logOptions = {};
 	var logged_in;
 	var whisperRestriction = false;
 
@@ -98,175 +107,209 @@ MBchat = function () {
         url:'login/index.php',
         link:'chain',
         onSuccess: function(response,t) {
-            document.id('alternate').addClass('hide');
-            if(response.status) {
+            document.id('rsa_generator').addClass('hide');
+            if(response && response.status) {
+                document.id('chatblock').removeClass('hide');
                 logged_in = true;
                 chatBot = {uid:0, name : response.params.chatbot_name, role: 'C'};  //Make chatBot like a user
                 messageListSize = response.params.max_messages;  //Size of message list
-                c = new BigInteger(response.key);
-                m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
+                var c = new BigInteger(response.key);
+                var m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
                 auth.U = 'U'+response.uid;
-                auth.P = auth.U+'P'+m.toString(10);
+                auth.P = auth.U+'P'+padDigits(m.toString(10),5);
+                logOptions.fetchdelay = response.params.log_fetch_delay;
+                logOptions.spinrate = response.params.log_spin_rate;
+                logOptions.secondstep = response.params.log_set_seconds;
+                logOptions.minutestep = response.params.log_set_minutes;
+                logOptions.hourset = response.params.log_set_hours;
+                logOptions.sixhourstep = response.params.log_set_6hours;
+                whisperRestriction = response.params.whisper_restrict;
                 entranceHall = new Room(0,response.params.entrance_hall,'O');
                 room = new Room();
                 room.set(entranceHall);
-	            MBchat.updateables.init(); //Start Rest
-                MBchat.updateables.whispers.init(response.lastid);
-                MBchat.updateables.online.show(0);	//Show online list for entrance hall
-                MBchat.updateables.poller.init(response.lastid,response.params.presence_interval);
+                var roomReq = new Request({url:'client/chat.php',onSuccess:function (html) {
+                    document.id('entranceHall').set('html',html);
+	                var roomgroups = $$('.rooms');
+	                var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
+	                roomgroups.each( function (roomgroup,i) {
+		                var rooms = roomgroup.getElements('.room');
+		                var fx = new Fx.Elements(rooms, {link:'cancel', duration: 500, transition: roomTransition.easeOut });
+		                rooms.each( function(door, i){
+			                var request;
+			                door.addEvent('mouseenter', function(e){
+                				if (room.rid == 0) {
+					                //adjust width of room to be wide
+					                var obj = {};
+					                obj[i] = {'width': [door.getStyle('width').toInt(), 219]};
+					                rooms.each(function(otherRoom, j){
+						                if (otherRoom != door){
+							                var w = otherRoom.getStyle('width').toInt();
+							                if (w != 67) obj[j] = {'width': [w, 67]};
+						                }
+					                });
+			                        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+                   					    fx.start(obj);
+                   					}
+					                // Set up online list for this room 
+                   					MBchat.updateables.online.show(door.get('id').substr(1).toInt());
+             					} else {
+					                displayErrorMessage('Debug - MouseEnter in Room');
+				                }
+			                });
+			                door.addEvent('mouseleave', function(e){
+				                var obj = {};
+				                rooms.each(function(other, j){
+					                obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
+				                });
+		                        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+               					    fx.start(obj);
+               					}
+				                if(room.rid == 0 ) {
+                   					MBchat.updateables.online.show(0);
+				                }
+			                });
+			                door.addEvent('click', function(e) {
+				                e.stop();			//browser should not follow link
+                				if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || door.hasClass('committee'))) {
+                					MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
+				                } else {
+					                MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
+				                }
+			                });
+		                });
+	                });
+	                var exit = $('exit');
+	                var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
+	                exit.addEvent('mouseenter',function(e) {
+                        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+		                    exitfx.start({width:100});
+		                }
+	                });
+	                exit.addEvent('mouseleave', function(e) {
+                        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+		                    exitfx.start({width:50});
+		                 }
+	                });
+	                exit.addEvent('click', function(e) {
+		                e.stop();
+		                if (privateRoom != 0) {
+			                privateReq.transmit({
+				                'wid':  0, 
+				                'lid' : MBchat.updateables.poller.getLastId(),
+				                'rid' : room.rid }); 
+		                } else {
+			                if (room.rid == 0 ) {
+				                if (this.hasClass('exit-r')) {
+					                // just exiting from logging
+					                MBchat.updateables.logger.returnToEntranceHall();
+				                } else {
+					                MBchat.logout(); //Go back from whence you came
+
+				                }
+			                } else {
+				                MBchat.updateables.message.leaveRoom();
+			                }
+		                }
+	                });
+                    document.id('messageForm').addEvent('submit', function(e) {
+		                messageSubmit(e);
+		                return false;
+	                });
+
+                    MBchat.updateables.init(); //Start Rest
+                    MBchat.updateables.whispers.init(response.lastid);
+                    MBchat.updateables.online.show(0);	//Show online list for entrance hall
+                    MBchat.updateables.poller.init(response.lastid,response.params.presence_interval);
+                    reqRunning = false;
+			        reqQueue.callChain();
+	            }});
+                var probe = new Browser.Request();
+                probe.open('post','client/probe.php',false,auth.U,auth.P);
+                probe.send();
+                if(probe.status ==  200) {      
+		            var roomReqSend = function() {
+        		        roomReq.send({});
+        		    }
+                    if (reqRunning) {
+                        reqQueue.chain(roomReqSend.bind(this));
+                    } else {
+                        reqRunning = true;
+			            roomReqSend();;
+			        }
+			     }
             } else {
-                var logout = Browser.request();
+                var logout = new Browser.Request();
                 logout.open('post','login/logout.php',false,null,null);
                 logout.send();
-                windows.location = 'login/logout.php';
+                window.location = 'login/logout.php';
             }
-        },
-        onFailure: function(xhr) {
-            document.id('alternate').addClass('hide');
+        }
+	           
+    });
+    var messageSubmit;
+return {
+	init : function(user,pass,loginOptions,keys) {
+        rsaKeys = keys;
+	    logged_in = false;
+	    //We now probe to see if we would authenticate in the login arena.
+        var probe = new Browser.Request;
+        probe.open('post','login/probe.php',false,user,pass);
+        probe.send();
+        if(probe.status ==  200) {      
+            loginReq.post(loginOptions);
+            messageSubmit = function(event) {
+			    event.stop();
+			    if (privateRoom == 0 ) {
+				    messageReq.transmit({
+					    'rid':room.rid,
+					    'lid':MBchat.updateables.poller.getLastId(),
+					    'text':$('messageText').value});
+			    } else {
+				    whisperReq.transmit({
+					    'wid':privateRoom,
+					    'rid':room.rid,
+					    'lid':MBchat.updateables.poller.getLastId(),
+					    'text':$('messageText').value});
+			    }
+
+			    $('messageText').value = '';
+			    if(MBChat.sounds) MBchat.sounds.resetTimer();
+		    }
+		
+		//Set up emoticons
+		
+		    var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)
+		    var emoticons = $$('img.emoticon');
+		    emoticons.each(function(icon,i) {
+			    var key = icon.get('alt').substr(1);
+			    var img = '<img src="' + icon.get('src') + '" alt="' + key + '" title="' + key + '" />' ;
+			    emoticonSubstitution.include(key,img);
+			    if(i!=0) regExpStr += '|';
+			    regExpStr += key.replace(/\)/g,'\\)') ;  //regular expression is key except if has ) in it which we need to escape
+			    icon.addEvent('click', function(e) {
+				    e.stop();		
+				    var msgText = $('messageText');
+				    msgText.value += ':'+ key ;
+				    msgText.focus();
+			    });
+		    });
+		    //finish pattern and turn it into a regular expression to use;
+		    regExpStr += ')';
+		    emoticonRegExpStr = new RegExp(regExpStr, 'gm');
+		    contentSize = $('content').getCoordinates();
+		    window.addEvent('resize', function() {
+			    contentSize = $('content').getCoordinates();
+		    });
+
+        } else {
+            document.id('rsa_generator').addClass('hide');
             document.id('authblock').removeCLass('hide');
             document.id('login').password.value='';
             loginError(true);
         }
-	           
-    });
 
-return {
-	init : function(user,pass,loginOptions,keys) {
-	    loginReq.xhr.open("post",'login/index.php',true,user,pass);
-        loginReq.transmit(loginOptions);
-	    logged_in = false;
-        rsaKeys = keys;
 // We need to setup all the entrance hall
-		var roomgroups = $$('.rooms');
-		var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
-		roomgroups.each( function (roomgroup,i) {
-			var rooms = roomgroup.getElements('.room');
-			var fx = new Fx.Elements(rooms, {link:'cancel', duration: 500, transition: roomTransition.easeOut });
-			rooms.each( function(door, i){
-				var request;
-				door.addEvent('mouseenter', function(e){
-    				if (room.rid == 0) {
-						//adjust width of room to be wide
-						var obj = {};
-						obj[i] = {'width': [door.getStyle('width').toInt(), 219]};
-						rooms.each(function(otherRoom, j){
-							if (otherRoom != door){
-								var w = otherRoom.getStyle('width').toInt();
-								if (w != 67) obj[j] = {'width': [w, 67]};
-							}
-						});
-				        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-       					    fx.start(obj);
-       					}
-						// Set up online list for this room 
-       					MBchat.updateables.online.show(door.get('id').substr(1).toInt());
- 					} else {
-						displayErrorMessage('Debug - MouseEnter in Room');
-					}
-				});
-				door.addEvent('mouseleave', function(e){
-					var obj = {};
-					rooms.each(function(other, j){
-						obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
-					});
-			        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-   					    fx.start(obj);
-   					}
-					if(room.rid == 0 ) {
-       					MBchat.updateables.online.show(0);
-					}
-				});
-				door.addEvent('click', function(e) {
-					e.stop();			//browser should not follow link
-    				if((e.control || e.shift) && (me.role == 'A' || me.role == 'L' || door.hasClass('committee'))) {
-    					MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
-					} else {
-						MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
-					}
-				});
-			});
-		});
 
-		var exit = $('exit');
-		var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
-		exit.addEvent('mouseenter',function(e) {
-	        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-			    exitfx.start({width:100});
-			}
-		});
-		exit.addEvent('mouseleave', function(e) {
-	        if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-			    exitfx.start({width:50});
-			 }
-		});
-		exit.addEvent('click', function(e) {
-			e.stop();
-			if (privateRoom != 0) {
-				privateReq.transmit({
-					'wid':  0, 
-					'lid' : MBchat.updateables.poller.getLastId(),
-					'rid' : room.rid }); 
-			} else {
-				if (room.rid == 0 ) {
-					if (this.hasClass('exit-r')) {
-						// just exiting from logging
-						MBchat.updateables.logger.returnToEntranceHall();
-					} else {
-						MBchat.logout(); //Go back from whence you came
-
-					}
-				} else {
-					MBchat.updateables.message.leaveRoom();
-				}
-			}
-		});
-		var messageSubmit = function(event) {
-			event.stop();
-			if (privateRoom == 0 ) {
-				messageReq.transmit({
-					'rid':room.rid,
-					'lid':MBchat.updateables.poller.getLastId(),
-					'text':$('messageText').value});
-			} else {
-				whisperReq.transmit({
-					'wid':privateRoom,
-					'rid':room.rid,
-					'lid':MBchat.updateables.poller.getLastId(),
-					'text':$('messageText').value});
-			}
-
-			$('messageText').value = '';
-			if(MBChat.sounds) MBchat.sounds.resetTimer();
-		}
-		
-		//Set up emoticons
-		
-		var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)
-		var emoticons = $$('img.emoticon');
-		emoticons.each(function(icon,i) {
-			var key = icon.get('alt').substr(1);
-			var img = '<img src="' + icon.get('src') + '" alt="' + key + '" title="' + key + '" />' ;
-			emoticonSubstitution.include(key,img);
-			if(i!=0) regExpStr += '|';
-			regExpStr += key.replace(/\)/g,'\\)') ;  //regular expression is key except if has ) in it which we need to escape
-			icon.addEvent('click', function(e) {
-				e.stop();		
-				var msgText = $('messageText');
-				msgText.value += ':'+ key ;
-				msgText.focus();
-			});
-		});
-		//finish pattern and turn it into a regular expression to use;
-		regExpStr += ')';
-		emoticonRegExpStr = new RegExp(regExpStr, 'gm');
-		$('messageForm').addEvent('submit', function(e) {
-			messageSubmit(e);
-			return false;
-		});
-		contentSize = $('content').getCoordinates();
-		window.addEvent('resize', function() {
-			contentSize = $('content').getCoordinates();
-		});
 	},
 	logout: function () {
 	    if(logged_in) {
@@ -298,7 +341,7 @@ return {
 				Cookie.write('soundDelay', $('soundDelay').value.toString(),{duration:50});
 			}
 			
-			if (!music && soundReady) {
+			if (!music) {
 				music = soundManager.getSoundById('music');
 				music.options.onfinish = function () {
 					playAgain = true;

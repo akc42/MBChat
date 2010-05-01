@@ -25,10 +25,7 @@
  *     - Fixed Some trivial bugs.
  */
 
-function initBigInteger1( packages ) {
-    __unit( "BigInteger.init1.js" );
-    __uses( "packages.js" );
-
+(function(window){
     ///////////////////////////////////////////////////////////////
     // import
     ///////////////////////////////////////////////////////////////
@@ -347,7 +344,6 @@ function initBigInteger1( packages ) {
     
     // (protected) set from string and radix
     BigInteger.prototype.fromString = function ( s, b ) {
-	// ElapsedTime.start( "fromString" );
 	var k;
 	
 	     if ( b <= 0  ) throw "bitLength must be larger than 0";
@@ -396,7 +392,6 @@ function initBigInteger1( packages ) {
 	if( mi ) {
 	    BigInteger.ZERO.subTo( this, this );
 	}
-	// ElapsedTime.stop();
     };
 
     // (protected) set from a byte array.
@@ -773,11 +768,10 @@ function initBigInteger1( packages ) {
     // Inner Classes
     BigInteger.Classic = Classic;
     BigInteger.Montgomery = Montgomery;
-    
-    // main class
-    __export( packages, "titaniumcore.crypto.BigInteger" , BigInteger );
-}
+    window.BigInteger = BigInteger;
+})(window);
 
-initBigInteger1( this );
+
+
 
 // vim:ts=8 sw=4:noexpandtab:

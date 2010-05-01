@@ -31,10 +31,6 @@ if($chatting['chat']['ext_user_auth'] == 'yes') {
         header("Location:".$chatting['chat']['remote_start']); //
         exit;
     }
-    if(!$header = d_get_header()) {
-        cs_forbidden();
-    }
-    if(!isset($_POST['name'])) exit;  //this was a "probe" call via ajax to set up the authentication
 }
 
 
@@ -53,22 +49,20 @@ if(!isset($_REQUEST['lite'])) {
 ?>	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
-?>	<script src="js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
+?><script src="js/mootools-1.2.4-core-chat-nc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/mootools-1.2.4.4-more-chat-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-1.2.4.4-more-chat-nc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script> 
     <script src="js/cipher/packages.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/isarray.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/elapse.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/cipher/BigInteger.init1.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/RSA.init1.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/SecureRandom.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/BigInteger.init2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script> 
     <script src="js/cipher/nonstructured.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script> 
     <script type="text/javascript">
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
 <?php
@@ -77,15 +71,22 @@ if(!isset($_REQUEST['lite'])) {
     authorisation, we need the values that login would have looked up in its local database to be provided as post
     parameters.  Since this is after an digest has been authorized we can assume them to be correctly setup
 */
-if($chatting['chat']['ext_user_auth'] == 'yes') {
+if($chatting['chat']['ext_user_auth'] == 'yes') { 
+    $remote_key = bcpowmod($post['pass'],$chatting['chat']['rsa_private'],$chatting['chat']['rsa_public']);  //decript using private key
+    if ($remote_key == $chatting['chat']['remote_key'].$_POST['uid']) {  //we can assume we have a valid user
 ?>
         var loginRequestOptions = {
             name:<?php echo $_POST['name']; ?>,
             role:<?php echo $_POST['role']; ?>,
             mod:<?php echo $_POST['mod'];?>,
-            whisperer:<?php echo $_POST['whi'];?>
+            whi:<?php echo $_POST['whi'];?>,
+            cap:<?php echo $_POST['grp'];?>
         }
-<?php            
+        login('$$$'.$POST['uid'],<?php echo $remote_key;?>); //We have to do the same calculation as above. to properly authorise
+<?php
+    } else {
+        cs_forbidden();
+    }            
 } else {
 ?>
         var loginRequestOptions = {};
@@ -105,7 +106,7 @@ if(!isset($_REQUEST['lite'])) {
             loginRequestOptions.n = activity.get('rsa').n.toString(10);
             loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
             loginRequestOptions.msg += ' on:'+Browser.Platform.name;
-            MBChat.init(activity.get('login').user,activity.get('login').pass,loginRequestOptions,activity.get('rsa'));
+            MBchat.init(activity.get('login').user,activity.get('login').pass,loginRequestOptions,activity.get('rsa'));
             window.addEvent('beforeunload', function() {
 	            MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
             });
@@ -116,17 +117,8 @@ if(!isset($_REQUEST['lite'])) {
 <?php
 }
 ?>
-            document.id('chatblock').removeClass('hide');
         });
 
-	    __uses( "BigInteger.init1.js" );
-	    __uses( "BigInteger.init2.js" );
-	    __uses( "RSA.init1.js" );
-	    __uses( "RSA.init2.js" );
-	    __uses( "RSA.init3.js" );
-	    
-        var BigInteger = __import( this,"titaniumcore.crypto.BigInteger" ); 
-        var RSA = __import( this,"titaniumcore.crypto.RSA" );
 
         var rsa = new RSA();
 
@@ -164,47 +156,37 @@ if(!isset($_REQUEST['lite'])) {
 
                 soundManager.createSound({
 	                id : 'whispers',
-	                url : "sounds/<?php echo $chatting['sounds']['sound_whisper'] ; ?>",
+	                url : "sounds/<?php echo $chatting['sounds']['whisper'] ?>",
 	                autoLoad : true ,
 	                autoPlay : false 
                 });
                 soundManager.createSound({
 	                id : 'move',
-	                url : "sounds/<?php echo $chatting['sounds']['sound_move'] ; ?>",
+	                url : "sounds/<?php echo $chatting['sounds']['move'] ; ?>",
 	                autoLoad : true ,
 	                autoPlay : false 
                 });
                 soundManager.createSound({
 	                id : 'speak',
-	                url : "sounds/<?php echo $chatting['sounds']['sound_speak'] ; ?>",
+	                url : "sounds/<?php echo $chatting['sounds']['speak'] ; ?>",
 	                autoLoad : true ,
 	                autoPlay : false 
                 });
                 soundManager.createSound({
 	                id : 'creaky',
-	                url : "sounds/<?php echo $chatting['sounds']['sound_creaky'] ; ?>",
+	                url : "sounds/<?php echo $chatting['sounds']['creaky'] ; ?>",
 	                autoLoad : true ,
 	                autoPlay : false
                 });
                 soundManager.createSound({
 	                id : 'music',
-	                url : "sounds/<?php echo $chatting['sounds']['sound_music'] ; ?>",
+	                url : "sounds/<?php echo $chatting['sounds']['music'] ; ?>",
 	                autoLoad : true ,
 	                autoPlay : false
                 });
                 soundcoord.done('sound',{});
             }
         });
-
-<?php
-if(!isset($_REQUEST['lite'])) {
-?>
-
-
-
-<?php
-}
-?>
     </script>
     <style type="text/css">
     
@@ -272,28 +254,7 @@ if(!isset($_REQUEST['lite'])) {
 <div id="roomNameContainer"></div>
 <div id="content">
 <?php
-if($header = d_get_header()) { 
-    if(isset($_REQUEST['login'])) {//setting this is used to FORCE login
-?>  <script type="text/javascript">
-        http = new Browser.Request();
-        http.open("post",'login/logout.php',false,null,null); //send a syncronous request to force credentials to be cleared
-        http.send();
-        window.location.reload();
-    </script>
-    <h1>Reset</h1>
-    <p>Please Wait, we a reloading the page to allow you to login</p>
-</div>
-</body>
-</html>
-<?php
-        exit;
-    }
-?>  <script type="text/javascript">
-        login('','');
-    </script>
-    <div id="rsa_generator" class="loading"></div>
-<?php
-} else {
+if($chatting['chat']['ext_user_auth'] != 'yes') { 
 ?>  <div id="rsa_generator" class="hide loading"></div> 
     <div id="authblock">
 <?php
@@ -312,7 +273,8 @@ if($header = d_get_header()) {
     <p>If you are already logged in your connection will be <strong>refused</strong>.</p>
 
     <p>Guest users should just enter the name they wish to be known as in chat and leave the password field <strong>empty</strong>.  There will
-    be no check for whether you are already connected.</p>
+    be no check for whether you are already connected.  Please <strong>note</strong> that $ characters will <strong>not</strong> be allowed in user
+    names.</p>
 <?php
     } else {
 ?>
@@ -325,14 +287,17 @@ if($header = d_get_header()) {
         var login_step1 = function() {
             var user = document.id('login').username.value;
             var pass = document.id('login').password.value;
+            if(user.contains('$')) {
+                loginError(false);
+                return false;
+            }
 
 <?php
     if($chatting['chat']['guests_allowed'] == 'yes') {
 ?>
             if(pass == '') {
-                user += ' (G)';
-                pass = 'guest';
-                loginReqestOptions.guest = true;  //Ultimately these will be included in the request to be sent to login.php
+                pass = 'guest'
+                user = '$$G'+user;
             }
 <?php
     } else {
@@ -369,9 +334,12 @@ if($header = d_get_header()) {
                 <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
                 <tr><td><input type="submit" name="submit" value="Sign In"/></td><td></td></tr>
             </table>
-        <form>
+        </form>
     </div>
 
+<?php
+} else {
+?>  <div id="rsa_generator" class="loading"></div>
 <?php
 }
 ?><script type="text/javascript">
@@ -396,44 +364,7 @@ if($header = d_get_header()) {
     </div>
 <?php 
 }
-?><div id="entranceHall">
-	<div  id="mainRooms" class="rooms">
-	    <h3>Main Rooms</h3>
-<?php
-$i=0;
-
-   
-foreach($chatting['rooms'] as $row) {
-    $rid = $row['rid'];
-    if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['committee'],$groups)))) {
-        if($i > 0 && $i%4 == 0) {
-?>  <div class="rooms"> 
-    	<h3>Committee Rooms</h3>
-<?php   }
-        if(isset($_REQUEST['lite'])) {
-?>    	<input id="R<?php echo $row['rid']; ?>" 
-                type="button" onclick="MBchat.goToRoom(<?php echo $row['rid']; ?>)" 
-                value="<?php echo $row['name']; ?>" /><br/>
-<?php   }else {
-?>		<div id="R<?php echo $row['rid']; ?>" class="room<?php if($row['type'] == 'C') echo ' committee'; ?>"><?php echo $row['name']; ?></div>
-<?php   }
-        $i++;
-	    if( ($i % 4) == 0 ) {
-?>  	<div style="clear:both"></div>
-	</div>
-<?php 
-        }
-    }    
-}
-
-//If ended loop and hadn't just comleted div we will have to do it here
-if( ($i % 4) != 0 ) { 
-?>      <div style="clear:both"></div>
-    </div>
-<?php
-} 
-?>
-</div>
+?><div id="entranceHall"></div>
 <div id="onlineListContainer">
 	<h4>Users Online</h4>
 	<div id="onlineList" class="loading"></div>
@@ -441,18 +372,15 @@ if( ($i % 4) != 0 ) {
 <div id="chatList" class="whisper"></div>	
 
 <div id="inputContainer">
-	<form id="messageForm" action="/"
-	 enctype="application/x-www-form-urlencoded" autocomplete="off" >
+	<form id="messageForm" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
 		<input id="messageText" type="text" name="text" />
 		<input type="submit" name="submit" value="Send"/>
-	</form>
+    </form>
 </div>
-
 <div id="whisperBoxTemplate">
 	<div class="private"></div><div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
 	<div class="whisperList"></div>
-	<form action="/"
-	 	enctype="application/x-www-form-urlencoded" autocomplete="off" >
+	<form action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
 		<input type="text" name="text" class="whisperInput" />
 		<input type="submit" name="submit" value="Send" class="whisperSend"/>
 	</form>

@@ -26,18 +26,11 @@
  *     - Added Asynchronous Execution Feauture.
  */
 
-function initRSA1( packages ) {
-    __unit( "RSA.init1.js" );
-    __uses( "packages.js" );
-    // __uses( "SecureRandom.js" );
-    __uses( "BigInteger.init1.js" );
-    __uses( "isarray.js" );
+(function (window) {
 
     /////////////////////////////////////////////////////////////////////
     // import
     /////////////////////////////////////////////////////////////////////
-    var BigInteger = __import( packages, "titaniumcore.crypto.BigInteger" );
-    // var SecureRandom = __import( packages, "titaniumcore.crypto.SecureRandom" );
 
     /////////////////////////////////////
     // implementation
@@ -85,7 +78,7 @@ function initRSA1( packages ) {
 	return result;
     };
 
-    RSA.defaultKeyFormat= null;
+/*    RSA.defaultKeyFormat= null;
     RSA.installKeyFormat= function( keyFormat ){
 	RSA.defaultKeyFormat  = keyFormat;
     };
@@ -94,7 +87,7 @@ function initRSA1( packages ) {
     RSA.installMessageFormat= function( messageFormat ){
 	RSA.defaultMessageFormat  = messageFormat;
     };
-
+*/
     // (private)
     function makeGetterSetter(name){
 	return function() {
@@ -181,7 +174,7 @@ function initRSA1( packages ) {
      * when no parameter is specified. The type of each parameters are
      * automatically converted to proper type.
      */
-    RSA.prototype.publicKey = function (n,e,ksize) {
+/*    RSA.prototype.publicKey = function (n,e,ksize) {
 	if ( arguments.length == 0 ) {
 	    return { n:this.n, e:this.e, ksize:this.ksize };
 	} else {
@@ -191,13 +184,13 @@ function initRSA1( packages ) {
 	}
     };
 
-    /*
+*/    /*
      * processPublic(m) 
      * encrypt( when it is used as cipher ) /  decrypt ( when it is used as
      * signing ) message.  Parameter m specifies a BigInteger object to
      * encrypt/decrypt.  Returns an encrypted/decrypted BigInteger value.
      */
-    RSA.prototype.processPublic = function (m) {
+/*    RSA.prototype.processPublic = function (m) {
 	m = this.preprocessPublic(m);
 	return m.modPowInt(this.e, this.n);
     };
@@ -220,11 +213,11 @@ function initRSA1( packages ) {
 	}
 	return this.messageFormat.publicEncryptMaxSize( this );
     };
-
+*/
     /*
      * Set a public key as a binary representation string.
      */
-    RSA.prototype.publicKeyBytes = function() {
+/*    RSA.prototype.publicKeyBytes = function() {
 	if ( this.keyFormat==null ) {
 	    throw "Error. No key format is installed.";
 	}
@@ -239,7 +232,7 @@ function initRSA1( packages ) {
 	    return this;
 	}
     };
-
+*/
     /////////////////////////////////////////////////////////////////////
 
     RSA.log = function(message) {
@@ -253,9 +246,9 @@ function initRSA1( packages ) {
     /////////////////////////////////////////////////////////////////////
     // export
     /////////////////////////////////////////////////////////////////////
-    __export( packages, "titaniumcore.crypto.RSA" ,RSA );
-};
+    window.RSA = RSA;
+})(window);
 
-initRSA1( this );
+
 
 // vim:ts=8 sw=4:noexpandtab:

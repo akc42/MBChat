@@ -7,10 +7,7 @@
  * Copyright(c) 2009 Atsushi Oka [ http://oka.nu/ ]
  * This script file is distributed under the LGPL
  */
-function initBinary( packageRoot ) {
-    if ( packageRoot.__PACKAGE_ENABLED ) {
-	__unit( "binary.js" );
-    }
+(function (window) {
 
 var i2a  = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -548,61 +545,60 @@ function mktst( encode, decode ) {
 	}
     };
 }
-
 // export
 
 // base64
-packageRoot.base64_encode = base64_encode;
-packageRoot.base64_decode = base64_decode;
-packageRoot.base64_test   = mktst( base64_encode, base64_decode );
+window.base64_encode = base64_encode;
+window.base64_decode = base64_decode;
+window.base64_test   = mktst( base64_encode, base64_decode );
 
 // base64ex
-packageRoot.base64x_encode = base64x_encode;
-packageRoot.base64x_decode = base64x_decode;
-packageRoot.base64x_test   = mktst( base64x_encode, base64x_decode );
+window.base64x_encode = base64x_encode;
+window.base64x_decode = base64x_decode;
+window.base64x_test   = mktst( base64x_encode, base64x_decode );
 
-packageRoot.base64x_pre_encode = base64x_pre_encode;
-packageRoot.base64x_pre_decode = base64x_pre_decode;
+window.base64x_pre_encode = base64x_pre_encode;
+window.base64x_pre_decode = base64x_pre_decode;
 
 // base16
-packageRoot.base16_encode = base16_encode;
-packageRoot.base16_decode = base16_decode;
-packageRoot.base16        = base16;
-packageRoot.hex           = base16;
+window.base16_encode = base16_encode;
+window.base16_decode = base16_decode;
+window.base16        = base16;
+window.hex           = base16;
 
 // utf8
-packageRoot.utf82str      = utf82str;
-packageRoot.str2utf8      = str2utf8;
-packageRoot.str2char      = str2char;
-packageRoot.char2str      = char2str;
+window.utf82str      = utf82str;
+window.str2utf8      = str2utf8;
+window.str2char      = str2char;
+window.char2str      = char2str;
 
 // byte expressions
-packageRoot.i2ba    = i2ba_be;
-packageRoot.ba2i    = ba2i_be;
-packageRoot.i2ba_be = i2ba_be;
-packageRoot.ba2i_be = ba2i_be;
-packageRoot.i2ba_le = i2ba_le;
-packageRoot.ba2i_le = ba2i_le;
+window.i2ba    = i2ba_be;
+window.ba2i    = ba2i_be;
+window.i2ba_be = i2ba_be;
+window.ba2i_be = ba2i_be;
+window.i2ba_le = i2ba_le;
+window.ba2i_le = ba2i_le;
 
-packageRoot.s2ba    = s2ba_be;
-packageRoot.ba2s    = ba2s_be;
-packageRoot.s2ba_be = s2ba_be;
-packageRoot.ba2s_be = ba2s_be;
-packageRoot.s2ba_le = s2ba_le;
-packageRoot.ba2s_le = ba2s_le;
+window.s2ba    = s2ba_be;
+window.ba2s    = ba2s_be;
+window.s2ba_be = s2ba_be;
+window.ba2s_be = ba2s_be;
+window.s2ba_le = s2ba_le;
+window.ba2s_le = ba2s_le;
 
-packageRoot.ba2ia    = ba2ia_be;
-packageRoot.ia2ba    = ia2ba_be;
-packageRoot.ia2ba_be = ia2ba_be;
-packageRoot.ba2ia_be = ba2ia_be;
-packageRoot.ia2ba_le = ia2ba_le;
-packageRoot.ba2ia_le = ba2ia_le;
+window.ba2ia    = ba2ia_be;
+window.ia2ba    = ia2ba_be;
+window.ia2ba_be = ia2ba_be;
+window.ba2ia_be = ba2ia_be;
+window.ia2ba_le = ia2ba_le;
+window.ba2ia_le = ba2ia_le;
 
 
 // arrays
-packageRoot.cmparr        = equals;
-}
+window.cmparr        = equals;
 
-initBinary(this);
+
+})(window);
 
 

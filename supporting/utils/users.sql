@@ -14,17 +14,23 @@ CREATE TABLE capabilities (
     description character varying NOT NULL
 );
 
-INSERT INTO capabilities (cid,description) VALUES (1,'Leader');
-INSERT INTO capabilities (cid,description) VALUES (2,'Director');
-INSERT INTO capabilities (cid,description) VALUES (3,'Moderator');
-INSERT INTO capabilities (cid,description) VALUES (4,'Guest');
-INSERT INTO capabilities (cid,description) VALUES (5,'Speaker');
-INSERT INTO capabilities (cid,description) VALUES (10,'Child');
-INSERT INTO capabilities (cid,description) VALUES (20,'Administrator');
-INSERT INTO capabilities (cid,description) VALUES (30,'Marketing');
-INSERT INTO capabilities (cid,description) VALUES (32,'Engineering');
-INSERT INTO capabilities (cid,description) VALUES (34,'IT');
-INSERT INTO capabilities (cid,description) VALUES (36,'Finance');
+INSERT INTO capabilities (cid,description) VALUES (1,'Admin'); -- can take logs of open rooms
+INSERT INTO capabilities (cid,description) VALUES (2,'Mod'); -- can moderate in auditorium
+INSERT INTO capabilities (cid,description) VALUES (3,'Speaker');  -- can speak in auditorium
+INSERT INTO capabilities (cid,description) VALUES (4,'Secretary'); -- can take logs of meeting rooms which allowed in.
+
+INSERT INTO capabilities (cid,description) VALUES (10,'CEO'); -- Brown
+INSERT INTO capabilities (cid,description) VALUES (12,'Director'); -- Teal
+INSERT INTO capabilities (cid,description) VALUES (14,'Dept Head'); -- Olive
+INSERT INTO capabilities (cid,description) VALUES (16,'Sponsor'); -- Purple
+
+
+INSERT INTO capabilities (cid,description) VALUES (20,'Board');
+INSERT INTO capabilities (cid,description) VALUES (22,'Technology');
+INSERT INTO capabilities (cid,description) VALUES (24,'Marketing');
+INSERT INTO capabilities (cid,description) VALUES (26,'Engineering');
+INSERT INTO capabilities (cid,description) VALUES (28,'IT');
+INSERT INTO capabilities (cid,description) VALUES (30,'Finance');
 
 COMMIT;
 VACUUM;

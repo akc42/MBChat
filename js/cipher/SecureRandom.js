@@ -22,9 +22,7 @@
  *     - Added Object-Oriented Interface.
  */
 
-function initRNG( packages ) {
-    __unit( "SecureRandom.js" );
-    __uses( "packages.js" );
+(function (window){
 
     /////////////////////////////////////////////
     // import
@@ -158,14 +156,10 @@ function initRNG( packages ) {
     // initialize
     pool_init();
 
-    ///////////////////////////////////////////
-    // export
-    ///////////////////////////////////////////
-    // __package( packages, path ).RNG = RNG;
-    // __package( packages, path ).SecureRandom = SecureRandom;
-    __export( packages, "titaniumcore.crypto.SecureRandom", SecureRandom );
-};
-initRNG( this );
+    window.SecureRandom = SecureRandom;
+
+})(window);
+
 
 
 // vim:ts=8 sw=4:noexpandtab:

@@ -26,14 +26,7 @@
  *     - Added Asynchronous Execution Feauture.
  */
 
-function initRSA2( packages ) {
-    __unit( "RSA.init2.js" );
-    __uses( "packages.js" );
-    __uses( "SecureRandom.js" );
-    __uses( "BigInteger.init1.js" );
-    __uses( "BigInteger.init2.js" );
-    __uses( "RSA.init1.js" );
-    __uses( "elapse.js" );
+(function () {
 
     /////////////////////////////////////////// 
     // import
@@ -41,9 +34,6 @@ function initRSA2( packages ) {
     // var RSA = __package( packages, id ).RSA;
     // var BigInteger = __package( packages, id ).BigInteger;
     // var SecureRandom = __package( packages, id ).SecureRandom;
-    var RSA = __import( packages, "titaniumcore.crypto.RSA" );
-    var BigInteger = __import( packages, "titaniumcore.crypto.BigInteger" );
-    var SecureRandom = __import( packages, "titaniumcore.crypto.SecureRandom" );
 
     /////////////////////////////////////////// 
     // implementation
@@ -164,27 +154,27 @@ function initRSA2( packages ) {
 	var ee = new BigInteger( this.e );
 
 	for(;;) {
-	    var et1= ElapsedTime.create();
+
 	    for(;;) {
-		et1.start("generateLoop1");
+
 		// Modified Jan15,2009 >>
 		// this.p = new BigInteger( B-qs, 1, rng );
 		this.p = new BigInteger( qs[0], 1, rng );
 		// <<
 
-		et1.stop();
+
 		if ( this.p.subtract(BigInteger.ONE).gcd(ee).compareTo(BigInteger.ONE) == 0 && this.p.isProbablePrime(10) )
 		    break;
 	    }
 
-	    var et2= ElapsedTime.create();
+
 	    for(;;) {
-		et2.start("generateLoop2");
+
 		// Modified Jan15,2009 >>
 		// this.q = new BigInteger( qs, 1, rng );
 		this.q = new BigInteger( qs[1], 1, rng );
 		// <<
-		et2.stop();
+
 		if ( this.q.subtract( BigInteger.ONE ).gcd( ee ).compareTo( BigInteger.ONE ) == 0 && this.q.isProbablePrime(10) )
 		    break;
 	    }
@@ -287,7 +277,7 @@ function initRSA2( packages ) {
 	}
     };
 
-};
-initRSA2( this );
+})();
+
 
 // vim:ts=8 sw=4:noexpandtab:
