@@ -145,7 +145,7 @@
 					return self.q.stepping_isProbablePrime(10);
 				},
 				function(result) {
-					RSA.log( "RSAEngine:2.3.3:subparam.result="+result );
+					RSA.log( "RSAEngine:2.3.3:result="+result );
 					if ( result ) {
 						RSA.log("RSAEngine:2.3.3=>EXIT");
 						return DONE();

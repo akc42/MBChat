@@ -236,11 +236,11 @@
     /////////////////////////////////////////////////////////////////////
 
     RSA.log = function(message) {
-	// trace(message);
+	//console.log(message);
     };
 
     RSA.err = function(message) {
-	trace(message);
+	console.log(message);
     };
 
     /////////////////////////////////////////////////////////////////////
