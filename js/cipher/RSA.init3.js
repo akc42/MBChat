@@ -136,8 +136,8 @@
 				return self.q.stepping_fromNumber1( qs[1], 1, rng );
 				},
 				// Step2.3 ver2>>>
-				function () {
-					RSA.log("RSAEngine:2.3.1");
+				function (result) {
+					RSA.log("RSAEngine:2.3.1 returned from q.stepping_from number with result "+result);
 					if ( self.q.subtract( BigInteger.ONE ).gcd( ee ).compareTo( BigInteger.ONE ) != 0 ) return AGAIN();
 				},
 				function() {
