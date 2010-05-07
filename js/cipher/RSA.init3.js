@@ -54,7 +54,6 @@
 	
 
 	var _result = function(keyPair) {
-		$extend(self,keyPair);
 	    result( self );
 	};
 	generator.EXEC([keylen,exp],_result);
@@ -111,7 +110,7 @@
 				},
 				function (result) {
 					RSA.log("RSAEngine:1.3.3 : returned stepping_isProbablePrime" + result );
-					if ( result ) {
+					if ( result.prime ) {
 						RSA.log("RSAEngine:1.3.3=>EXIT");
 						return DONE();
 					} else {
@@ -136,17 +135,18 @@
 				return self.q.stepping_fromNumber1( qs[1], 1, rng );
 				},
 				// Step2.3 ver2>>>
-				function (result) {
+				function () {
+					var result = self.q.subtract( BigInteger.ONE ).gcd( ee ).compareTo( BigInteger.ONE );
 					RSA.log("RSAEngine:2.3.1 returned from q.stepping_from number with result "+result);
-					if ( self.q.subtract( BigInteger.ONE ).gcd( ee ).compareTo( BigInteger.ONE ) != 0 ) return AGAIN();
+					if ( result != 0 ) return AGAIN();
 				},
 				function() {
 					RSA.log("RSAEngine:2.3.2");
 					return self.q.stepping_isProbablePrime(10);
 				},
 				function(result) {
-					RSA.log( "RSAEngine:2.3.3:result="+result );
-					if ( result ) {
+					RSA.log( "RSAEngine:2.3.3:result="+result.prime );
+					if ( result.prime ) {
 						RSA.log("RSAEngine:2.3.3=>EXIT");
 						return DONE();
 					} else {

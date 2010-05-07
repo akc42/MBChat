@@ -2,7 +2,7 @@ NS = new Class({
     initialize:function(myexec,unique) {
         this.myexec = myexec;
         this.stack = [];
-        this.result = null;
+        this.result = {};
         this.next = 'next';
 		this.firstRun = true; //Indicates that we are in the compilation phase and DO,STEP and FINISH should do things
         this.Context = new Class ({
@@ -10,7 +10,6 @@ NS = new Class({
                 this.step=0;
                 this.name='';
                 this.steps=[];
-                this.scope = {}; //holder for loop scope when pushed
             },
             insertStep: function(step) {
 				this.steps.splice(this.step++,0,step); //This is adding it during execution of a step.
@@ -42,65 +41,66 @@ NS = new Class({
         var repeat = true; //indicates if the engine should repeat without returning  (for steps that are immediate)
         do {
             if((step = this.currentContext.getStep()) === null) {
-                this.currentContext.step = 0; //Force to beginning (DO LOOPs loop until an exit or other request seen
-                if((step = this.currentContext.getStep()) === null) {
-                    //if we still get a null, then we have a bad level
-                    this.throwerror("Badly formed context");            
-                }
-            }
-            switch (step.type) {
-            case 'f':
-				var stepno = this.currentContext.step;
-                repeat = false;
-                this.next = 'next'; //default is to go on to next step
-				this.firstRun = step.firstRun;  //This flag indicates to DO, STEP and FINISH that they should compile their parameters
-                //call it
-                step.data(this.result);
-				step.firstRun=false;  //Do the first run, so all steps included by the function should now be in place
+                repeat = this.poplevel();  //reached the end of a level - we should now step out.
+            } else {
+                switch (step.type) {
+                case 'f':
+				    var stepno = this.currentContext.step;
+                    repeat = false;
+                    this.next = 'next'; //default is to go on to next step
+				    this.firstRun = step.firstRun;  //This flag indicates to DO, STEP and FINISH that they should compile their parameters
+                    //call it
+                    step.data(this.result);
+				    step.firstRun=false;  //Do the first run, so all steps included by the function should now be in place
 				
-                switch(this.next) {
-                case 'continue':
-                    this.currentContext.step = stepno-1;
-                    break; //we will re-execute the step next time through;
-                case 'again':
+                    switch(this.next) {
+                    case 'continue':
+                        this.currentContext.step = stepno-1;
+                        break; //we will re-execute the step next time through;
+                    case 'again':
+                        this.currentContext.step = 0;
+                        break;
+                    case 'done':
+                        this.poplevel();
+                        break;
+                    case 'next':
+					    this.currentContext.step = stepno;  //We need to explicitly set this because compilation may have added in new steps to execute
+                    default:
+                        //Nothing
+                    }
+                    break;
+                case 'do':
+                    this.stack.push(this.currentContext);
+                    this.scope = null;  
+                    this.currentContext = step.data;
+                    break;
+                case 'loop':
                     this.currentContext.step = 0;
                     break;
-                case 'done':
-                    this.poplevel();
+                case 'exit':
+                    repeat = this.poplevel();
                     break;
-                case 'next':
-					this.currentContext.step = stepno;  //We need to explicitly set this because compilation may have added in new steps to execute
+                case 'fail':
                 default:
-                    //Nothing
+                    this.throwerror(step.data)
                 }
-                break;
-            case 'do':
-                this.stack.push(this.currentContext);
-                this.scope = null;  
-                this.currentContext = step.data;
-                break;
-            case 'exit':
-                this.poplevel();
-                break;
-            case 'fail':
-            default:
-                this.throwerror(step.data)
             }
         } while (repeat);
     },
     poplevel: function() {
         if(this.stack.length > 0) {
             this.currentContext = this.stack.pop();
+            return true;
         } else {
             $clear(this.timerid);
-            this.whendone(true,this.result); //signal done
+            this.whendone(true); //signal done
+            return false;
         }
     }.protect(),
     throwerror:function(msg) {
         $clear(this.timerid);
         console.error(msg+" at D:"+this.stack.length+" S:"+this.currentContext.step);
-        this.result.error = msg;
-        this.whendone(false,this.result);
+        this.whendone(false,msg);
         throw "NS terminating";  //need to throw in order not to return to calling function
     }.protect(),
     STEP:function(func) {
@@ -136,6 +136,8 @@ NS = new Class({
 			funcarray.each(function(func){
 				this.STEP(func);
 			}.bind(this));
+			this.currentContext.insertStep({type:'loop'});
+			this.currentContext.step = 0;  //reset to start at begining of loop
 			this.currentContext = this.stack.pop();
 			this.currentContext.insertStep({type:'do',data:context});
 		}
