@@ -144,18 +144,15 @@ NS = new Class({
         return this;
     },
 
-    CONTINUE:function(result) {
-        if($type(result)) this.result = result;
+    CONTINUE:function() {
         this.next = 'continue';
 		return this;
     },
-    AGAIN:function(result) {
-        if($type(result)) this.result = result;
+    AGAIN:function() {
         this.next = 'again';
 		return this;
     },
-    DONE:function(result) {
-        if($type(result)) this.result = result;
+    DONE:function() {
         this.next = 'done';
 		return this;
     },

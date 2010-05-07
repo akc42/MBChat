@@ -80,16 +80,16 @@
 
 					// ver2 >>
 					function(result) {
-						result.prime = NULL_CHECKER;
+						result.checker = NULL_CHECKER;
 						BigInteger.log( "stepping_fromNumber1.2.1.1: calling stepping_isProbablePrime" );
 						return self.stepping_isProbablePrime( certainty );
 					},
 					function(result) {
 						BigInteger.log( "stepping_fromNumber1.2.1.2: returned stepping_isProbablePrime:" + result );
-						if ( result.prime == null || result.prime == NULL_CHECKER ) {
+						if ( result.checker == null || result.checker == NULL_CHECKER ) {
 							BigInteger.err( "stepping_fromNumber1.2.1.2: returned stepping_isProbablePrime: subparam.result == WARNING NULL " + result.prime );
 						}
-						if ( result.prime ) return DONE( result);
+						if ( result.checker ) return DONE();
 					},
 					// ver2 <<
 
@@ -126,19 +126,19 @@
 						BigInteger.log( "stepping_isProbablePrime.1 EXIT" );
 						//return true;
 						result.prime = true;
-						return DONE(result);
+						return DONE();
 					}
 					BigInteger.log( "stepping_isProbablePrime.2 EXIT" );
 					// return false;
 					result.prime = false;
-					return DONE(result);
+					return DONE();
 				}
 
 				if ( x.isEven() ) {
 					BigInteger.log( "stepping_isProbablePrime.3 EXIT" );
 					// return false;
 					 result.prime = false;
-					return DONE(result);
+					return DONE();
 				}
 
 				i = 1;
@@ -154,8 +154,8 @@
 						if( m % lowprimes[i++] == 0 ) {
 							BigInteger.log( "stepping_isProbablePrime:4 EXIT" );
 							// return false;
-							result.prime
-							return DONE(result);
+							result.prime = false;
+							return DONE();
 						}
 					}
 				}
@@ -174,7 +174,7 @@
 				BigInteger.log( "stepping_isProbablePrime No.3: returning millerRabin : subparam.result=" + result.prime );
 
 				BigInteger.log( "stepping_isProbablePrime No.3: param.result=" + result.prime );
-				return DONE(result);
+				return DONE();
 			},
 		]);
     };
@@ -207,7 +207,7 @@
 				if ( k <= 0) {
 					// return false;
 					result.prime = false
-					return DONE(result);
+					return DONE();
 				}
 
 				r = n1.shiftRight(k);
@@ -233,7 +233,7 @@
 					} else {
 //						BigInteger.log( "stepping_millerRabin:No2.1.2" );
 						result.prime = true
-						return DONE(result);
+						return DONE();
 					}
 				},
 				function() {
@@ -271,7 +271,7 @@
 								// return BREAK;
 								// return EXIT;
 								result.prime = false;
-								return DONE(result);
+								return DONE();
 							}
 						}
 						if ( y.compareTo( n1 ) != 0 ) {
@@ -280,7 +280,7 @@
 							// return EXIT;
 //							BigInteger.log( "stepping_millerRabin:No2.5.4 " + result );
 							result.prime = false;
-							return DONE(result);
+							return DONE();
 						}
 //						BigInteger.log( "stepping_millerRabin:No2.5.5 " );
 					}
@@ -300,10 +300,10 @@
 			//},
 			//ver3
 
-			function (result ) {
+			function ( ) {
 				// return true;
 //				BigInteger.log( "stepping_millerRabin:No3 : param.result=" + true );
-				return DONE(result);
+				return DONE();
 			},
 
 		]);
@@ -329,7 +329,7 @@
 			if ( i <= 0 ){
 				// return r;
 				result.y = r
-				return DONE(result);
+				return DONE();
 			}
 			else if(i < 18) k = 1;
 			else if(i < 48) k = 3;
@@ -426,7 +426,7 @@
 				result.y = z.revert(r);
 //				BigInteger.log("stepping_modPow 3:result=" + result );
 				//return BREAK;
-				return DONE(result);
+				return DONE();
 			},
 
 		]);
