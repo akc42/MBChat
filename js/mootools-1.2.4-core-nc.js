@@ -195,9 +195,7 @@ function $each(iterable, fn, bind){
 function $empty(){};
 
 function $extend(original, extended){
-    if(typeof(extended) != "undefined") {
-        for (var key in extended) original[key] = extended[key];
-    }
+	for (var key in (extended || {})) original[key] = extended[key];
 	return original;
 };
 

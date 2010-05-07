@@ -49,7 +49,8 @@ if(!isset($_REQUEST['lite'])) {
 ?>	<script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
-?><script src="js/mootools-1.2.4-core-chat-nc.js" type="text/javascript" charset="UTF-8"></script>
+?><script src="js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/ns.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-1.2.4.4-more-chat-nc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script> 
@@ -59,8 +60,7 @@ if(!isset($_REQUEST['lite'])) {
     <script src="js/cipher/RSA.init1.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/SecureRandom.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/BigInteger.init2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script> 
-    <script src="js/cipher/nonstructured.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script> 
     <script type="text/javascript">
@@ -119,15 +119,13 @@ if(!isset($_REQUEST['lite'])) {
 ?>
         });
 
-
-        var rsa = new RSA();
+            var rsa = new RSA();
+            function genResult (key,rsa) {
+                coordinator.done('rsa',key);
+            };
+ 
 
         
-        var genResult = function (key,rsa) {
-            coordinator.done('rsa',key);
-        };
-        var progress = function(count){};
-        var done = function(succeeded) {}
         /*
             We are kicking off a process to generate a rsa public/private key pair.  Typically this
             takes about 1.2 seconds or so to run to completion with this key length, so should be done
@@ -135,7 +133,9 @@ if(!isset($_REQUEST['lite'])) {
             function will be called when complete (as is 'done' but we don't use it).  Instead we will check for 
             keyPair to become non null. 
         */
-        var timerId = rsa.generateAsync(64,65537,progress,genResult,done);
+
+        rsa.generateAsync(64,65537,genResult);
+
         var login = function(user,pass) {
             var me = {};
             me.user = user;
