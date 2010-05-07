@@ -741,13 +741,13 @@
     
 
     BigInteger.log = function(message){
-	// trace( message );
+	// console.log( message );
 	// alert( message );
 	return;
     };
 
     BigInteger.err = function(message) {
-	trace( message );
+	console.log( message );
 	// alert( message );
 	return;
     };
