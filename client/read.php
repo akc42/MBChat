@@ -19,16 +19,9 @@
 
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: -1"); // Date in the past
-if(!(isset($_POST['user']) && isset($_POST['password']) ))
-	die('Poll-Hacking attempt - wrong parameters');
-$uid = $_POST['user'];
 
-if ($_POST['password'] != sha1("Key".$uid))
-	die('Hacking attempt got: '.$_POST['password'].' expected: '.sha1("Key".$uid));
+require_once('../inc/client.inc');
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.inc');
-
-$c = new ChatServer();
-$c->fetch('read',$_POST['lid']);
+cs_validate();
+cs_fetch('read',$_POST['lid']);
 

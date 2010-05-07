@@ -76,31 +76,11 @@ function cs_fetch() {
         echo "Cannot read reply without having sent a command";
         exit;
     }
-
-    if($read = socket_read($socket,15)) {
-        //$read should contain either {"status":true, or {"status":false
-        if(strpos($read,'true')) {
-            echo '{';
-            while($read = socket_read($socket,1024)) {
-                echo $read;
-            }
-            if($read === false) {
-                echo "} Socket Read Failed";
-            }
-        } else {
-            $message = $read;
-            while($read = socket_read($socket,1024)) {
-                $message .= $read;
-            }
-            if($read === false) {
-                echo "Socket Read Failed having read:$message";
-            } else {
-                $response = json_decode($message,true);
-                echo "Command Failed:".$response['reason'];
-            }
-        }
-    } else {
-        echo "Failed to read anything";
+    while($read = socket_read($socket,1024)) {
+        $message .= $read;
+    }
+    if($read === false) {
+        echo "Socket Read Failed having read:$message";
     }
     socket_close($socket);
 }

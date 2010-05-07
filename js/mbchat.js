@@ -468,7 +468,7 @@ return {
 				var pollInterval;
 				var wid;
                 
-    			var pollRequest = new Request.JSON({url:'read.php',link:'ignore',onComplete:function (r,t) {
+    			var pollRequest = new Request.JSON({url:'client/read.php',link:'ignore',onComplete:function (r,t) {
     			    readComplete.delay(10,this,[r,t]);
     			}}); 
 
@@ -488,12 +488,12 @@ return {
 				        if(errorMessage) displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
 				    }
 				    if (fullPoll == 2) {
-				        pollRequest.post($merge(myRequestOptions,{'lid':lastId+1})); //Should chain (we are in previous still)
+				        pollRequest.post({'lid':lastId+1}); //Should chain (we are in previous still)
 				    } else {
 				        fullPoll = 0; //If stop was pending, it has now finished
 				    }
 				}
-				var presenceReq = new ServerReq('presence.php', function(r) {});
+				var presenceReq = new ServerReq('client/presence.php', function(r) {});
 				var pollPresence = function () {
 							presenceReq.transmit({});  //say here (also timeout others)
 				};
@@ -510,7 +510,7 @@ return {
 
 					start : function () {
 	        		    if (fullPoll == 0) {
-        		            pollRequest.post($merge(myRequestOptions,{'lid':lastId+1}));		
+        		            pollRequest.post({'lid':lastId+1});		
 						 }
                         fullPoll= 2;
 					},
@@ -576,7 +576,7 @@ return {
 										'click' : function(e) {
 											if (e.control) { //Promote to moderator
 												if (user.role != 'M') { //but only if not already one
-													var request = new ServerReq('promote.php', function (response) {
+													var request = new ServerReq('client/promote.php', function (response) {
 //														MBchat.updateables.poller.pollResponse(response);
 													}).transmit({
 														'lid':MBchat.updateables.poller.getLastId(),
@@ -586,7 +586,7 @@ return {
 											} else {
 												var qtext = div.retrieve('question');
 												if (qtext) { // only send one if there is one
-													var request = new ServerReq('release.php',function (response) {
+													var request = new ServerReq('client/release.php',function (response) {
 //														MBchat.updateables.poller.pollResponse(response);
 													}).transmit({
 														'lid':MBchat.updateables.poller.getLastId(),
@@ -629,7 +629,7 @@ return {
 									div.addEvent('click', function(e) {
 										e.stop();
 										if(e.control && e.alt) {
-											var request = new ServerReq('demote.php',function (response) {
+											var request = new ServerReq('client/demote.php',function (response) {
 //												MBchat.updateables.poller.pollResponse(response);
 											}).transmit({
 												'lid':MBchat.updateables.poller.getLastId(),
@@ -698,7 +698,7 @@ return {
 									return true;
 								})){
 								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper
-									var getNewWhisperReq = new ServerReq('newwhisper.php',function(response) {
+									var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
 										if(response.wid != 0) {
 											var user = response.user
 											user.uid = user.uid.toInt();
@@ -728,7 +728,7 @@ return {
 					div.destroy(); //removes from list
 					labelList();
 				};
-				onlineReq = new ServerReq('online.php',function(response) {
+				onlineReq = new ServerReq('client/online.php',function(response) {
 					onlineList.removeClass('loading');
 					onlineList.addClass(room.type);
 					currentRid = loadingRid;
@@ -1014,7 +1014,7 @@ return {
 						exit.addClass('exit-r');
 						exit.removeClass('exit-f');
 						room = new Room(rid,'Loading','I'); //set upi room first so random calls afterwards don't screw me
-						var request = new ServerReq('room.php',function(response) {
+						var request = new ServerReq('client/room.php',function(response) {
 							response.room.rid = response.room.rid.toInt();
 							room.set(response.room);
 							var soundEnabled = $('soundEnabled').checked;
@@ -1051,7 +1051,7 @@ return {
 					},
 					leaveRoom: function () {
 						lastId = null;
-						var request = new ServerReq ('exit.php',function(response) {
+						var request = new ServerReq ('client/exit.php',function(response) {
 							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
 								item.rid = item.rid.toInt();
@@ -1291,7 +1291,7 @@ return {
 						whisperer.addClass('whisperer');
 						whisperer.set('id', 'W'+wid+'U'+user.uid);
 					}
-					var getWhisperersReq = new ServerReq('getwhisperers.php',function(response) {
+					var getWhisperersReq = new ServerReq('client/getwhisperers.php',function(response) {
 						whisperList.removeClass('loading');
 						response.whisperers.each(function(whisperer) {
 							whisperer.uid = whisperer.uid.toInt();
@@ -1301,7 +1301,7 @@ return {
 					getWhisperersReq.transmit({'wid':wid});
 					//Now we have to make the whole thing draggable.
 					var closeBox = whisper.getElement('.closeBox');
-					var leaveWhisper = new ServerReq('leavewhisper.php',function(response) {
+					var leaveWhisper = new ServerReq('client/leavewhisper.php',function(response) {
 						whisper.destroy();
 						$('content').setStyles(contentSize);
 					});
@@ -1445,7 +1445,7 @@ return {
 											return true;		 
 										}, dragReturn)){ 
 								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
-											var getNewWhisperReq = new ServerReq('newwhisper.php',function(response) {
+											var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
 												if(response.wid != 0) {
 													var user = response.user
 													user.uid = user.uid.toInt();
@@ -1468,7 +1468,7 @@ return {
 										}
 										//See if already in whisper with this user
 										if (addUser (user,droppable) ) {
-											var addUserToWhisperReq = new ServerReq('joinwhisper.php',function(response) {});
+											var addUserToWhisperReq = new ServerReq('client/joinwhisper.php',function(response) {});
 											addUserToWhisperReq.transmit({
 												'wuid':user.uid,
 												'wid':droppable.get('id').substr(1).toInt()});
@@ -1638,7 +1638,7 @@ return {
 						break;
 					}
 				}
-				var request = new ServerReq('log.php',function(response) {
+				var request = new ServerReq('client/log.php',function(response) {
 					messageList.removeClass('loading');
 					if(response) {
 						response.messages.each(function(item) {
@@ -1668,7 +1668,7 @@ return {
 							printQuery += '&end='+endTime.getTime()/1000;
 							printQuery += '&tzo='+endTime.getTimezoneOffset()*60;
 							MBchat.logout();
-							window.location = 'print.php?' + printQuery ; //and go back to the forum
+							window.location = 'client/print.php?' + printQuery ; //and go back to the forum
 						});
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
