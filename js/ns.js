@@ -28,6 +28,7 @@ NS = new Class({
             window.AGAIN = this.AGAIN.bind(this);
             window.DO = this.DO.bind(this);
             window.STEP = this.STEP.bind(this);
+            window.SET = this.SET.bind(this);
             window.EXIT = 0;
         }
         this.timerid;
@@ -48,10 +49,8 @@ NS = new Class({
 				    var stepno = this.currentContext.step;
                     repeat = false;
                     this.next = 'next'; //default is to go on to next step
-				    this.firstRun = step.firstRun;  //This flag indicates to DO, STEP and FINISH that they should compile their parameters
-                    //call it
+                   //call it
                     step.data(this.result);
-				    step.firstRun=false;  //Do the first run, so all steps included by the function should now be in place
 				
                     switch(this.next) {
                     case 'continue':
@@ -64,7 +63,6 @@ NS = new Class({
                         this.poplevel();
                         break;
                     case 'next':
-					    this.currentContext.step = stepno;  //We need to explicitly set this because compilation may have added in new steps to execute
                     default:
                         //Nothing
                     }
@@ -93,7 +91,7 @@ NS = new Class({
             return true;
         } else {
             $clear(this.timerid);
-            this.whendone(true); //signal done
+            this.whendone(true,this.result); //signal done
             return false;
         }
     }.protect(),
@@ -103,58 +101,74 @@ NS = new Class({
         this.whendone(false,msg);
         throw "NS terminating";  //need to throw in order not to return to calling function
     }.protect(),
-    STEP:function(func) {
+    step:function (func) {
             var boundfunc;
-			if(this.firstRun) {
-				switch($type(func)) {
-				case 'function': 
-					boundfunc = func.bind(this);
-					this.currentContext.insertStep({type:'f',data:boundfunc,firstRun:true});
+			switch($type(func)) {
+			case 'function': 
+				boundfunc = func.bind(this);
+				this.currentContext.insertStep({type:'f',data:boundfunc,firstRun:true});
+				break;
+			case 'array':
+				this.donest(func); //recursively add the next level
+				break;
+			case 'number':
+				if (func == EXIT) {
+					this.currentContext.insertStep({type:'exit'});
 					break;
-				case 'array':
-					this.DO(func); //recursively add the next level
-					break;
-				case 'number':
-					if (func == EXIT) {
-						this.currentContext.insertStep({type:'exit'});
-						break;
-					}
-					//deliberately fall through
-				default:
-					this.currentContext.insertStep({type:'fail',data:'Invalid Entry in DO array'});
 				}
+				//deliberately fall through
+			default:
+				this.currentContext.insertStep({type:'fail',data:'Invalid Entry in DO array'});
 			}
-					
+        return this;
+    },
+    STEP:function(func) {
+        this.step(func);
+        this.currentContext.step--; //point back the set just added, so it will execute next
+    },
+    donest:function(funcarray) {
+        var context;
+		this.stack.push(this.currentContext);
+		context = new this.Context();
+		this.currentContext = context;
+		funcarray.each(function(func){
+			this.step(func);
+		}.bind(this));
+		this.currentContext.insertStep({type:'loop'});
+		this.currentContext.step = 0;  //reset to start at begining of loop
+        this.currentContext = this.stack.pop();
+		this.currentContext.insertStep({type:'do',data:context});
+
         return this;
     },
     DO:function(funcarray) {
         var context;
-		if(this.firstRun) { //only if in compile phase.
-			this.stack.push(this.currentContext);
-			context = new this.Context();
-			this.currentContext = context;
-			funcarray.each(function(func){
-				this.STEP(func);
-			}.bind(this));
-			this.currentContext.insertStep({type:'loop'});
-			this.currentContext.step = 0;  //reset to start at begining of loop
-			this.currentContext = this.stack.pop();
-			this.currentContext.insertStep({type:'do',data:context});
-		}
-        return this;
-    },
-
-    CONTINUE:function() {
+		this.stack.push(this.currentContext);
+		context = new this.Context();
+		this.currentContext = context;
+		funcarray.each(function(func){
+			this.step(func);
+		}.bind(this));
+		this.currentContext.insertStep({type:'loop'});
+		this.currentContext.step = 0;  //reset to start at begining of loop - this will then be execited next;
+    },        
+    CONTINUE:function(result) {
+        if($type(result)) this.result = result;
         this.next = 'continue';
 		return this;
     },
-    AGAIN:function() {
+    AGAIN:function(result) {
+        if($type(result)) this.result = result;
         this.next = 'again';
 		return this;
     },
-    DONE:function() {
+    DONE:function(result) {
+        if($type(result)) this.result = result;        
         this.next = 'done';
 		return this;
+    },
+    SET:function(result) {
+        this.result = result;
     },
     EXEC: function(params,complete) {
         var boundexec = this.myexec.bind(this);
