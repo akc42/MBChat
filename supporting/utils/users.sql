@@ -32,6 +32,8 @@ INSERT INTO capabilities (cid,description) VALUES (26,'Engineering');
 INSERT INTO capabilities (cid,description) VALUES (28,'IT');
 INSERT INTO capabilities (cid,description) VALUES (30,'Finance');
 
+INSERT INTO capabilities (cid,description) VALUES (501,'WhisperBan'); -- banned from whispering;
+
 COMMIT;
 VACUUM;
     

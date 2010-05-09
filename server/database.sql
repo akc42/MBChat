@@ -49,15 +49,15 @@ INSERT INTO parameters VALUES ('remote_start','http://mb.home/chat2',1); --for r
 INSERT INTO parameters VALUES ('guests_allowed','yes',1); -- if we are allowing guests?  yes if we are, anything else means no.
 INSERT INTO parameters VALUES ('emoticon_dir','./emoticons',1); -- emoticon directory (either absolute or relative to the application)
 INSERT INTO parameters VALUES ('emoticon_url','/emoticons/',1); -- emoticon url 
-INSERT INTO parameters VALUES ('remote_key','MB.COM',1); -- emoticon url 
+INSERT INTO parameters VALUES ('remote_key','MB.COM',1); -- key used for remote connector 
 
 -- Same as the first group, but separated out for easy of use - they will be returned in the same request under different json object (sounds)
 
-INSERT INTO parameters VALUES ('whisper','ding.mp3',2); -- file path (absolute or relative) to sound for whisper box appearing
-INSERT INTO parameters VALUES ('move','exit.mp3',2); -- file path (absolute or relative) to sound for person moving rooms or exiting
-INSERT INTO parameters VALUES ('creaky','creaky.mp3',2); -- file path (absolute or relative) to sound for vamp room door 
-INSERT INTO parameters VALUES ('speak','poptop.mp3',2); -- file path (absolute or relative) to sound when someone speaks (when you are quiet)
-INSERT INTO parameters VALUES ('music','iyl.mp3',2); -- file path (absolute or relative) to background music
+INSERT INTO parameters VALUES ('whisper','ding.mp3',2); -- file name in sound directory for whisper box appearing
+INSERT INTO parameters VALUES ('move','exit.mp3',2); -- file name in sound directory for person moving rooms or exiting
+INSERT INTO parameters VALUES ('creaky','creaky.mp3',2); -- file name in sound directory for vamp room door 
+INSERT INTO parameters VALUES ('speak','poptop.mp3',2); -- file name in sound directory when someone speaks (when you are quiet)
+INSERT INTO parameters VALUES ('music','iyl.mp3',2); -- file name in sound directory to background music
 
 -- Colours of different roles separated out for easy of use uses the colours json object - name represents the role id.
 INSERT INTO parameters VALUES ('A','843B00',3); -- brown CEO (Not Used)
@@ -98,7 +98,6 @@ INSERT INTO parameters VALUES ('tick_interval','10',9); -- how long (in seconds)
 INSERT INTO parameters VALUES ('check_ticks','6',9); -- how long (in tick intervals) should the server wait before testing the database for timeout
 INSERT INTO parameters VALUES ('user_timeout','270',9); -- how long (in seconds) to timeout a user as no longer present
 INSERT INTO parameters VALUES ('purge_message_interval','20',9); -- messages older than this number of days will be purged from the database
-INSERT INTO parameters VALUES ('realm','chat@hartley-consultants.com',9); -- realm used in password database
 
 
 

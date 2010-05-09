@@ -19,14 +19,10 @@
 
 
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-include_once('./client.inc');
-
-if(!d_get_header()) {
-    d_forbidden();
-    exit;
-}
-$r = cs_query('location')
+include_once('../inc/client.inc');
+cs_start_server();
+cs_validate();
+$r = cs_query('location');
 header("location: ".$r['location']);
-?>
+
 

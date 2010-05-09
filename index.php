@@ -19,6 +19,7 @@
 
 /* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
 
+/* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
 require_once('./inc/client.inc');
 
@@ -39,7 +40,7 @@ if($chatting['chat']['ext_user_auth'] == 'yes') {
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<link rel="stylesheet" type="text/css" href="css/header.css" />
-    <title>Hartley Chat</title>
+    <title>MB Chat</title>
 	<link rel="stylesheet" type="text/css" href="css/chat.css" />
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="/css/chat-ie.css"/>
@@ -54,7 +55,6 @@ if(!isset($_REQUEST['lite'])) {
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-1.2.4.4-more-chat-nc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/<?php echo (isset($_REQUEST['lite']))?'mbclite.js':'mbchat.js' ; ?>" type="text/javascript" charset="UTF-8"></script> 
-    <script src="js/cipher/packages.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/cipher/BigInteger.init1.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/RSA.init1.js" type="text/javascript" charset="UTF-8"></script>
@@ -63,26 +63,34 @@ if(!isset($_REQUEST['lite'])) {
     <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script> 
+    <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script> 
     <script type="text/javascript">
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
 <?php
 /*
     login request options will ultimately be passed by mbchat.js to the client/login.php routine.  For external
     authorisation, we need the values that login would have looked up in its local database to be provided as post
-    parameters.  Since this is after an digest has been authorized we can assume them to be correctly setup
+    parameters.
 */
-if($chatting['chat']['ext_user_auth'] == 'yes') { 
-    $remote_key = bcpowmod($post['pass'],$chatting['chat']['rsa_private'],$chatting['chat']['rsa_public']);  //decript using private key
-    if ($remote_key == $chatting['chat']['remote_key'].$_POST['uid']) {  //we can assume we have a valid user
+if($chatting['chat']['ext_user_auth'] == 'yes') {
+    /* The remote end will look up the remote key and concatenate it with its view of the next five minute boundary.   Because it might
+        be close to the boundary its possible that it selects one five minutes further on - so we have two to chose from.  Similarly,
+        because it may be slightly skew from me and we have at least one overlapping boundary we need it to send its two possible values*/
+    $t = ceil(time()/300)*300;
+    $r1 = md5($chatting['chat']['remote_key'].sprintf("%012u",$t));
+    $r2 = md5($chatting['chat']['remote_key'].sprintf("%012u",$t+300));
+
+    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {  //we can assume we have a valid user
 ?>
         var loginRequestOptions = {
+            uid:<?php echo $_POST['uid']; ?>,
             name:<?php echo $_POST['name']; ?>,
             role:<?php echo $_POST['role']; ?>,
             mod:<?php echo $_POST['mod'];?>,
             whi:<?php echo $_POST['whi'];?>,
             cap:<?php echo $_POST['grp'];?>
         }
-        login('$$$'.$POST['uid'],<?php echo $remote_key;?>); //We have to do the same calculation as above. to properly authorise
+        login(); //We are ready togo
 <?php
     } else {
         cs_forbidden();
@@ -106,7 +114,7 @@ if(!isset($_REQUEST['lite'])) {
             loginRequestOptions.n = activity.get('rsa').n.toString(10);
             loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
             loginRequestOptions.msg += ' on:'+Browser.Platform.name;
-            MBchat.init(activity.get('login').user,activity.get('login').pass,loginRequestOptions,activity.get('rsa'));
+            MBchat.init(loginRequestOptions,activity.get('rsa'));
             window.addEvent('beforeunload', function() {
 	            MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
             });
@@ -136,17 +144,13 @@ if(!isset($_REQUEST['lite'])) {
 
         rsa.generateAsync(64,65537,genResult);
 
-        var login = function(user,pass) {
-            var me = {};
-            me.user = user;
-            me.pass = pass;
-            coordinator.done('login',me);    
+        var login = function() {
+            coordinator.done('login',{});    
         };
 
 
-        window.addEvent('domready', function() {
+        window.addEvent('domready', function() {                
             coordinator.done('dom',{});
-
         });
         soundManager.url = '/js/';
         soundManager.flashVersion = 9; // optional: shiny features (default = 8)
@@ -284,40 +288,64 @@ if($chatting['chat']['ext_user_auth'] != 'yes') {
     }
 ?>
     <script type="text/javascript">
-        var login_step1 = function() {
-            var user = document.id('login').username.value;
-            var pass = document.id('login').password.value;
-            if(user.contains('$')) {
-                loginError(false);
-                return false;
-            }
+        window.addEvent('domready',function () {
+            document.id('login').addEvent('submit', function(e) {
+                e.stop();
+                var user = document.id('login').username.value;
+                var pass = document.id('login').password.value;
+                if(user.contains('$')) {
+                    loginError(false);
+                    return ;
+                }
 
 <?php
     if($chatting['chat']['guests_allowed'] == 'yes') {
 ?>
-            if(pass == '') {
-                pass = 'guest'
-                user = '$$G'+user;
-            }
+                if(pass == '') {
+                    pass = 'guest'
+                    user = '$$G'+user;
+                }
 <?php
     } else {
 ?>
-            if(pass == '') {
-                loginError(false);
-                return false
-            }
+                if(pass == '') {
+                    loginError(false);
+                    return;
+                }
 <?php
     }
 ?>
-            document.id('rsa_generator').removeClass('hide');
-            document.id('authblock').addClass('hide');
-            document.id('login_error').addClass('hide');
-            document.id('login').username.removeClass('error');
-            document.id('login').password.removeClass('error');
-            login(user,pass);
-            return false;
-        }
-        var loginError = function() { 
+
+
+                var t1 = (Math.ceil(new Date().getTime()/300000)*300).toString();
+                while(t1.length < 12) {
+                    t1 = '0'+t1;
+                }
+                var t2 = (Math.ceil(new Date().getTime()/300000)*300+300).toString();
+                while(t2.length < 12) {
+                    t2 = '0'+t2;
+                }
+                document.id('rsa_generator').removeClass('hide');
+                document.id('authblock').addClass('hide');
+                document.id('login_error').addClass('hide');
+                document.id('login').username.removeClass('error');
+                document.id('login').password.removeClass('error');
+                var loginReq = new Request.JSON({
+                    url:'login/index.php',
+                    onComplete:function(response,t) {
+                        if(response && response.status) {
+                            loginRequestOptions = response.login;
+                            login();
+                        } else { 
+                            loginError(response.usererror);
+                        }
+                    }
+                }).post({user:user,pass1:hex_md5(pass+t1),pass2:hex_md5(pass+t2)});
+            });
+        });
+        var loginError = function(usernameError) { 
+                document.id('rsa_generator').addClass('hide');
+                document.id('authblock').removeClass('hide');
             document.id('login_error').removeClass('hide');
             if(usernameError) {
                 document.id('login').username.addClass('error');
@@ -326,13 +354,14 @@ if($chatting['chat']['ext_user_auth'] != 'yes') {
                 document.id('login').password.addClass('error');
             }
         }
+        
     </script>
         <div id="login_error" class="hide">Incorrect Credentials</div>
-        <form id="login" action="#" method="post" onsubmit="javascript:return login_step1()">
+        <form id="login">
             <table>
                 <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
                 <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
-                <tr><td><input type="submit" name="submit" value="Sign In"/></td><td></td></tr>
+                <tr><td><input type="submit" name="signin" value="Sign In"/></td><td></td></tr>
             </table>
         </form>
     </div>
@@ -407,7 +436,8 @@ if(!isset($_REQUEST['lite'])) {
 			 }
 		}
 	}
-?><div id="userOptions">
+?></div>
+<div id="userOptions">
     <form>
 	    <input id="autoScroll" type="checkbox" checked="checked" />
 	    <label for="autoScroll">Autoscroll</label>
@@ -425,9 +455,9 @@ if(!isset($_REQUEST['lite'])) {
 }
 ?>
 </div>
-</div>
 <div id="copyright">MB Chat <span id="version"><?php include('./inc/version.inc');?></span> &copy; 2008-2010
     <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a></div>
+</div>
 </div>
 <!-- Google Analytics Tracking Code -->
   <script type="text/javascript">

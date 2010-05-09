@@ -377,7 +377,7 @@ div.logging {
 }
 
 .private {
-	background: green url(private.gif) no-repeat;
+	background: green url(../images/private.gif) no-repeat;
 	position:absolute;
 	top:0px;
 	left:0px;
@@ -417,7 +417,7 @@ div.wBactive {
 }
 
 .closeBox {
-	background:#0066ff url(closebox.gif) no-repeat;
+	background:#0066ff url(../images/closebox.gif) no-repeat;
 	height:21px;
 	width:21px;
 	position:absolute;
@@ -529,7 +529,7 @@ span.whisper {
 	float:left;
 	height:20px;
 	width:21px;
-	background: url(timeminus.gif) no-repeat center;
+	background: url(../images/timeminus.gif) no-repeat center;
 	margin-left:10px;
 }
 
@@ -548,7 +548,7 @@ span.whisper {
 	float:left;
 	height:20px;
 	width:21px;
-	background: url(timeplus.gif) no-repeat center;
+	background: url(../images/timeplus.gif) no-repeat center;
 	margin-left:10px;
 }
 
@@ -556,7 +556,7 @@ span.whisper {
 	float:left;
 	height:44px;
 	width: 50px; 
-	background: #a87aad url(printer.jpg) no-repeat; 
+	background: #a87aad url(../images/printer.jpg) no-repeat; 
 	margin-left:40px;
 	cursor:pointer;
 }
@@ -569,6 +569,19 @@ span.whisper {
 
 #printScreen h1,#printScreen h2, #printScreen h3 {
 	text-align:center;
+}
+
+#login_error {
+    font-weight:bold;
+    background-color:white;
+    color:red;
+    text-align:center;
+    width:240px;
+    height:30px;
+}
+
+#login input.error {
+    border:2px solid red;
 }
 
 

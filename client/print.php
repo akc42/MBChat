@@ -20,30 +20,23 @@
 // Show all errors:
 error_reporting(E_ALL);
 
-
-if(!(isset($_GET['user']) && isset($_GET['password']) && isset($_GET['rid'])
-	&& isset($_GET['room']) && isset($_GET['start'])&& isset($_GET['end']) && isset($_GET['tzo'])))
-	die('Log - Hacking attempt - wrong parameters');
-$uid = $_GET['user'];
-if ($_GET['password'] != sha1("Key".$uid))
-	die('Log - Hacking attempt got: '.$_GET['password'].' expected: '.sha1("Key".$uid));
+date_default_timezone_set('UTC');
 	
 $rid = $_GET['rid'];
 
-$now = new DateTime();
-$dtz = new DateTimeZone(date_default_timezone_get());
-$tzo = $_GET['tzo']+$dtz->getOffset($now);
 
-define ('MBC',1);   //defined so we can control access to some of the files.
-require_once('./client.inc');
+$tzo = intval($_GET['tzo'])*60;
 
-$c = new ChatServer();
+require_once('../inc/client.inc');
 
-$c->start_server(SERVER_KEY);
+cs_start_server();
 
-$hephaestus = $c->getParam('chatbot_name');
+cs_validate();
 
-$rows = $c->query('print',$uid,$rid,$_GET['start'],$_GET['end']);
+
+$print = cs_query('print',$rid,$_GET['start'],$_GET['end']);
+$hephaestus = $print['chatbot'];
+
 
 if ($rid == 99) {
 	$room = 'Non Standard';
@@ -57,30 +50,32 @@ if ($rid == 99) {
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>Melinda's Backups Chat</title>
-	<link rel="stylesheet" type="text/css" href="chat-pr.css" title="mbstyle"/>
+	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
 </head>
 <body>
-<a id="exitPrint" href="forum.php"><img src="exit.gif"/></a>
-<h1>Melinda&#8217;s Backups Chat History Log</h1>
+<!-- It is important that chat is called without parameters.  If external authorisation is in place it will jump back to that authentication -->
+<a id="exitPrint" href="../index.php"><img src="../images/exit.gif"/></a>
+<h1>Chat History Log</h1>
 <h2><?php echo $room; ?></h2> 
 <h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3>
 
 <?php
 function message($txt) {
-global $row, $i;
-	echo '"C">'.$hephaestus.'</span><span>'.$row['name'].' '.$txt.'</span><br/>';
+global $row, $i,$hephaestus,$nomessages,$tzo;
+	echo '<span class="time">'.date("D h:i:s a",$row['time']-$tzo).'</span> <span class=';
+	echo '"C">'.$hephaestus.':</span> <span>'.$row['name'].' '.$txt.'</span><br/>';
 	echo "\n";
 	$nomessages = false;
 }
 function umessage($txt) {
-global $row,$i;
-	echo '"'.$row['role'].'">'.$row['name'].'</span><span>'.$txt.'</span><br/>';
+global $row,$i,$nomessages,$tzo;
+	echo '<span class="time">'.date("D h:i:s a",$row['time']-$tzo).'</span> <span class=';
+	echo '"'.$row['role'].'">'.$row['name'].':</span> <span>'.$txt.'</span><br/>';
 	echo "\n";
 	$nomessages = false;
 }
 $nomessages = true;
-foreach($rows as $row) {
-		echo '<span class="time">'.date("h:i:s a",$row['time']-$tzo).'</span><span class=';
+foreach($print['rows'] as $row) {
 		switch ($row['type']) {
 		case "LI" :
 			message('Logs In');
@@ -92,9 +87,11 @@ foreach($rows as $row) {
 			message('Logs Out (timeout)');
 			break;
 		case 'RE':
+		case 'PX':
 			message('Enters Room');
 			break;
 		case 'RX':
+		case 'PE':
 			message('Leaves Room');
 			break;
 		case 'RM':
@@ -119,6 +116,7 @@ foreach($rows as $row) {
 			message('Reads Log');
 			break;
 		default:
+		    umessage('Unknown message type '.$row['type']);
 		// Do nothing with these
 			break;
 		}

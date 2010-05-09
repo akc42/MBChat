@@ -16,8 +16,9 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-include_once('./client.inc');
+include_once('../inc/client.inc');
 
 cs_validate();
-$c->fetch('online',$_POST['rid']);
+
+cs_fetch('online',$_POST['rid']);
 

@@ -27,9 +27,6 @@ define('SERVER_SOCKET',DATA_DIR.'message.sock');
 $uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
 
 
-require_once(dirname(__FILE__).'/digest.inc');
-
-
 function cs_start_server() {
     exec(SERVER_DIR.'server.php '.DATA_DIR);
 }
@@ -77,7 +74,7 @@ function cs_fetch() {
         exit;
     }
     while($read = socket_read($socket,1024)) {
-        $message .= $read;
+        echo $read;
     }
     if($read === false) {
         echo "Socket Read Failed having read:$message";
@@ -88,7 +85,7 @@ function cs_fetch() {
 
 
 function cs_forbidden() {
-    d_send_forbidden();
+    header('HTTP/1.0 403 Forbidden');
 ?><html>
     <head>
         <style type="text/css">
@@ -114,34 +111,14 @@ exit;
 }
 
 function cs_validate() {
-    global $key,$realm;
-    $return = cs_query('validate');
+    global $uid;
+    if(!(isset($_REQUEST['uid']) && isset($_REQUEST['pass']))) cs_forbidden();
+    $return = cs_query('auth');
     $key = $return['key'];
-    $realm = $return['realm'];
-    if(!$header = d_get_header()) {
-        cs_forbidden();
-    }
-    if(!$u = d_authenticate($header,'cs_get_uid')) {
-        if(is_null($u)) {
-            cs_forbidden();
-        } else {
-            d_refresh($realm,'client/');
-            exit;
-        }
-    }
-    header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
-    return $u;
+    if(md5("U".$_REQUEST['uid']."P".$key) != $_REQUEST['pass']) cs_forbidden();
+    $uid = $_REQUEST['uid'];
 }
 
-function cs_get_uid($username) {
-    global $uid,$realm,$key;
-    if(preg_match('/U([1-9][0-9]*|0)/',$username,$matches) == 0) {
-        return false;  //no matches so invalid
-    }
-    $uid = $matches[1];
-    return md5($username.":".$realm.":U".$uid."P".$key);
-}
 
 
 

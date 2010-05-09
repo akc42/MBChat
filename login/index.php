@@ -17,81 +17,64 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 error_reporting(E_ALL);
 
+$t = ceil(time()/300)*300;
 
-require_once('../inc/client.inc');
-
-cs_start_server();
-$auth = cs_query('auth');
-function get_password($username) {
-    global $auth,$db;
-    if(substr($username,0,3) == '$$$') {
-        //An externally authorised client with where we checked the password already
-
-        return md5($username.":".$auth['realm'].":".$auth['remote_key'].substr($username,3)); 
-    }
-    $db = new PDO('sqlite:../data/users.db');
-   if (substr($username,0,3) == '$$G') {
-        //A guest
-        return md5($username.":".$auth['realm'].":guest");
-    }
-    $result = $db->query("SELECT password FROM users WHERE isguest = 0 AND name = '$username'");
-    $pass = $result->fetchColumn();
-    $result->closeCursor();
-    return $pass;
-}
-
-if(!$header = d_get_header()) {
-    cs_forbidden();
-}
-if(!$username = d_authenticate($header,'get_password')) {
-    if(is_null($username)) {
-        d_send_bad_request(); //this will let us know we made an error with the password
-        exit;
-    } else {
-        d_refresh($auth['realm'],'login/');
-        exit;
-    }
-}
-header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
-header("Expires: Mon, 26 Jul 1997 05:00:00 GMT"); // Date in the past
-
-//We found a user (although of course it might just be a guest (or an externally authenticated user)
-
+$username = $_POST['user'];
 $return = Array();
 
-if(substr($username,0,3) == '$$$') {
-    $return['uid'] = substr($username,3);
-    $return['name'] = $_POST['name'];
-    $return['role'] = $_POST['role'];
-    $return['mod'] = $_POST['mod'];
-    $return['whi'] = ($_POST['whi'] == 'true');
-    $return['cap'] = $_POST['cap'];
-} elseif(substr($username,0,3) == '$$G') {
-    $db->exec("INSERT INTO users (name,password,isGuest) VALUES ('$username','guest',1)");
-    $return['uid'] = $db->lastInsertID();
-    $return['name'] = substr($username,3).'_(G)';
-    $return['role'] = 'B';
-    $return['mod'] = 'N';
-    $return['whi'] = true;
-    $return['cap'] = '';
+$db = new PDO('sqlite:../data/users.db');
+
+if (substr($_POST['user'],0,3) == '$$G') {
+    //A guest
+    $r1 = md5('guest'.sprintf("%012u",$t));
+    $r2 = md5('guest'.sprintf("%012u",$t+300));
+    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+        $db->exec("INSERT INTO users (name,password,isGuest) VALUES ('$username','guest',1)");
+        $return['login']['uid'] = $db->lastInsertID();
+        $return['login']['name'] = substr($username,3).'_(G)';
+        $return['login']['role'] = 'B';
+        $return['login']['mod'] = 'N';
+        $return['login']['whi'] = true;
+        $return['login']['cap'] = '';
+        $return['status'] = true;
+    } else {
+        $return['status'] = false;
+        $return['usererror'] = true;
+    }
 } else {
-    $result = $db->query("SELECT * FROM users WHERE name = '$username'");
-    $row = $result->fetch(PDO::FETCH_ASSOC);
+    //Normal user
+    $result = $db->query("SELECT password FROM users WHERE isguest = 0 AND name = '$username'");
+    if($pass = $result->fetchColumn()){
+        $r1 = md5($pass.sprintf("%012u",$t));
+        $r2 = md5($pass.sprintf("%012u",$t+300));
+        if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+        
+            $result->closeCursor();
+            $result = $db->query("SELECT * FROM users WHERE name = '$username'");
+            $row = $result->fetch(PDO::FETCH_ASSOC);
+            $return['login']['uid'] = $row['uid'];
+            $return['login']['name'] = $row['name'];
+            $c = explode(":",$row['capability']);
+            $return['login']['whi'] = (!in_array('501',$c));
+            $return['login']['role'] = (in_array('10',$c)?'A':(in_array('12',$c)?'L':(in_array('14',$c)?'G':(in_array('16',$c)?'H':'R'))));
+            $return['login']['mod'] = (in_array('2',$c)?'M':(in_array('3',$c)?'S':'N'));
+            $return['login']['cap'] = $row['capability'];
+            $return['status'] = true;
+        } else {
+            $return['status'] = false;
+            $return['usererror'] = false;
+            
+        }
+    } else {
+        $return['status'] = false;
+        $return['usererror'] = true;
+    }
     $result->closeCursor();
-    $return['uid'] = $row['uid'];
-    $return['name'] = $row['name'];
-    $return['whi'] = true;
-    $c = explode(":",$row['capability']);
-    $return['role'] = (in_array('10',$c)?'A':(in_array('12',$c)?'L':(in_array('14',$c)?'G':(in_array('16',$c)?'H':'R'))));
-    $return['mod'] = (in_array('2',$c)?'M':(in_array('3',$c)?'S':'N'));
-    $return['cap'] = $row['capability'];
 }
-$uid = $return['uid'];
-$q = cs_query('login',$return['name'],$return['role'],$return['mod'],$return['cap'],$_POST['msg']); //log on!.
-$return = array_merge($return,$q);
-$return['key'] = bcpowmod($return['key'],$_POST['e'],$_POST['n']);
-if(isset($return['des'])) $return['des'] = bcpowmod($return['des'],$_POST['e'],$_POST['n']);
 echo json_encode($return);    
+
+
 
