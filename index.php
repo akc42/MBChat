@@ -328,8 +328,8 @@ if($chatting['chat']['ext_user_auth'] != 'yes') {
                 document.id('rsa_generator').removeClass('hide');
                 document.id('authblock').addClass('hide');
                 document.id('login_error').addClass('hide');
-                document.id('login').username.removeClass('error');
-                document.id('login').password.removeClass('error');
+                document.id(document.id('login').username).removeClass('error');
+                document.id(document.id('login').password).removeClass('error');
                 var loginReq = new Request.JSON({
                     url:'login/index.php',
                     onComplete:function(response,t) {
@@ -348,16 +348,16 @@ if($chatting['chat']['ext_user_auth'] != 'yes') {
                 document.id('authblock').removeClass('hide');
             document.id('login_error').removeClass('hide');
             if(usernameError) {
-                document.id('login').username.addClass('error');
-                document.id('login').password.addClass('error');
+                document.id(document.id('login').username).addClass('error');
+                document.id(document.id('login').password).addClass('error');
             } else {
-                document.id('login').password.addClass('error');
+                document.id(document.id('login').password).addClass('error');
             }
         }
         
     </script>
         <div id="login_error" class="hide">Incorrect Credentials</div>
-        <form id="login">
+        <form id="login" action="/" enctype="application/x-www-form-urlencoded">
             <table>
                 <tr><td>Username:</td><td><input type="text" name="username" value="" /></td></tr>
                 <tr><td>Password:</td><td><input type="password" name="password" value="" /></td></tr>
