@@ -240,7 +240,7 @@
     };
 
     RSA.err = function(message) {
-	console.log(message);
+	//console.log(message);
     };
 
     /////////////////////////////////////////////////////////////////////

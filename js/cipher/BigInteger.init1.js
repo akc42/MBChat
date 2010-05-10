@@ -747,7 +747,7 @@
     };
 
     BigInteger.err = function(message) {
-	console.log( message );
+	//console.log( message );
 	// alert( message );
 	return;
     };

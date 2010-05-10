@@ -8,7 +8,6 @@ NS = new Class({
         this.Context = new Class ({
             initialize:function() {
                 this.step=0;
-                this.name='';
                 this.steps=[];
             },
             insertStep: function(step) {
@@ -97,7 +96,7 @@ NS = new Class({
     }.protect(),
     throwerror:function(msg) {
         $clear(this.timerid);
-        console.error(msg+" at D:"+this.stack.length+" S:"+this.currentContext.step);
+//        console.error(msg+" at D:"+this.stack.length+" S:"+this.currentContext.step);
         this.whendone(false,msg);
         throw "NS terminating";  //need to throw in order not to return to calling function
     }.protect(),
@@ -118,7 +117,7 @@ NS = new Class({
 				}
 				//deliberately fall through
 			default:
-				this.currentContext.insertStep({type:'fail',data:'Invalid Entry in DO array'});
+				this.currentContext.insertStep({type:'exit'});
 			}
         return this;
     },

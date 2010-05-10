@@ -99,7 +99,7 @@
 						if( self.bitLength() > bitLength ) {
 							self.subTo( BigInteger.ONE.shiftLeft(bitLength-1), self );
 						}
-					},
+					}
 				]);
 			}
 		});
@@ -171,7 +171,7 @@
 
 				BigInteger.log( "stepping_isProbablePrime No.3: param.result=" + result );
 				return DONE();
-			},
+			}
 		]);
     };
     // ver2<<
@@ -283,7 +283,7 @@
 //					BigInteger.log( "stepping_millerRabin:No2.6" );
 					++i;
 
-				},
+				}
 
 			],
 			// }
@@ -296,7 +296,7 @@
 				// return true;
 //				BigInteger.log( "stepping_millerRabin:No3 : param.result=" + true );
 				return DONE();
-			},
+			}
 
 		]);
 	// VER2 <<
@@ -418,7 +418,7 @@
 //				BigInteger.log("stepping_modPow 3:result=" + result );
 				//return BREAK;
 				return DONE(result);
-			},
+			}
 
 		]);
     };
