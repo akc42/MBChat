@@ -29,10 +29,7 @@ $tzo = intval($_GET['tzo'])*60;
 
 require_once('../inc/client.inc');
 
-cs_start_server();
-
 cs_validate();
-
 
 $print = cs_query('print',$rid,$_GET['start'],$_GET['end']);
 $hephaestus = $print['chatbot'];
@@ -53,6 +50,11 @@ if ($rid == 99) {
 	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
 </head>
 <body>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', GOOGLE_ACCOUNT]);
+  _gaq.push(['_trackPageview']);
+</script>        
 <!-- It is important that chat is called without parameters.  If external authorisation is in place it will jump back to that authentication -->
 <a id="exitPrint" href="../index.php"><img src="../images/exit.gif"/></a>
 <h1>Chat History Log</h1>
@@ -126,6 +128,15 @@ if($nomessages) {
 	echo '"C">'.$hephaestus.'</span><span><b>THERE ARE NO MESSAGES TO DISPLAY</b></span><br/>';
 	echo "\n";
 }
-?></body>
+?>
+<!-- Google Analytics Tracking Code -->
+  <script type="text/javascript">
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+    })();
+  </script>
+</body>
 
 </html>

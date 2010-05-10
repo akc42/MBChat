@@ -21,7 +21,6 @@ error_reporting(E_ALL);
 
 
 require_once('../inc/client.inc');
-cs_start_server(); //in case stopped waiting for password for long time
 
 $uid = $_POST['uid'];
 $q = cs_query('login',$_POST['name'],$_POST['role'],$_POST['mod'],$_POST['cap'],$_POST['msg']); //log on!.

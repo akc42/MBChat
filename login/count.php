@@ -20,14 +20,26 @@
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-define ('MBC',1);   //defined so we can control access to some of the files.
+define('REMOTE_KEY','MB.COM');
+
 require_once('../inc/client.inc');
 
-$c = new ChatServer();
-if($c->is_server_running() {
-    $c->start_server(SERVER_KEY);  //Just in case
-    echo $c->cmd('count');
+$t = ceil(time()/300)*300;
+$r1 = md5(REMOTE_KEY.sprintf("%012u",$t));
+$r2 = md5(REMOTE_KEY.sprintf("%012u",$t+300));
+
+if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {  //we can assume we have a valid user
+    if(cs_is_server_running()) {  //we don't want to start the server just to find out it wasn't running and no one is in chat
+        $count = cs_query('count');
+        echo $count['count'];
+    } else {
+        echo 0;  
+    }
 } else {
-    echo 0;
+    cs_forbidden();
 }
+
+
+
+
 

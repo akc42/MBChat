@@ -20,7 +20,7 @@
 
 
 include_once('../inc/client.inc');
-cs_start_server();
+
 cs_validate();
 $r = cs_query('location');
 header("location: ".$r['location']);

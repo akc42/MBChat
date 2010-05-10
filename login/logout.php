@@ -16,6 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
+require_once('../inc/client.inc');
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
@@ -31,7 +32,7 @@
 <body>
 <script type="text/javascript">
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-6767755-1']);
+  _gaq.push(['_setAccount', GOOGLE_ACCOUNT]);
   _gaq.push(['_trackPageview']);
 </script>
 <table id="header" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" >

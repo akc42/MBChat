@@ -21,9 +21,8 @@
 
 /* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
-require_once('./inc/client.inc');
 
-cs_start_server();
+require_once('./inc/client.inc');
 
 $chatting = cs_query('chats');
 
@@ -373,7 +372,7 @@ if($chatting['chat']['ext_user_auth'] != 'yes') {
 }
 ?><script type="text/javascript">
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-6767755-1']);
+  _gaq.push(['_setAccount', GOOGLE_ACCOUNT]);
   _gaq.push(['_trackPageview']);
 </script>
 

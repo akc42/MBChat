@@ -19,6 +19,8 @@
 */
 //The following 2 keys need to be adjusted for each installation.  
 
+define('GOOGLE_ACCOUNT','UA-6767755-1');
+
 define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web space
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
 
@@ -27,13 +29,14 @@ define('SERVER_SOCKET',DATA_DIR.'message.sock');
 $uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
 
 
-function cs_start_server() {
-    exec(SERVER_DIR.'server.php '.DATA_DIR);
+function cs_is_server_running() {
+    return file_exists(SERVER_SOCKET)
 }
 
 $socket = false; 
 function cs_server($args) {
     global $socket,$uid;
+    if(!file_exists(SERVER_SOCKET)) exec(SERVER_DIR.'server.php '.DATA_DIR); //start server if its not running
     if(!$socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         echo "Failed to get a socket, Error =".socket_strerror(socket_last_error());
         exit;
@@ -102,8 +105,22 @@ function cs_forbidden() {
         </style>
     </head>
     <body>
-        <h1>Forbidden</h1>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', GOOGLE_ACCOUNT]);
+  _gaq.push(['_trackPageview']);
+</script>        
+<h1>Forbidden</h1>
         <p>This URL is intended to only be called by authorised applications</p>
+<!-- Google Analytics Tracking Code -->
+  <script type="text/javascript">
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+    })();
+  </script>
+
     </body>
 </html>
 <?php

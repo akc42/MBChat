@@ -19,6 +19,7 @@
 
 
 error_reporting(E_ALL);
+define('PURGE_GUEST_INTERVAL',5); //Days to leave guests in the database
 
 $t = ceil(time()/300)*300;
 
@@ -26,6 +27,7 @@ $username = $_POST['user'];
 $return = Array();
 
 $db = new PDO('sqlite:../data/users.db');
+$db->exec("DELETE FROM users WHERE time < ".(time() - PURGE_GUEST_INTERVAL*86400)." AND isguest = 1"); //purge old guests
 
 if (substr($_POST['user'],0,3) == '$$G') {
     //A guest
