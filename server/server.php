@@ -19,6 +19,7 @@
 
 */
 error_reporting(E_ALL);
+date_default_timezone_set('Europe/London');
 
 if($argc != 2) die("Chat Server usage wrong\n");
 $datadir = $argv[1];
@@ -214,7 +215,6 @@ function markActive($uid) {
 $logfp = fopen(LOG_FILE,'a');
 $running = false; 
 declare(ticks = 1);
-date_default_timezone_set('Europe/London');
 try {
 
 if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {

@@ -4,7 +4,7 @@ CREATE TABLE users (
   uid integer primary key autoincrement NOT NULL,
   time bigint DEFAULT (strftime('%s','now')) NOT NULL,
   name character varying NOT NULL,
-  password character varying NOT NULL, --md5 hash of (name:realm:password) where realm is defined elsewhere
+  password character varying NOT NULL, --raw password
   capability character varying, -- a ":" separated list of capabilities (equivalent to smf_groups) which define that user
   isguest boolean DEFAULT 0 NOT NULL
 );
