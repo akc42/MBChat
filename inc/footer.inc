@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -15,11 +15,14 @@
 
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
 */
-include('./url.inc');
-
-echo @file_get_contents($uri."/count.php");
-?>
-
-
+?><!-- Google Analytics Tracking Code -->
+  <script type="text/javascript">
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+    })();
+  </script>
 
