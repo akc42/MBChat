@@ -27,6 +27,36 @@ cs_validate();
 $rooms = cs_query('rooms');
 $groups = explode(":",$rooms['cap']);
 
+
+function getRoomClass ($type) {
+    $class = "room";
+    switch($type) {
+    case 0:
+        $class .= " forum";
+    case 1:
+        $class .= " meeting";
+        break;
+    case 2:
+        $class .= " gallery";
+        break;
+    case 3:
+        $class .= " auditorium";
+        break;
+    case 4:
+        $class .= " member";
+        break;
+    case 5:
+        $class .= " guest";
+        break;
+    default:
+    }
+    return $class;
+}
+    
+
+
+
+
 ?><div  id="mainRooms" class="rooms">
 	    <h3>Main Rooms</h3>
 <?php
@@ -35,17 +65,19 @@ $i=0;
    
 foreach($rooms['rooms'] as $row) {
     $rid = $row['rid'];
-    if(!(($role == 'B' && $rid == 2) || ($role != 'B' && $rid == 3) || ($row['type'] == 'C' && !in_array($row['committee'],$groups)))) {
+    if( ($row['type'] != 1 || in_array($rid,$groups)) 
+            && (!(($row['type'] == 4 && $rooms['role'] == 'B') || ($row['type'] == 5 && $rooms['role'] != 'B'))) ) {
         if($i > 0 && $i%4 == 0) {
 ?><div class="rooms"> 
     	<h3>Committee Rooms</h3>
 <?php   }
-        if(isset($_REQUEST['lite'])) {
+        if($rooms['blind']) {
 ?>    	<input id="R<?php echo $row['rid']; ?>" 
                 type="button" onclick="MBchat.goToRoom(<?php echo $row['rid']; ?>)" 
+                class="<?php echo getRoomClass($row['type']);?>"
                 value="<?php echo $row['name']; ?>" /><br/>
 <?php   }else {
-?>		<div id="R<?php echo $row['rid']; ?>" class="room<?php if($row['type'] == 'C') echo ' committee'; ?>"><?php echo $row['name']; ?></div>
+?>		<div id="R<?php echo $row['rid']; ?>" class="<?php echo getRoomClass($row['type']);?>"><?php echo $row['name']; ?></div>
 <?php   }
         $i++;
 	    if( ($i % 4) == 0 ) {

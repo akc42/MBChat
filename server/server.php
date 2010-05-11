@@ -266,7 +266,7 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
 $statements['timeout'] = $db->prepare("SELECT uid, name, role, rid FROM users WHERE time < :time ");
 $statements['delete_user'] = $db->prepare("DELETE FROM users WHERE uid = :uid ");
 $statements['read_log'] = $db->prepare("SELECT lid,time,uid,name,role,rid,type,text FROM log WHERE lid >= :lid ORDER BY lid ASC");
-$statements['new_user'] = $db->prepare("INSERT INTO users (uid,name,role,moderator,capability) VALUES (:uid, :name , :role, :mod,:cap)");
+$statements['new_user'] = $db->prepare("INSERT INTO users (uid,name,role,mod,cap,rooms) VALUES (:uid, :name , :role , :mod ,:cap , :rooms )");
 $statements['purge_log'] = $db->prepare("DELETE FROM log WHERE time < :interval ");
 
 //Sendlog
@@ -289,7 +289,7 @@ $statements['room_msgs'] = $db->prepare("SELECT lid, time, type, rid, log.uid AS
                                             FROM log LEFT JOIN participant ON participant.wid = rid
                                             WHERE ( (participant.uid = :uid  AND type = 'WH' ) OR rid = :rid ) 
                                             AND lid >= :lid ORDER BY lid ASC");
-$statements['enter'] = $db->prepare("UPDATE users SET rid = :rid , time = :time, role = :role, moderator = :mod WHERE uid = :uid ");
+$statements['enter'] = $db->prepare("UPDATE users SET rid = :rid , time = :time, role = :role, mod = :mod WHERE uid = :uid ");
 //Room Exit
 $statements['room_whi_start'] = $db->prepare("SELECT lid  FROM log  JOIN participant ON participant.wid = rid 
                                             WHERE participant.uid = :uid AND type = 'WH' AND log.time > :time 
@@ -297,13 +297,13 @@ $statements['room_whi_start'] = $db->prepare("SELECT lid  FROM log  JOIN partici
 $statements['room_whis'] = $db->prepare("SELECT lid, time, type, rid, log.uid AS uid , name, role, text  
                                         FROM log JOIN participant ON participant.wid = rid WHERE participant.uid = :uid 
                                         AND type = 'WH' AND lid >= :lid ");
-$statements['exit'] = $db->prepare("UPDATE users SET rid = 0, time = :time, role = :role , moderator = :mod WHERE uid = :uid ");
+$statements['exit'] = $db->prepare("UPDATE users SET rid = 0, time = :time, role = :role , mod = :mod WHERE uid = :uid ");
 
 //Message
 $statements['question'] = $db->prepare("UPDATE users SET time = :time, question = :q , rid = :rid WHERE uid = :uid ");
 //Managing Moderation
-$statements['demote'] = $db->prepare("UPDATE users SET role = :role , moderator = 'N', time = :time WHERE uid = :uid ");
-$statements['promote'] = $db->prepare("UPDATE users SET role = 'M',  moderator = :mod, time = :time, question = NULL WHERE uid = :uid ");
+$statements['demote'] = $db->prepare("UPDATE users SET role = :role , mod = 'N', time = :time WHERE uid = :uid ");
+$statements['promote'] = $db->prepare("UPDATE users SET role = 'M',  mod = :mod, time = :time, question = NULL WHERE uid = :uid ");
 $statements['release'] = $db->prepare("UPDATE users SET question = NULL WHERE uid = :uid ");
 //Whispering
 $statements['join'] = $db->prepare("INSERT INTO participant (wid,uid) VALUES (:wid, :uid)");
@@ -389,15 +389,16 @@ while($running) {
                     $message .= ',"colours":'.json_encode($chats).'}';
                     break;
                 case 'rooms':
-                    $cap = $db->querySingle("SELECT capability FROM users WHERE uid = $uid");
-                    $message = '{"status":true,"cap":"'.$cap.'"';
-                    $chats = Array();
+                    $rooms = $db->querySingle("SELECT rooms,cap,role FROM users WHERE uid = $uid",true);
+                    $message = '{"status":true,"cap":"'.$rooms['rooms'].'","blind":'.((($rooms['cap'] & 1) == 1)?'true':'false');
+                    $message .= ',"role":"'.$rooms['role'].'"';
+                    $rooms = Array();
                     $result = $db->query("SELECT * FROM rooms");
                     while($row = $result->fetchArray(SQLITE3_ASSOC)){
-                        $chats[] = $row;
+                        $rooms[] = $row;
                     }
                     $result->finalize();
-                    $message .= ',"rooms":'.json_encode($chats).'}';
+                    $message .= ',"rooms":'.json_encode($rooms).'}';
                     break;
                 case 'location':
                     $message = '{"status":true,"location":"'.$db->querySingle("SELECT value FROM parameters WHERE name = 'exit_location'").'"}';
@@ -413,8 +414,17 @@ while($running) {
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
                     $u->bindValue(':name',htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
                     $u->bindValue(':role',$cmd['params'][1],SQLITE3_TEXT);
-                    $u->bindValue(':mod',$cmd['params'][2],SQLITE3_TEXT);
-                    $u->bindValue(':cap',$cmd['params'][3],SQLITE3_TEXT);
+                    $mod = $cmd['params'][2] & 24;  //looks for mod = 8 and speaker = 24
+                    if(($cmd['params'][2] & 24) ==0) 
+                        $mod = 'N';
+                    else if(($cmd['params'][2] & 8) != 0)
+                        $mod = 'M';
+                    else
+                        $mod = 'S';
+                    
+                    $u->bindValue(':mod',$mod,SQLITE3_TEXT);
+                    $u->bindValue(':cap',($cmd['params'][2] & 39),SQLITE3_INTEGER);
+                    $u->bindValue(':rooms',$cmd['params'][3],SQLITE3_TEXT);
                     $u->bindValue(':time',time(),SQLITE3_INTEGER);
                     $u->execute();
                     $u->reset();
@@ -469,15 +479,15 @@ while($running) {
                     markActive($uid);
                     $rid = $cmd['params'][0];
                     if($room = $db->querySingle("SELECT rid, name, type FROM rooms WHERE rid = $rid ",true)) { //validate room
-                        $user = $db->querySingle("SELECT uid, name, role, moderator, question FROM users WHERE uid = $uid ",true);
+                        $user = $db->querySingle("SELECT uid, name, role, mod, question FROM users WHERE uid = $uid ",true);
 
-	                    if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
+	                    if ($room['type'] == 3  && $user['mod'] != 'N') {
 	                    //This is a moderated room, and this person is not normal - so swap them into moderated room role
-		                    $role = $user['moderator'];
+		                    $role = $user['mod'];
 		                    $mod = $user['role'];
 	                    } else {
 		                    $role = $user['role'];
-		                    $mod = $user['moderator'];
+		                    $mod = $user['mod'];
 	                    }
 	                    $name = $user['name'];
 	                    $question = $user['question'];
@@ -555,15 +565,15 @@ while($running) {
                     markActive($uid);
                     $rid = $cmd['params'][0];
                     if(($room = $db->querySingle("SELECT rid, name, type FROM rooms where rid = $rid ",true)) != 0) {
-                        $user = $db->querySingle("SELECT uid, name, role, moderator FROM users WHERE uid = $uid ",true);
+                        $user = $db->querySingle("SELECT uid, name, role, mod FROM users WHERE uid = $uid ",true);
 
-                        if ($room['type'] == 'M'  && $user['moderator'] != 'N') {
+                        if ($room['type'] == 3  && $user['mod'] != 'N') {
                         //This is a moderated room, and this person is not normal - so swap them out of moderated room role
-	                        $role = $user['moderator'];
+	                        $role = $user['mod'];
 	                        $mod = $user['role'];
                         } else {
 	                        $role = $user['role'];
-	                        $mod = $user['moderator'];
+	                        $mod = $user['mod'];
                         }
 	                    $name = $user['name'];
 
@@ -626,7 +636,6 @@ while($running) {
                     $message .= '], "lastid" :'.(($lid && $lid < $maxlid)?$lid:$maxlid).'}';
                     break;
                case 'msg':
-                    markActive($uid);
                     $rid = $cmd['params'][0];
                     $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
 
@@ -635,9 +644,10 @@ while($running) {
     	
 	                $role = $row['role'];
 	                $type = $row['type'];
+                    $message = '{"status":true}'; 
 	                $u = $statements['question'];
 	                $mtype = '' ;
-	                if ($type == 'M' && $role != 'M' && $role != 'H' && $role != 'G' && $role != 'S' ) {
+	                if ($type == 3 && $role != 'M' && $role != 'S' ) {
 	                //we are in a moderated room and not allowed to speak, so we just update the question we want to ask
 		                if( $text == '') {
 		                    $u->bindValue(':q',null,SQLITE3_NULL);
@@ -647,11 +657,15 @@ while($running) {
                 		    $mtype = "MQ";
 		                    }
 	                } else {
-		                    $u->bindValue(':q',null,SQLITE3_NULL);
+		                $u->bindValue(':q',null,SQLITE3_NULL);
 		            //just indicate presence
 		                if ($text != '') {  //only insert non blank text - ignore other
-		                    $mtype = "ME";
-		                }
+		                    if($type == 2 && $role == 'B') {
+                                $message = '{"status":false,"reason":"Message ignored (Guests may not speak in Operational rooms)"}'; 
+                            } else {
+		                        $mtype = "ME";
+		                    }
+                        }
 		            }
                     $u->bindValue(':time',time(),SQLITE3_INTEGER);
                     $u->bindValue(':rid',$rid,SQLITE3_INTEGER);
@@ -661,32 +675,31 @@ while($running) {
 	                if ($mtype != '') {
 	                    sendLog($uid, $row['name'],$role,$mtype,$rid,$text);
                     }
-                    $message = '{"status":true}'; 
                     break;
                 case 'demote':
                     markActive($uid);
                     $rid = $cmd['params'][0];
                     $u = $statements['demote'];
-                    $user = $db->querySingle("SELECT uid, name, role, rid, moderator FROM users WHERE uid = $uid",true);
+                    $user = $db->querySingle("SELECT uid, name, role, rid, mod FROM users WHERE uid = $uid",true);
 
                 	if ($user['role'] == 'M' && $user['rid'] == $rid ) {
-                	    $u->bindValue(':role',$user['moderator'],SQLITE3_TEXT);
+                	    $u->bindValue(':role',$user['mod'],SQLITE3_TEXT);
                 	    $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
                         $u->bindValue(':time',time(),SQLITE3_INTEGER);
                         $u->execute();
                         $u->reset();
-                        sendLog($uid, $user['name'],$user['moderator'],"RN",$rid,"");
+                        sendLog($uid, $user['name'],$user['mod'],"RN",$rid,"");
                     }
                     $message = '{"status":true}';
                     break; 
                 case 'promote':
                     markActive($uid);
                     $puid = $cmd['params'][0];
-                    $user = $db->querySingle("SELECT uid, name, role, rid, moderator, question  FROM users WHERE uid = $puid ",true);
+                    $user = $db->querySingle("SELECT uid, name, role, rid, mod, question  FROM users WHERE uid = $puid ",true);
 
 	                if ($user['role'] == 'M' || $user['role'] == 'S') {
 		                //already someone special 
-		                $mod =$user['moderator'];
+		                $mod =$user['mod'];
 	                } else {
 		                $mod = $user['role'];
 	                }
@@ -735,8 +748,8 @@ while($running) {
                 case 'newwhi':
                     $wuid = $cmd['params'][0];
 
-                    if(($wuser = $db->querySingle("SELECT uid,name,role,moderator FROM users WHERE uid = $wuid",true)) &&
-                        ($user = $db->querySingle("SELECT uid,name,role,moderator FROM users WHERE uid = $uid",true))) {
+                    if(($wuser = $db->querySingle("SELECT uid,name,role,mod FROM users WHERE uid = $wuid",true)) &&
+                        ($user = $db->querySingle("SELECT uid,name,role,mod FROM users WHERE uid = $uid",true))) {
                         markActive($uid);
                         $statements['seq']->execute();
                         $statements['seq']->reset();

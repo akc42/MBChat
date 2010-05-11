@@ -21,20 +21,19 @@ BEGIN;
 CREATE TABLE rooms (
   rid integer primary key NOT NULL,
   name varchar(30) NOT NULL,
-  type room_type NOT NULL,
-  committee smallint default NULL
+  type integer NOT NULL -- 0 = Open, 1 = meeting, 2 = guests can't speak, 3 moderated, 4 members(adult) only, 5 guests(child) only
 ) ;
 
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (1, 'Members Lounge', 'O', NULL);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (2, 'The Blue Room', 'A', NULL);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (3, 'The Green Room', 'B', NULL);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (4, 'Vamp Club', 'O', NULL);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (5, 'Auditorium', 'M', NULL);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (6, 'Lead Team', 'C', 9);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (7, 'The Music Room', 'C', 12);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (8, 'The Africa Room', 'C', 16);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (9, 'The News Room', 'C', 17);
-INSERT INTO `rooms` (`rid`, `name`, `type`, `committee`) VALUES (10, 'The Spiders Lair', 'C', 18);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (1, 'The Forum', 0);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (2, 'Operations Gallery', 2); --Guests Can't Speak
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (3, 'Dungeon Club', 0);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (4, 'Auditorium', 3); -- Moderated Room
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (5, 'The Board Room', 1);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (6, 'Operations', 1);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (7, 'Marketing', 1);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (8, 'Engineering',1);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (9, 'IT Dept', 1);
+INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (10, 'Finance', 1);
 
 CREATE TABLE parameters (
     name text primary key,
@@ -44,8 +43,7 @@ CREATE TABLE parameters (
 -- The first group of parameters are needed by chat as it starts, but will not be needed again. There will be loaded (as a group) on demand from
 -- The chat page
 
-INSERT INTO parameters VALUES ('ext_user_auth','no',1);  --is user authentication provided by an external source (see remoate)
-INSERT INTO parameters VALUES ('remote_start','http://mb.home/chat2',1); --for redirecting users who have been give the local server, to redirect them
+INSERT INTO parameters VALUES ('remote_error','http://mb.home/chat2/chat.html',1); --for redirecting users who have failed remote authentication
 INSERT INTO parameters VALUES ('guests_allowed','yes',1); -- if we are allowing guests?  yes if we are, anything else means no.
 INSERT INTO parameters VALUES ('emoticon_dir','./emoticons',1); -- emoticon directory (either absolute or relative to the application)
 INSERT INTO parameters VALUES ('emoticon_url','/emoticons/',1); -- emoticon url 
@@ -108,10 +106,11 @@ CREATE TABLE users (
   name character varying NOT NULL,
   role char(1) NOT NULL default 'R',
   rid integer NOT NULL default 0,
-  moderator char(1) NOT NULL default 'N',
+  mod char(1) NOT NULL default 'N',
   question character varying,
   private integer NOT NULL default 0,
-  capability character varying 
+  cap integer NOT NULL default 0,
+  rooms character_varying 
 );
     
 CREATE table wid_sequence ( value integer);

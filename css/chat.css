@@ -143,22 +143,19 @@ body
 
 /* rooms in entrance hall */
 #R1 {
-	background: #78ba91 url(../images/members-lounge.gif) no-repeat;
+	background: #78ba91 url(../images/forum.gif) no-repeat;
 }
 #R2 {
-	background: #7389ae url(../images/blue-room.gif) no-repeat;
+	background: #7389ae url(../images/operations.gif) no-repeat;
 }
 #R3 {
-	background: #c17878 url(../images/green-room.gif) no-repeat;
+	background: #c17878 url(../images/dungeon-club.gif) no-repeat;
 }
 #R4 {
-	background: #c17878 url(../images/vamp-club.gif) no-repeat;
-}
-#R5 {
 	background: #a87aad url(../images/auditorium.gif) no-repeat;
 }
-.committee {
-	background: #c17878 url(../images/member-room.gif) no-repeat;
+.meeting {
+	background: #c17878 url(../images/meeting-room.gif) no-repeat;
 }
 
 #exit {
@@ -171,11 +168,11 @@ body
 }
 
 .exit-f {	
-	background: #a87aad url(../images/forum.gif) no-repeat; 
+	background: #a87aad url(../images/exit-forum.gif) no-repeat; 
 }
 
 .exit-r {	
-	background: #a87aad url(../images/exit.gif) no-repeat; 
+	background: #a87aad url(../images/exit-room.gif) no-repeat; 
 }
 
 .loading {

@@ -19,7 +19,7 @@
 */
 ?><script type="text/javascript">
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-6767755-1']);
+  _gaq.push(['_setAccount',  '<?php echo GOOGLE_ACCOUNT;?>']);
   _gaq.push(['_trackPageview']);
 </script>
 <table id="header" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" >

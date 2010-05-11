@@ -30,7 +30,7 @@ $uid = 0; //This is the number we will use for non UID based calls to the server
 
 
 function cs_is_server_running() {
-    return file_exists(SERVER_SOCKET)
+    return file_exists(SERVER_SOCKET);
 }
 
 $socket = false; 
@@ -107,7 +107,7 @@ function cs_forbidden() {
     <body>
 <script type="text/javascript">
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', GOOGLE_ACCOUNT]);
+  _gaq.push(['_setAccount', '<?php echo GOOGLE_ACCOUNT;?>']);
   _gaq.push(['_trackPageview']);
 </script>        
 <h1>Forbidden</h1>
