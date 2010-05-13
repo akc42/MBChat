@@ -89,7 +89,7 @@ INSERT INTO parameters VALUES ('max_messages','100',4); -- maximum number of bac
 --  although some will be called when needed
 
 -- next parameter only enabled if we are going to encrypt messages
--- INSERT INTO parameters VALUES ('des_key','0',6); -- placeholder for des-Key
+-- INSERT INTO parameters VALUES ('des_key','0',9); -- placeholder for des-Key
 INSERT INTO parameters VALUES ('exit_location','http://chat/index.php',9); -- where to exit to.
 INSERT INTO parameters VALUES ('max_time','180',9); -- maximum number of minutes of back messages to display when entering a room
 INSERT INTO parameters VALUES ('tick_interval','10',9); -- how long (in seconds) that the server should check for exit

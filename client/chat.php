@@ -33,6 +33,7 @@ function getRoomClass ($type) {
     switch($type) {
     case 0:
         $class .= " forum";
+        break;
     case 1:
         $class .= " meeting";
         break;
@@ -73,9 +74,9 @@ foreach($rooms['rooms'] as $row) {
 <?php   }
         if($rooms['blind']) {
 ?>    	<input id="R<?php echo $row['rid']; ?>" 
-                type="button" onclick="MBchat.goToRoom(<?php echo $row['rid']; ?>)" 
+                type="button" onclick="MBchat.updateables.message.enterRoom(<?php echo $row['rid']; ?>)" 
                 class="<?php echo getRoomClass($row['type']);?>"
-                value="<?php echo $row['name']; ?>" /><br/>
+                value="<?php echo $row['name']; ?>" />
 <?php   }else {
 ?>		<div id="R<?php echo $row['rid']; ?>" class="<?php echo getRoomClass($row['type']);?>"><?php echo $row['name']; ?></div>
 <?php   }

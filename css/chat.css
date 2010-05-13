@@ -70,6 +70,8 @@ body
     height:100px;
     width:240px;
     margin:auto;
+    background-color:white;
+    color:red;
 }
 
 #content {
@@ -339,7 +341,6 @@ div.logging {
 }
 
 #inputContainer {
-	display:none;
 	position:absolute;
 	height: 25px;
 	left:20px;
@@ -481,7 +482,6 @@ span.whisper {
 }
 
 #emoticonContainer {
-	display:none;
 	position:absolute;
 	left:20px;
 	bottom:10px;

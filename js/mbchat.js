@@ -118,7 +118,7 @@ MBchat = function () {
 	var pO;
 
 
-
+    var desKey = false;
     var auth = {};
 	var rsaKeys;
     var loginReq = new Request.JSON({
@@ -135,6 +135,10 @@ MBchat = function () {
                 var m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
                 auth.uid = me.uid;
                 auth.pass = hex_md5('U'+auth.uid+'P'+padDigits(m.toString(10),5));
+                if(response.des) {
+                    var d = new BigInteger(response.des);
+                    desKey = padDigits(d.modPow(rsaKeys.d,rsaKeys.n).toString(10),10);
+                }
                 logOptions.fetchdelay = response.params.log_fetch_delay.toInt();
                 logOptions.spinrate = response.params.log_spin_rate.toInt();
                 logOptions.secondstep = response.params.log_step_seconds.toInt();
@@ -147,6 +151,7 @@ MBchat = function () {
                 room.set(entranceHall);
                 var roomReq = new Request({url:'client/chat.php',onSuccess:function (html) {
                     document.id('entranceHall').set('html',html);
+                    var exit = $('exit');
                     if(me.can(BLIND)) {
 		                document.addEvent('keydown',function(e) {
 			                if(!e.control ) {
@@ -186,8 +191,19 @@ MBchat = function () {
 		                });
 
                     } else {
-	                    var roomgroups = $$('.rooms');
 	                    var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
+                        var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
+                        exit.addEvent('mouseenter',function(e) {
+                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+	                            exitfx.start({width:100});
+	                        }
+                        });
+                        exit.addEvent('mouseleave', function(e) {
+                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
+	                            exitfx.start({width:50});
+	                         }
+                        });
+	                    var roomgroups = $$('.rooms');
 	                    roomgroups.each( function (roomgroup,i) {
 		                    var rooms = roomgroup.getElements('.room');
 		                    var fx = new Fx.Elements(rooms, {link:'cancel', duration: 500, transition: roomTransition.easeOut });
@@ -227,7 +243,9 @@ MBchat = function () {
 			                    });
 			                    door.addEvent('click', function(e) {
 				                    e.stop();			//browser should not follow link
-                    				if((e.control || e.shift) && (me.can(ADMIN) || (me.can(SECRETARY) && door.hasClass('meeting')))) {
+                    				if((e.control || e.shift) && 
+                    				        ((me.can(ADMIN) && !door.hasClass('meeting')) || 
+                    				            (me.can(SECRETARY) && door.hasClass('meeting')))) {
                     					MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
 				                    } else {
 					                    MBchat.updateables.message.enterRoom(door.get('id').substr(1).toInt());
@@ -235,40 +253,28 @@ MBchat = function () {
 			                    });
 		                    });
 	                    });
-	                    var exit = $('exit');
-	                    var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
-	                    exit.addEvent('mouseenter',function(e) {
-                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-		                        exitfx.start({width:100});
-		                    }
-	                    });
-	                    exit.addEvent('mouseleave', function(e) {
-                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-		                        exitfx.start({width:50});
-		                     }
-	                    });
-	                    exit.addEvent('click', function(e) {
-		                    e.stop();
-		                    if (privateRoom != 0) {
-			                    privateReq.transmit({
-				                    'wid':  0, 
-				                    'lid' : MBchat.updateables.poller.getLastId(),
-				                    'rid' : room.rid }); 
-		                    } else {
-			                    if (room.rid == 0 ) {
-				                    if (this.hasClass('exit-r')) {
-					                    // just exiting from logging
-					                    MBchat.updateables.logger.returnToEntranceHall();
-				                    } else {
-					                    MBchat.logout(); //Go back from whence you came
-
-				                    }
-			                    } else {
-				                    MBchat.updateables.message.leaveRoom();
-			                    }
-		                    }
-	                    });
 	                }
+                    exit.addEvent('click', function(e) {
+	                    e.stop();
+	                    if (privateRoom != 0) {
+		                    privateReq.transmit({
+			                    'wid':  0, 
+			                    'lid' : MBchat.updateables.poller.getLastId(),
+			                    'rid' : room.rid }); 
+	                    } else {
+		                    if (room.rid == 0 ) {
+			                    if (this.hasClass('exit-r')) {
+				                    // just exiting from logging
+				                    MBchat.updateables.logger.returnToEntranceHall();
+			                    } else {
+				                    MBchat.logout(); //Go back from whence you came
+
+			                    }
+		                    } else {
+			                    MBchat.updateables.message.leaveRoom();
+		                    }
+	                    }
+                    });
                     document.id('messageForm').addEvent('submit', function(e) {
 		                messageSubmit(e);
 		                return false;
@@ -313,17 +319,23 @@ return {
         loginReq.post(loginOptions);
         messageSubmit = function(event) {
 		    event.stop();
+		    var msg;
+		    if(desKey) {
+    		    msg = Base64.encode(des(desKey, $('messageText').value, true));
+    		} else {
+    		    msg = $('messageText').value;
+    		}
 		    if (privateRoom == 0 ) {
 			    messageReq.transmit({
 				    'rid':room.rid,
 				    'lid':MBchat.updateables.poller.getLastId(),
-				    'text':$('messageText').value});
+				    'text':msg});
 		    } else {
 			    whisperReq.transmit({
 				    'wid':privateRoom,
 				    'rid':room.rid,
 				    'lid':MBchat.updateables.poller.getLastId(),
-				    'text':$('messageText').value});
+				    'text':msg});
 		    }
 
 		    $('messageText').value = '';
@@ -368,7 +380,10 @@ return {
     		var logoutRequest = new ServerReq('client/logout.php',function(r){});
     		logoutRequest.transmit({ident:identString});
             logged_in = false;
-			window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
+            var leaver = function() {
+			    window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
+			}
+			leaver.delay(400); //just wait to allow the logout request some time to happen.
         }
 	},
 	sounds: function () {
@@ -453,6 +468,9 @@ return {
 				MBchat.updateables.logger.init();
 			},
 			processMessage : function(message) {
+			    if(message.message && desKey) {
+			        message.message = des(desKey,Base64.decode(message.message),false).replace(/\0+/g,'');
+			    }
 				MBchat.updateables.online.processMessage(message);
 				MBchat.updateables.message.processMessage(message);
 				MBchat.updateables.whispers.processMessage(message);
@@ -676,7 +694,7 @@ return {
 					}
 					// Figure out if we can whisper together
 					if (user.uid != me.uid && !me.can(NO_WHISPER) 
-					              && (crossWhisper || ((me.is('B') && user.role != 'B') || ( me.is('B') && user.role === 'B' )))
+					              && (crossWhisper || ((!me.is('B') && user.role != 'B') || ( me.is('B') && user.role === 'B' )))
 					                         ) { 
 						span.addEvent('mousedown',function (e) {
 							MBchat.updateables.whispers.whisperWith(user,span,e);
@@ -1005,9 +1023,11 @@ return {
 						messageList.empty();
 						messageList.addClass('chat');
 						$('roomNameContainer').empty();
-						$('inputContainer').set('styles',{ 'display':'block'});
-						$('emoticonContainer').set('styles',{ 'display':'block'});
-						$('entranceHall').set('styles',{'display':'none'});	
+						$('inputContainer').removeClass('hide');
+						if(!me.can(BLIND)) {
+						    $('emoticonContainer').removeClass('hide');
+						}
+						$('entranceHall').addClass('hide');	
 						var exit = $('exit');
 						exit.addClass('exit-r');
 						exit.removeClass('exit-f');
@@ -1080,9 +1100,9 @@ return {
 						var el = new Element('h1')
 							.set('text', room.name)
 							.inject('roomNameContainer');
-						$('inputContainer').set('styles',{ 'display':'none'});
-						$('emoticonContainer').set('styles',{ 'display':'none'});
-						$('entranceHall').set('styles',{'display':'block'});
+						$('inputContainer').addClass('hide');
+						$('emoticonContainer').addClass('hide');
+						$('entranceHall').removeClass('hide');
 						var exit = $('exit');	
 						exit.addClass('exit-f');
 						exit.removeClass('exit-r');
@@ -1306,7 +1326,7 @@ return {
 					});
 					var privateBox = whisper.getElement('.private');
 					//can't go private if a key character in a modded room
-					if (room.type == 'M' && (me.is('M') || me.('S'))) {
+					if (room.type == 'M' && (me.is('M') || me.is('S'))) {
 						privateBox.removeClass('private');
 						privateBox.addClass('nonprivate');
 					} else {
@@ -1320,7 +1340,7 @@ return {
 						if(!e.alt) return;
 						switch (e.key) {
 						case 'p' :
-							if (!(room.type == 'M' && (me.is('M') || me.('S')))) {
+							if (!(room.type == 'M' && (me.is('M') || me.is('S')))) {
 								e.stop();
 								var boundPrivateBox = goPrivate.bind(privateBox);
 								boundPrivateBox();

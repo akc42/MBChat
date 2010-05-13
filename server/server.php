@@ -164,7 +164,8 @@ function sendLog ($uid,$name,$role,$type,$rid,$text) {
     $l->bindValue(':role',$role,SQLITE3_TEXT);
     $l->bindValue(':type',$type,SQLITE3_TEXT);
     $l->bindValue(':rid',$rid,SQLITE3_INTEGER);
-    $l->bindValue(':text',htmlentities($text,ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
+//    $l->bindValue(':text',htmlentities($text,ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
+    $l->bindValue(':text',$text,SQLITE3_TEXT);
     $l->execute();
     $lid = $db->lastInsertRowID();
     $l->reset();        
@@ -236,13 +237,12 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
 //        $key = sprintf("%05u",rand(1,30000));  //key used in password - for user Uuid passworkd is UuidP$key
 //TODO
         $key = sprintf("%05u",rand(1,9000));  //TMP TO FORCE LEADING 0
-        logger("Key for this run:$key");
 //If there is no entry in for des_key encryption is not enabled. If it is, but is still 0 we have to make one
         $des_key = $db->querySingle("SELECT count(*) FROM parameters WHERE name ='des_key'");
         if($des_key !=0) {
             if(($des_key = $db->querySingle("SELECT value FROM parameters WHERE name ='des_key'")) == '0') {
-                $des_key = sprintf("%05u",rand(1,30000));
-                $db->exec("INSERT INTO parameters VALUES('des_key','$des_key',6)");
+                $des_key = sprintf("%05u",rand(1,65000)).sprintf("%05u",rand(1,65000));
+                $db->exec("UPDATE parameters SET value = '$des_key' WHERE name = 'des_key'");
             }
         }
 
@@ -372,6 +372,7 @@ while($running) {
                         $chats[$row['name']] = $row['value'];
                     }
                     $result->finalize();
+                    $chats['des'] = ($des_key != 0);
                     $message = '{"status":true,"chat":'.json_encode($chats);
                     $chats = Array();
                     $result = $db->query("SELECT name,value FROM parameters WHERE grp = 2");
@@ -637,8 +638,8 @@ while($running) {
                     break;
                case 'msg':
                     $rid = $cmd['params'][0];
-                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
-
+//                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
+                    $text = $cmd['params'][1];
                     $row = $db->querySingle("SELECT uid, users.name, role, question, users.rid, type ".
                                         "FROM users LEFT JOIN rooms ON users.rid = rooms.rid WHERE uid=".$uid,true);
     	
@@ -825,8 +826,8 @@ while($running) {
                     break;
                 case 'whisper':
                     $wid = $cmd['params'][0];
-                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
-
+//                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
+                    $text= $cmd['params'][1];
                     if($row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
                                                 LEFT JOIN users ON users.uid = participant.uid WHERE
                                                     participant.uid = $uid AND wid = $wid ",true)) {

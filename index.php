@@ -21,7 +21,7 @@
 
 /* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
-
+require_once('./inc/public.inc');
 require_once('./inc/client.inc');
 
 $chatting = cs_query('chats');
@@ -52,10 +52,18 @@ $chatting = cs_query('chats');
     <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script> 
     <script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
     <script src="/js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
-    <script type="text/javascript">
+<?php
+if($chatting['chat']['des']) {
+?>  <script src="/js/des.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="/js/base64.js" type="text/javascript" charset="UTF-8"></script>
+<?php
+}
+?>  <script type="text/javascript">
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
         var remoteError = "<?php echo $chatting['chat']['remote_error'];?>";
         var guestsAllowed = <?php echo (($chatting['chat']['guests_allowed'] == 'yes')?'true':'false'); ?>;
+        var rsaExponent ="<?php echo RSA_EXPONENT;?>";
+        var rsaModulus="<?php echo RSA_MODULUS;?>";
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
         });
@@ -154,17 +162,17 @@ $chatting = cs_query('chats');
 <?php
 if($chatting['chat']['guests_allowed'] == 'yes') {
 ?>
-    <p>Enter a username that you want to be known of in chat. You only need to enter a  password <strong>if you are already
-    registered as a user</strong> and wish to use that in chat. <strong>Note</strong>, for regular registered users, if you are already logged 
-    in your connection will be <strong>refused</strong>.</p>
+        <p>Enter a username that you want to be known of in chat. You only need to enter a  password <strong>if you are already
+        registered as a user</strong> and wish to use that in chat. <strong>Note</strong>, for regular registered users, if you are already logged 
+        in your connection will be <strong>refused</strong>.</p>
 
-    <p>Please <strong>note</strong> that $ characters will <strong>not</strong> be allowed in user
-    names.</p>
+        <p>Please <strong>note</strong> that $ characters will <strong>not</strong> be allowed in user
+        names.</p>
 <?php
 } else {
 ?>
-    <p>Please Enter your username and password, but note, if you are already logged in 
-    in another window your connection will be <strong>refused</strong>.</p>
+        <p>Please Enter your username and password, but note, if you are already logged in 
+        in another window your connection will be <strong>refused</strong>.</p>
 <?php
 }
 ?>
@@ -178,41 +186,41 @@ if($chatting['chat']['guests_allowed'] == 'yes') {
         </form>
     </div>
 
-<div id="chatblock" class="hide">
-    <div id="exit" class="exit-f"></div>
-    <div id="logControls" class="hide">
-	    <div id="startTimeBlock">
-		    <div id="startTextLog">Log Start Time</div>
-		    <div id="minusStartLog"></div><div id="timeShowStartLog"></div><div id="plusStartLog"></div>
-	    </div>
-	    <div id="endTimeBlock">
-		    <div id="endTextLog">Log End Time</div>
-		    <div id="minusEndLog"></div><div id="timeShowEndLog"></div><div id="plusEndLog"></div>
-     	</div>
-	    <div id="printLog"></div>
-    </div>
-    <div id="entranceHall"></div>
-    <div id="onlineListContainer">
-	    <h4>Users Online</h4>
-	    <div id="onlineList" class="loading"></div>
-    </div>
-    <div id="chatList" class="whisper"></div>	
+    <div id="chatblock" class="hide">
+        <div id="exit" class="exit-f"></div>
+        <div id="logControls" class="hide">
+	        <div id="startTimeBlock">
+		        <div id="startTextLog">Log Start Time</div>
+		        <div id="minusStartLog"></div><div id="timeShowStartLog"></div><div id="plusStartLog"></div>
+	        </div>
+	        <div id="endTimeBlock">
+		        <div id="endTextLog">Log End Time</div>
+		        <div id="minusEndLog"></div><div id="timeShowEndLog"></div><div id="plusEndLog"></div>
+         	</div>
+	        <div id="printLog"></div>
+        </div>
+        <div id="entranceHall"></div>
+        <div id="onlineListContainer">
+	        <h4>Users Online</h4>
+	        <div id="onlineList" class="loading"></div>
+        </div>
+        <div id="chatList" class="whisper"></div>	
 
-    <div id="inputContainer">
-	    <form id="messageForm" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		    <input id="messageText" type="text" name="text" />
-		    <input type="submit" name="submit" value="Send"/>
-        </form>
-    </div>
-    <div id="whisperBoxTemplate">
-	    <div class="private"></div><div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
-	    <div class="whisperList"></div>
-	    <form action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		    <input type="text" name="text" class="whisperInput" />
-		    <input type="submit" name="submit" value="Send" class="whisperSend"/>
-	    </form>
-    </div>
-    <div id="emoticonContainer">
+        <div id="inputContainer" class="hide">
+	        <form id="messageForm" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		        <input id="messageText" type="text" name="text" />
+		        <input type="submit" name="submit" value="Send"/>
+            </form>
+        </div>
+        <div id="whisperBoxTemplate">
+	        <div class="private"></div><div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
+	        <div class="whisperList"></div>
+	        <form action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+		        <input type="text" name="text" class="whisperInput" />
+		        <input type="submit" name="submit" value="Send" class="whisperSend"/>
+	        </form>
+        </div>
+        <div id="emoticonContainer" class="hide">
 <?php
 $dir = $chatting['chat']['emoticon_dir'];
 $urlbase = $chatting['chat']['emoticon_url'];
@@ -232,25 +240,25 @@ foreach ($fns as $filename) {
 		 }
 	}
 }
-?>  </div>
-    <div id="userOptions">
-        <form>
-	        <input id="autoScroll" type="checkbox" checked="checked" />
-	        <label for="autoScroll">Autoscroll</label>
-	        <span id="soundOptions">
-		        <input id="musicEnabled" type="checkbox" />
-		        <label for="musicEnabled">Enable Music</label><br/>
-		        <input id="soundEnabled" type="checkbox" checked="checked"/>
-		        <label for="soundEnabled">Enable Sound</label><br/>
-		        <input id="soundDelay" type="text" size="1" value="5" />
-		        <label for="soundDelay">Minutes 'till sound</label>
-	        </span>
-        </form>
+?>      </div>
+        <div id="userOptions">
+            <form>
+	            <input id="autoScroll" type="checkbox" checked="checked" />
+	            <label for="autoScroll">Autoscroll</label>
+	            <span id="soundOptions">
+		            <input id="musicEnabled" type="checkbox" />
+		            <label for="musicEnabled">Enable Music</label><br/>
+		            <input id="soundEnabled" type="checkbox" checked="checked"/>
+		            <label for="soundEnabled">Enable Sound</label><br/>
+		            <input id="soundDelay" type="text" size="1" value="5" />
+		            <label for="soundDelay">Minutes 'till sound</label>
+	            </span>
+            </form>
+        </div>
     </div>
-</div>
-<div id="copyright">MB Chat <span id="version"><?php include('./inc/version.inc');?></span> &copy; 2008-2010
-    <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a></div>
-</div>
+    <div id="copyright">MB Chat <span id="version"><?php include('./inc/version.inc');?></span> &copy; 2008-2010
+        <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a>
+    </div>
 </div>
 <?php require('./inc/footer.inc'); ?>
 </body>

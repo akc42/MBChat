@@ -43,8 +43,8 @@ function des (key, message, encrypt, mode, iv) {
 
   message += "\0\0\0\0\0\0\0\0"; //pad the message out with null bytes
   //store the result here
-  result = "";
-  tempresult = "";
+  var result = "";
+  var tempresult = "";
 
   if (mode == 1) { //CBC mode
     cbcleft = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
@@ -189,16 +189,8 @@ function des_createKeys (key) {
 } //end of des_createKeys
 
 
-////////////////////////////// TEST //////////////////////////////
-//printHexArray
-function printHex (s) {
-  var r = "0x";
-  var hexes = new Array ("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f");
-  for (var i=0; i<s.length; i++) {r += hexes [s.charCodeAt(i) >> 4] + hexes [s.charCodeAt(i) & 0xf];}
-  return r;
-}
 
-var key = "this is a 24 byte key !!";
-var message = "This is a test message";
-var ciphertext = des (key, message, 1, 0);
-document.writeln ("DES Test: " + printHex (ciphertext));
+
+
+
+

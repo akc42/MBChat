@@ -1,0 +1,6 @@
+#!/bin/sh 
+DIR=$(dirname $0)
+
+openssl genrsa -out $DIR/newkey.pem 128
+$DIR/writepublickey.php  > $DIR/../../inc/public.inc
+$DIR/writeprivatekey.php > $DIR/../../data/private.inc 
