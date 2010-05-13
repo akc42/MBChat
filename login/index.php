@@ -38,8 +38,8 @@ $db->exec("DELETE FROM users WHERE time < ".(time() - PURGE_GUEST_INTERVAL*86400
 
 switch(substr($username,0,3)) {
 case '$$$':
-    $r1 = md5('auth'.sprintf("%012u",$t));
-    $r2 = md5('auth'.sprintf("%012u",$t+300));
+    $r1 = md5(REMOTE_KEY.sprintf("%010u",$t));
+    $r2 = md5(REMOTE_KEY.sprintf("%010u",$t+300));
     if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
         if(isset($_POST['trial'])) {
             echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS).'"}';
@@ -48,8 +48,8 @@ case '$$$':
     }
     cs_forbidden();
 case '$$#':
-    $r1 = md5('auth'.sprintf("%012u",$t));
-    $r2 = md5('auth'.sprintf("%012u",$t+300));
+    $r1 = md5(REMOTE_KEY.sprintf("%010u",$t));
+    $r2 = md5(REMOTE_KEY.sprintf("%010u",$t+300));
     if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
         /*  This particular version of chat requires that the chat itself prompts for a username and password.  Other 
             versions may well respond to this unique username with the authentication details (for instance because they can
@@ -73,8 +73,9 @@ case '$$G':
         $return['login']['cap'] = 0;
         $return['login']['rooms'] = '';
         $return['status'] = true;
+        $t = ceil(time()/60)*60; //This is the 1 minute availablity password
         $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t));
-        $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t+300));
+        $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t+60));
         break;
     } 
     cs_forbidden();
@@ -90,8 +91,9 @@ default:
             $return['login'] = $result->fetch(PDO::FETCH_ASSOC);
             $return['login']['name'] = $username; //ensuring case is as we entered it
             $return['status'] = true;
+            $t = ceil(time()/60)*60; //This is the 1 minute availablity password
             $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t));
-            $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t+300));
+            $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t+60));
         } else {
             $return['status'] = false;
             $return['usererror'] = false;

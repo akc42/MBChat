@@ -22,13 +22,13 @@ error_reporting(E_ALL);
 
 require_once('../inc/client.inc');
 
-$t = ceil(time()/300)*300; //This is the 5 minute availablity password
+$t = ceil(time()/60)*60; //This is the 1 minute availablity password
 
 if(!isset($_POST['uid'])) cs_forbidden();
 $uid = $_POST['uid'];
 
 $r1 = md5('U'.$uid."P".sprintf("%012u",$t));
-$r2 = md5('U'.$uid."P".sprintf("%012u",$t+300));
+$r2 = md5('U'.$uid."P".sprintf("%012u",$t+60));
 if (!($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2)) cs_forbidden();
 
 if(!isset($_POST['rooms'])) 

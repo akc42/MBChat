@@ -18,6 +18,7 @@
 function MBCAuth(soundcoord) {
         var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
+        var externalAuth = true;
         function confirmTimeout() {
             if(!confirmedServer) {
                 document.id('rsa_generator').removeClass('loading');
@@ -38,7 +39,6 @@ function MBCAuth(soundcoord) {
         }
 
         var loginRequestOptions = {};
-        var t1,t2; 
         var loginReq = new Request.JSON({
             url:'login/index.php',
             link:'chain',
@@ -48,7 +48,7 @@ function MBCAuth(soundcoord) {
                     if(response.trial == checkNo.toString(10)) {
                         //matched
                         confirmedServer = true;
-                        loginReq.post.delay(1,this,{user:'$$#',pass1:hex_md5('auth'+t1),pass2:hex_md5('auth'+t2)}); //now find out if I am supposed to prompt
+                        loginReq.post.delay(1,this,{user:'$$#',pass1:hex_md5(remoteKey1),pass2:hex_md5(remoteKey2)}); //now find out if I am supposed to prompt
                     } else {
                         confirmTimeout();
                     }
@@ -65,7 +65,7 @@ function MBCAuth(soundcoord) {
                 }
             } else { 
                 if(externalAuth) {
-                    window.location = remoteError;
+//                    window.location = remoteError;
                 } else {
                     loginError(response.usererror);
                 }
@@ -103,15 +103,6 @@ function MBCAuth(soundcoord) {
         var encCheckNo = checkNo.modPow(new BigInteger(rsaExponent),new BigInteger(rsaModulus));
 
         window.addEvent('domready',function () {
-            var externalAuth = true;
-            t1 = (Math.ceil(new Date().getTime()/300000)*300).toString();
-            while(t1.length < 12) {
-                t1 = '0'+t1;
-            }
-            t2 = (Math.ceil(new Date().getTime()/300000)*300+300).toString();
-            while(t2.length < 12) {
-                t2 = '0'+t2;
-            }
             document.id('login').addEvent('submit', function(e) {
                 e.stop();
                 var auth = {};
@@ -130,11 +121,11 @@ function MBCAuth(soundcoord) {
                     auth.U = '$$G'+auth.U;
                 }
  
-                t1 = (Math.ceil(new Date().getTime()/300000)*300).toString();
+                var t1 = (Math.ceil(new Date().getTime()/300000)*300).toString();
                 while(t1.length < 12) {
                     t1 = '0'+t1;
                 }
-                t2 = (Math.ceil(new Date().getTime()/300000)*300+300).toString();
+                var t2 = (Math.ceil(new Date().getTime()/300000)*300+300).toString();
                 while(t2.length < 12) {
                     t2 = '0'+t2;
                 }
@@ -146,7 +137,7 @@ function MBCAuth(soundcoord) {
                 loginReq.post({user:auth.U,pass1:hex_md5(auth.P+t1),pass2:hex_md5(auth.P+t2)});
             });
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
-            loginReq.post({user:'$$$',pass1:hex_md5('auth'+t1),pass2:hex_md5('auth'+t2),trial:encCheckNo.toString(10)});
+            loginReq.post({user:'$$$',pass1:hex_md5(remoteKey1),pass2:hex_md5(remoteKey2),trial:encCheckNo.toString(10)});
             confirmTimeout.delay(30000); //give server 30 seconds to come back with correct response.
         });
 };
