@@ -35,7 +35,7 @@ $chatting = cs_query('chats');
     <title>MB Chat</title>
 	<link rel="stylesheet" type="text/css" href="css/chat.css" />
 	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="<?php echo CHAT_URL ;?>css/chat-ie.css"/>
+		<link rel="stylesheet" type="text/css" href="css/chat-ie.css"/>
 	<![endif]-->
     <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/ns.js" type="text/javascript" charset="UTF-8"></script>
