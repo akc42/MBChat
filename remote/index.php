@@ -1,15 +1,24 @@
 <?php
-/* A new version of chat
-	Copyright (c) 2008 Alan Chandler
-	Licenced under the GPL
+/*
+ 	Copyright (c) 2010 Alan Chandler
+    This file is part of MBChat.
+
+    MBChat is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    MBChat is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-// Path to the chat directory:
-
-include('./url.inc');
-include('./public.inc');
 
 require_once(dirname(__FILE__).'/../forum/SSI.php');
 //If not logged in to the forum, not allowed any further so redirect to page to say so
@@ -81,8 +90,8 @@ $iv = mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_BLOWFISH,MCRYPT_MODE_CBC));
 $urlquery['user'] = '$$R';
 $urlquery['key']=bcpowmod($key,RSA_EXPONENT,RSA_MODULUS);
 $urlquery['iv']=$iv;
-$urlquery['params'] =base64_encode(mcrypt_encrypt( MCRYPT_BLOWFISH, md5($key), json_encode($query), MCRYPT_MODE_CBC, $iv );
-$url=SERVER_LOCATION.'login/index.php?'.http_build_query_string($urlquery);
+$urlquery['params'] =base64_encode(mcrypt_encrypt( MCRYPT_BLOWFISH, md5($key), json_encode($query), MCRYPT_MODE_CBC, $iv ));
+$url=SERVER_LOCATION.'login/index.php?'.http_build_query($urlquery);
 /* The trick here is to make the call to the url from the browser whilst it is loading the script.  The url is going to write a cookie
     with a relatively short life time with the whole query string in it and return a simple javascript program that immediately
     redirects the user to chat.

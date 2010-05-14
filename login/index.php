@@ -19,7 +19,6 @@
 
 /* This version is modified from the base to support remote authentication as opposed to local */
 
-define(
 
 error_reporting(E_ALL);
 require_once('../inc/client.inc');
@@ -75,6 +74,8 @@ case '$$R':
         //Now return a javascript program that sends us to chat
         echo "window.location = '".CHAT_URL."index.php'\n";
         exit;
+    }
+    cs_forbidden();
 }
 
 
