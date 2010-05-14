@@ -55,7 +55,7 @@ case '$$#':
             $data = json_decode($_COOKIE['mbchat']);
             $key = bcpowmod($data['key'],RSA_PRIVATE_KEY,RSA_MODULUS);
             $return['status'] = true;
-            $return['login'] = json_decode(rtrim(mcrypt_decrypt(MCRYPT_BLOWFISH, md5($key), base64_decode($data['params']), MCRYPT_MODE_CBC, $iv)));
+            $return['login'] = json_decode(rtrim(mcrypt_decrypt(MCRYPT_BLOWFISH, md5($key), base64_decode($data['params']), MCRYPT_MODE_CBC, $data['iv'])));
         } else {
             $return['status'] = false;
         }
