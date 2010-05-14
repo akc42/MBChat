@@ -940,7 +940,7 @@ while($running) {
     socket_close($socket); 
     unlink(SERVER_SOCKET);
     unlink(SERVER_RUNNING);           
-    $db_>exec("ROLLBACK");
+    $db->exec("ROLLBACK");
 }
 
 logger("Shutting Down".print_r($stats,true));
