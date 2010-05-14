@@ -54,8 +54,22 @@ case '$$#':
         if(isset($_COOKIE['mbchat'])) {
             $data = json_decode($_COOKIE['mbchat']);
             $key = bcpowmod($data['key'],RSA_PRIVATE_KEY,RSA_MODULUS);
+            $msg = base64_decode($data['params');
+            $iv = substr($msg, 0, 32);
+            $msg = substr($msg, 32);
+
+            $td = mcrypt_module_open('rijndael-256', '', 'ctr', '');
+            mcrypt_generic_init($td, $key, $iv);
+            $msg = mdecrypt_generic($td, $msg);
+            mcrypt_generic_deinit($td);
+            mcrypt_module_close($td); 
+            
+            $msg = unserialize($msg);
+
+             
             $return['status'] = true;
-            $return['login'] = json_decode(rtrim(mcrypt_decrypt(MCRYPT_BLOWFISH, md5($key), base64_decode($data['params']), MCRYPT_MODE_CBC, $data['iv'])));
+            $return['login'] = $msg;
+            
         } else {
             $return['status'] = false;
         }
@@ -67,7 +81,6 @@ case '$$R':
     if ($_GET['pass1'] == $r1 || $GET['pass1'] == $r2 || $_GET['pass2'] == $r1 || $_GET['pass2'] == $r2) {
         // We now have a valid requester - so we need to maka a cookie 
         $return['key']=$_GET['key'];
-        $return['iv']=$_GET['iv'];
         $return['params']=$_GET['params'];
         // for testing, I want to check cookie contents, so I will keep it - in production we will make it a session cookie
         setcookie('mbchat',json_encode($return),time()+60*60*24);

@@ -86,11 +86,22 @@ $urlquery['pass1'] = md5(REMOTE_KEY.sprintf("%010u",$t));
 $urlquery['pass2'] = md5(REMOTE_KEY.sprintf("%010u",$t+300));
 
 $key = sprintf("%05u",rand(1,99999));
-$iv = mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_BLOWFISH,MCRYPT_MODE_CBC));
 $urlquery['user'] = '$$R';
 $urlquery['key']=bcpowmod($key,RSA_EXPONENT,RSA_MODULUS);
-$urlquery['iv']=$iv;
-$urlquery['params'] =base64_encode(mcrypt_encrypt( MCRYPT_BLOWFISH, md5($key), json_encode($query), MCRYPT_MODE_CBC, $iv ));
+
+$msg=serialize($query);
+
+$td = mcrypt_module_open('rijndael-256', '', 'ctr', '');
+$iv = mcrypt_create_iv(32, MCRYPT_RAND);
+mcrypt_generic_init($td, $key, $iv);
+$msg = mcrypt_generic($td, $msg) ;
+$msg = $iv . $msg;
+mcrypt_generic_deinit($td); 
+mcrypt_module_close($td);
+$msg = base64_encode($msg);
+
+$urlquery['params'] = $msg;
+
 $url=SERVER_LOCATION.'login/index.php?'.http_build_query($urlquery);
 /* The trick here is to make the call to the url from the browser whilst it is loading the script.  The url is going to write a cookie
     with a relatively short life time with the whole query string in it and return a simple javascript program that immediately
