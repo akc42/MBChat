@@ -41,7 +41,7 @@ echo "<?php \n";
 echo "define('RSA_MODULUS','".hex2dec(bin2hex($key['rsa']['n']))."');\n";
 echo "define('RSA_PRIVATE_KEY','".hex2dec(bin2hex($key['rsa']['d']))."');\n";
 echo "define('REMOTE_KEY','".$argv[1]."');\n";
-
+echo "define('CHAT_URL','".$argv[2]."');\n";
 
   
 
