@@ -415,7 +415,7 @@ while($running) {
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
                     $u->bindValue(':name',htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
                     $u->bindValue(':role',$cmd['params'][1],SQLITE3_TEXT);
-                    $mod = $cmd['params'][2] & 24;  //looks for mod = 8 and speaker = 24
+                    $mod = $cmd['params'][2] & 24;  //looks for mod = 8 and speaker =16 total = 24
                     if(($cmd['params'][2] & 24) ==0) 
                         $mod = 'N';
                     else if(($cmd['params'][2] & 8) != 0)

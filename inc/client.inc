@@ -19,6 +19,7 @@
 */
 //The following 2 keys need to be adjusted for each installation.  
 
+
 define('GOOGLE_ACCOUNT','UA-6767400-1');
 
 define('SERVER_DIR','/home/alan/dev/mb.com/chatserve/server/');//Should be outside of web space
@@ -36,7 +37,7 @@ function cs_is_server_running() {
 $socket = false; 
 function cs_server($args) {
     global $socket,$uid;
-    if(!file_exists(SERVER_SOCKET)) exec(SERVER_DIR.'server.php '.DATA_DIR); //start server if its not running
+    if(!file_exists(SERVER_SOCKET)) exec(SERVER_DIR.'chatter.php '.DATA_DIR); //start server if its not running
     if(!$socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         echo "Failed to get a socket, Error =".socket_strerror(socket_last_error());
         exit;

@@ -315,8 +315,6 @@ return {
 	    delete me.pass2;
         rsaKeys = keys;
 	    logged_in = false;
-	    //lets login
-        loginReq.post(loginOptions);
         messageSubmit = function(event) {
 		    event.stop();
 		    var msg;
@@ -350,7 +348,7 @@ return {
             document.id('userOptions').addClass('hide');
             //replace exit div with a button
             document.id('exit').dispose();
-            var el = new Element('input',{type:'button',value:'Exit'});
+            var el = new Element('input',{id:'exit',type:'button',value:'Exit'});
             el.inject(document.id('chatblock'),'top');
             //remove send buttons as ctrl+s is used.
             document.id(document.id('messageForm').submit).dispose();
@@ -380,6 +378,8 @@ return {
 	    window.addEvent('resize', function() {
 		    contentSize = $('content').getCoordinates();
 	    });
+	    //lets login
+        loginReq.post(loginOptions);
 	},
 	logout: function () {
 	    if(logged_in) {

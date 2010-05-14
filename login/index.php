@@ -51,7 +51,7 @@ case '$$#':
             by a previous call to the '$$R' case below.  If it has then fine, if not we need to declare an error so that 
             the chat can be redirected to go get the credentials checked.
         */
-        if(isset($_COOKIE['mbchat'])) {
+        if(isset($_COOKIE['mbchat-key'])) {
             $key = $_COOKIE['mbchat-key'];
             $msg = $_COOKIE['mbchat-msg'];
             $key = bcpowmod($key,RSA_PRIVATE_KEY,RSA_MODULUS);
