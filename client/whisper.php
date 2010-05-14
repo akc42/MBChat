@@ -16,23 +16,10 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-include('./url.inc');
-include('./public.inc');
 
-pcntl_signal(SIGALRM,"timeout"); //setup communications timer
+require_once('../inc/client.inc');
 
-function timeout($signal) {
-    echo 0;
-    exit;
-}
-declare(ticks = 1);
-pcntl_alarm(10);
+cs_validate();
 
-$t = ceil(time()/300)*300;
-
-$data = array('pass1' => md5(REMOTE_KEY.sprintf("%010u",$t)),'pass2'=> md5(REMOTE_KEY.sprintf("%010u",$t+300)));
-echo do_post_request(SERVER_LOCATION."login/count.php",$data );
-
-
-
+cs_fetch('whisper',$_POST['wid'],$_POST['text']);
 

@@ -135,6 +135,7 @@ function reader_main() {
     while(true) {
 
         do_post_request('read.php',$data);
+        sleep(1);
    }
 }    
     
@@ -151,7 +152,9 @@ function do_post_request($url, $data) {
     );
 
     $context  = stream_context_create($opts);
-    @file_get_contents(URL_BASE.$url, false, $context,-1,40);
+
+    file_get_contents(URL_BASE.$url, false, $context,-1,400);
+
 }
   
 ?>

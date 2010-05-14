@@ -1,6 +1,7 @@
+#!/usr/bin/php
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -15,23 +16,31 @@
 
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
+
 */
-include('./url.inc');
-include('./public.inc');
 
-pcntl_signal(SIGALRM,"timeout"); //setup communications timer
-
-function timeout($signal) {
-    echo 0;
-    exit;
+function hex2dec($keystring) {
+    $set="0123456789abcdef";
+    $l = strlen($keystring);
+    $result='0';
+    for($i=0;$i<$l;$i++) {
+        $char=substr($keystring,$i,1);
+        $dec = stripos($set,$char);
+        $result = bcadd(bcmul($result,"16"),$dec);
+    }
+    return $result;
 }
-declare(ticks = 1);
-pcntl_alarm(10);
 
-$t = ceil(time()/300)*300;
+$res=openssl_pkey_get_private('file://'.dirname(__FILE__).'/newkey.pem');
+$key=openssl_pkey_get_details($res);
 
-$data = array('pass1' => md5(REMOTE_KEY.sprintf("%010u",$t)),'pass2'=> md5(REMOTE_KEY.sprintf("%010u",$t+300)));
-echo do_post_request(SERVER_LOCATION."login/count.php",$data );
+echo "<?php \n";
+echo "define('RSA_EXPONENT',".hex2dec(bin2hex($key['rsa']['e'])).");\n";
+echo "define('RSA_MODULUS','".hex2dec(bin2hex($key['rsa']['n']))."');\n";
+echo "define('REMOTE_KEY','".$argv[1]."');\n";
+
+
+  
 
 
 
