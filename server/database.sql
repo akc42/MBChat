@@ -45,7 +45,7 @@ CREATE TABLE parameters (
 INSERT INTO parameters VALUES ('remote_error','http://mb.home/chat/index.php',1); --for redirecting users who come here before authentication
 INSERT INTO parameters VALUES ('guests_allowed','yes',1); -- if we are allowing guests?  yes if we are, anything else means no.
 INSERT INTO parameters VALUES ('emoticon_dir','./emoticons',1); -- emoticon directory (either absolute or relative to the application)
-INSERT INTO parameters VALUES ('emoticon_url','/emoticons/',1); -- emoticon url 
+INSERT INTO parameters VALUES ('emoticon_url','emoticons/',1); -- emoticon url 
 
 -- Same as the first group, but separated out for easy of use - they will be returned in the same request under different json object (sounds)
 
