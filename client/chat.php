@@ -70,7 +70,7 @@ foreach($rooms['rooms'] as $row) {
             && (!(($row['type'] == 4 && $rooms['role'] == 'B') || ($row['type'] == 5 && $rooms['role'] != 'B'))) ) {
         if($i > 0 && $i%4 == 0) {
 ?><div class="rooms"> 
-    	<h3>Committee Rooms</h3>
+    	<h3>Meeting Rooms</h3>
 <?php   }
         if($rooms['blind']) {
 ?>    	<input id="R<?php echo $row['rid']; ?>" 

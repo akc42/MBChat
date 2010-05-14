@@ -85,6 +85,7 @@ default:
     if($pass = $result->fetchColumn()){
         $r1 = md5($pass.sprintf("%010u",$t));
         $r2 = md5($pass.sprintf("%010u",$t+300));
+        $return['r1'] = $r1; $return['r2']=$r2;$return['pass'] = $pass;
         if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
             $result->closeCursor();
             $result = $db->query("SELECT uid,role,cap,rooms FROM users WHERE name = '".strtolower($username)."'");
