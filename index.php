@@ -115,8 +115,6 @@ $r2 = REMOTE_KEY.sprintf("%010u",$t+300);
             }
         });
     </script>
-    <script src="/js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
-    
     <style type="text/css">
     
         /* these are the classes related to user types */
