@@ -35,7 +35,7 @@ elif [ "$branch" == "mb-test" ]; then
     git clean -f -x
     ./supporting/install/install 'http://www.hartley-consultants.com/chat/'
     echo "<?php echo '$version';?>" > inc/version.inc
-    rsync -axq --delete  --exclude=/supporting/ --exclude=/test/  --exclude=/data/  ./ www-data@piglet:chandlerfamily.org.uk/chat/
+    rsync -axq --delete  --exclude=/supporting/ --exclude=/test/  --exclude=/data/  --exclude=/remote/ ./ www-data@piglet:chandlerfamily.org.uk/chat/
     rsync data/private.inc www-data@piglet:chandlerfamily.org.uk/chat/data/
 else
     git clean -f -X
