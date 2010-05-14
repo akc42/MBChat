@@ -73,8 +73,8 @@ case '$$#':
             $return['status'] = true;
             $return['login'] = $msg;
             $t = ceil(time()/60)*60;
-            $return['login'][['pass1'] = md5(REMOTE_KEY.sprintf("%010u",$t));
-            $return['login'][['pass2'] = md5(REMOTE_KEY.sprintf("%010u",$t+60)); //tighter limit than rest
+            $return['login']['pass1'] = md5(REMOTE_KEY.sprintf("%010u",$t));
+            $return['login']['pass2'] = md5(REMOTE_KEY.sprintf("%010u",$t+60)); //tighter limit than rest
         } else {
             $return['status'] = false;
         }
