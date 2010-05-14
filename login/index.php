@@ -63,8 +63,8 @@ case '$$#':
 case '$$G':
 
     //A guest
-    $r1 = md5('guest'.sprintf("%012u",$t));
-    $r2 = md5('guest'.sprintf("%012u",$t+300));
+    $r1 = md5('guest'.sprintf("%010u",$t));
+    $r2 = md5('guest'.sprintf("%010u",$t+300));
     if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
         $db->exec("INSERT INTO users (name,password,isGuest) VALUES ('$username','guest',1)");
         $return['login']['uid'] = $db->lastInsertID();
@@ -74,8 +74,8 @@ case '$$G':
         $return['login']['rooms'] = '';
         $return['status'] = true;
         $t = ceil(time()/60)*60; //This is the 1 minute availablity password
-        $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t));
-        $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t+60));
+        $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",$t));
+        $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%010",$t+60));
         break;
     } 
     cs_forbidden();
@@ -83,8 +83,8 @@ default:
     //Normal user
     $result = $db->query("SELECT password FROM users WHERE  name = '".strtolower($username)."' ");
     if($pass = $result->fetchColumn()){
-        $r1 = md5($pass.sprintf("%012u",$t));
-        $r2 = md5($pass.sprintf("%012u",$t+300));
+        $r1 = md5($pass.sprintf("%010u",$t));
+        $r2 = md5($pass.sprintf("%010u",$t+300));
         if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
             $result->closeCursor();
             $result = $db->query("SELECT uid,role,cap,rooms FROM users WHERE name = '".strtolower($username)."'");
@@ -92,8 +92,8 @@ default:
             $return['login']['name'] = $username; //ensuring case is as we entered it
             $return['status'] = true;
             $t = ceil(time()/60)*60; //This is the 1 minute availablity password
-            $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t));
-            $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%012u",$t+60));
+            $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",$t));
+            $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",$t+60));
         } else {
             $return['status'] = false;
             $return['usererror'] = false;
