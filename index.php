@@ -24,6 +24,7 @@
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
 
+
 $chatting = cs_query('chats');
 
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -34,12 +35,12 @@ $chatting = cs_query('chats');
     <title>MB Chat</title>
 	<link rel="stylesheet" type="text/css" href="css/chat.css" />
 	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="/css/chat-ie.css"/>
+		<link rel="stylesheet" type="text/css" href="<?php echo CHAT_URL ;?>css/chat-ie.css"/>
 	<![endif]-->
-    <script src="js/mootools-1.2.4-core-nc.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/ns.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/mootools-1.2.4.4-more-chat-nc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
     <script src="js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/cipher/BigInteger.init1.js" type="text/javascript" charset="UTF-8"></script>
@@ -50,12 +51,12 @@ $chatting = cs_query('chats');
     <script src="js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script> 
     <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script> 
-    <script src="/js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 if($chatting['chat']['des']) {
-?>  <script src="/js/des.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="/js/base64.js" type="text/javascript" charset="UTF-8"></script>
+?>  <script src="js/des.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/base64.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
 $t = ceil(time()/300)*300; //This is the 5 minute availablity password

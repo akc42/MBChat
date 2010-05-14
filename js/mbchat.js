@@ -348,6 +348,13 @@ return {
             document.id('soundEnabled').checked = false; //switch off sound as it interferes with screen reader
             document.id('autoScroll').checked = false;
             document.id('userOptions').addClass('hide');
+            //replace exit div with a button
+            document.id('exit').dispose();
+            var el = new Element('input',{type:'button',value:'Exit'});
+            el.inject(document.id('chatblock'),'top');
+            //remove send buttons as ctrl+s is used.
+            document.id(document.id('messageForm').submit).dispose();
+            document.id(document.id('whisperBoxTemplate').getElement('form').submit).dispose();
         } else {
         	//Set up emoticons
 	        var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)
@@ -565,7 +572,11 @@ return {
 				var addUser = function (user) {
 					var div =$('U'+user.uid);  // Does this already exist?
 					if(div) div.destroy();  //So remove him, because we need to recreate from scratch
-					div = new Element('div', {'id': 'U'+user.uid}); 
+					if(me.can(BLIND)) {
+					    div = new Element('input',{type:'button',id: 'U'+user.uid,value:user.name});
+					} else {
+    					div = new Element('div', {'id': 'U'+user.uid}); 
+    				}
 					var span = displayUser(user,div);
 
 					if (user.wid && user.wid.toInt() != 0  ) { 
@@ -695,38 +706,16 @@ return {
 					// Figure out if we can whisper together
 					if (user.uid != me.uid && !me.can(NO_WHISPER) 
 					              && (crossWhisper || ((!me.is('B') && user.role != 'B') || ( me.is('B') && user.role === 'B' )))
-					                         ) { 
-						span.addEvent('mousedown',function (e) {
+					                         ) {
+					    var ww = function(e) { 
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						});
+                        if(me.can(BLIND) {
+                            div.addEvent('click',ww);
+                            div.addClass('whisperer');
+                        } else { 
+						span.addEvent('mousedown',ww);
 						div.getFirst().addClass('whisperer');
-						div.addEvent('keydown', function(e) {
-							if(!e.control) return;
-							if(e.key == 'w') {
-								e.stop();
-								var whisperBoxes = $$('.whisperBox');
-								if (whisperBoxes.every(function(whisperBox,i) {
-									var widStr = whisperBox.get('id');
-									var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
-									if (whisperers.length == 1) { //we only want to worry about this if only other person
-										if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
-											return false;
-										}
-									}
-									return true;
-								})){
-								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper
-									var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
-										if(response.wid != 0) {
-											var user = response.user
-											user.uid = user.uid.toInt();
-											var whisper = createWhisperBox(response.wid.toInt(),user);
-										}
-									});
-									getNewWhisperReq.transmit({'wuid':user.uid});
-								}
-							}
-						}); 
 					}
 					var qtext = div.retrieve('question');
 					if (qtext) {
@@ -1404,104 +1393,148 @@ return {
 						lastId = lid;
 					},
 					whisperWith : function (user,el,event) {
-						var startPosition = el.getCoordinates();
-						var dropNew;
-						if (room.rid == 0 && privateRoom == 0 ) {
-							dropNew = $('chatList');
-						} else {
-							dropNew = $('inputContainer');
+					    if(me.can(BLIND)) {
+						    if(privateRoom == 0) {
+							    //See if we are already in a whisper with this user
+							    var whisperBoxes = $$('.whisperBox');
+							    if (whisperBoxes.every(function(whisperBox,i) {
+								    var widStr = whisperBox.get('id');
+								    var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
+								    if (whisperers.length == 1) { //we only want to worry about this if only other person
+									    if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
+										    this.start(whisperBox.getCoordinates());
+										    if(activeWb) {
+											    activeWb.removeClass('wBactive');
+										    }
+										    activeWb = whisperBox;
+										    whisperBox.addClass('wBactive');
+										    whisperBox.getElement('.whisperInput').focus();
+										    return false;
+									    }
+								    }
+								    return true;		 
+							    })){ 
+					    //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
+								    var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
+									    if(response.wid != 0) {
+										    var user = response.user
+										    user.uid = user.uid.toInt();
+										    var whisper = createWhisperBox(response.wid.toInt(),user);
+									    } 
+								    });
+								    getNewWhisperReq.transmit({'wuid':user.uid});
+							    }
+						    } else {
+							    droppable = $('W'+privateRoom); //This was a private room drop
+							    $('U'+user.uid).addClass('priv'); //Show in room on online list
+							    //See if already in whisper with this user
+							    if (addUser (user,droppable) ) {
+								    var addUserToWhisperReq = new ServerReq('client/joinwhisper.php',function(response) {});
+								    addUserToWhisperReq.transmit({
+									    'wuid':user.uid,
+									    'wid':droppable.get('id').substr(1).toInt()});
+							    }
+						    }
+					    } else {
+						    var startPosition = el.getCoordinates();
+						    var dropNew;
+						    if (room.rid == 0 && privateRoom == 0 ) {
+							    dropNew = $('chatList');
+						    } else {
+							    dropNew = $('inputContainer');
+						    }
+						    var dropZones = $$('.whisperBox');
+						    var dragMan = new Element('div',{'class':'dragBox'});
+						    dragMan.setStyles(startPosition);
+						    var dragDestroy = function() {
+							    dragMan.destroy();
+							    $('content').setStyles(contentSize);
+						    }
+						    el.addEvent('mouseup', dragDestroy);
+						    displayUser(user,dragMan);
+						    var dragReturn = new Fx.Morph(dragMan, {
+							    link: 'cancel',
+							    duration: 500,
+							    transition: Fx.Transitions.Quad.easeOut,
+							    onComplete: function (dragged) {
+								    dragged.destroy();
+								    $('content').setStyles(contentSize);
+							    }
+						    });
+						    dragMan.inject(document.body);
+						    dragMan.addEvent('mouseup',dragDestroy);
+						    dropZones.include(dropNew);
+						    var drag = new Drag.Move(dragMan,{
+							    droppables:dropZones,
+							    onSnap: function(element) {
+								    element.removeEvent('mouseup',dragDestroy);
+							    },
+							    onDrop: function(element, droppable){
+								    dropZones.removeClass('dragOver');
+								    if(droppable) {
+									    if(droppable == dropNew && privateRoom == 0) {
+										    //See if we are already in a whisper with this user
+										    var whisperBoxes = $$('.whisperBox');
+										    if (whisperBoxes.every(function(whisperBox,i) {
+											    var widStr = whisperBox.get('id');
+											    var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
+											    if (whisperers.length == 1) { //we only want to worry about this if only other person
+												    if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
+													    this.start(whisperBox.getCoordinates());
+													    if(activeWb) {
+														    activeWb.removeClass('wBactive');
+													    }
+													    activeWb = whisperBox;
+													    whisperBox.addClass('wBactive');
+													    whisperBox.getElement('.whisperInput').focus();
+													    return false;
+												    }
+											    }
+											    return true;		 
+										    }, dragReturn)){ 
+								    //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
+											    var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
+												    if(response.wid != 0) {
+													    var user = response.user
+													    user.uid = user.uid.toInt();
+													    var whisper = createWhisperBox(response.wid.toInt(),user);
+													    dragReturn.start(whisper.getCoordinates()); //move towards it
+												    } else {
+												    //logged out before we started whisper
+													    dragReturn.start($('onlineList').getCoordinates());
+												    } 
+											    });
+											    getNewWhisperReq.transmit({'wuid':user.uid});
+										    }
+									    } else {
+										    if (droppable == dropNew) {
+											    droppable = $('W'+privateRoom); //This was a private room drop
+											    $('U'+user.uid).addClass('priv'); //Show in room on online list
+											    dragReturn.start($('chatList').getCoordinates());
+										    } else {
+											    dragReturn.start(droppable.getCoordinates());
+										    }
+										    //See if already in whisper with this user
+										    if (addUser (user,droppable) ) {
+											    var addUserToWhisperReq = new ServerReq('client/joinwhisper.php',function(response) {});
+											    addUserToWhisperReq.transmit({
+												    'wuid':user.uid,
+												    'wid':droppable.get('id').substr(1).toInt()});
+										    }
+									    }
+								    } else {
+									    dragReturn.start(startPosition);  // should make dragman return on online list
+								    }
+							    },
+       							onEnter: function(element, droppable){
+								    droppable.addClass('dragOver');
+							    },
+     							onLeave: function(element, droppable){
+								    droppable.removeClass('dragOver');
+							    }							
+						    });
+						    drag.start(event);
 						}
-						var dropZones = $$('.whisperBox');
-						var dragMan = new Element('div',{'class':'dragBox'});
-						dragMan.setStyles(startPosition);
-						var dragDestroy = function() {
-							dragMan.destroy();
-							$('content').setStyles(contentSize);
-						}
-						el.addEvent('mouseup', dragDestroy);
-						displayUser(user,dragMan);
-						var dragReturn = new Fx.Morph(dragMan, {
-							link: 'cancel',
-							duration: 500,
-							transition: Fx.Transitions.Quad.easeOut,
-							onComplete: function (dragged) {
-								dragged.destroy();
-								$('content').setStyles(contentSize);
-							}
-						});
-						dragMan.inject(document.body);
-						dragMan.addEvent('mouseup',dragDestroy);
-						dropZones.include(dropNew);
-						var drag = new Drag.Move(dragMan,{
-							droppables:dropZones,
-							onSnap: function(element) {
-								element.removeEvent('mouseup',dragDestroy);
-							},
-							onDrop: function(element, droppable){
-								dropZones.removeClass('dragOver');
-								if(droppable) {
-									if(droppable == dropNew && privateRoom == 0) {
-										//See if we are already in a whisper with this user
-										var whisperBoxes = $$('.whisperBox');
-										if (whisperBoxes.every(function(whisperBox,i) {
-											var widStr = whisperBox.get('id');
-											var whisperers = whisperBox.getElement('.whisperList').getChildren();   //gets users in whisper
-											if (whisperers.length == 1) { //we only want to worry about this if only other person
-												if (whisperers[0].get('id').substr(widStr.length+1).toInt() == user.uid) {
-													this.start(whisperBox.getCoordinates());
-													if(activeWb) {
-														activeWb.removeClass('wBactive');
-													}
-													activeWb = whisperBox;
-													whisperBox.addClass('wBactive');
-													whisperBox.getElement('.whisperInput').focus();
-													return false;
-												}
-											}
-											return true;		 
-										}, dragReturn)){ 
-								//If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
-											var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
-												if(response.wid != 0) {
-													var user = response.user
-													user.uid = user.uid.toInt();
-													var whisper = createWhisperBox(response.wid.toInt(),user);
-													dragReturn.start(whisper.getCoordinates()); //move towards it
-												} else {
-												//logged out before we started whisper
-													dragReturn.start($('onlineList').getCoordinates());
-												} 
-											});
-											getNewWhisperReq.transmit({'wuid':user.uid});
-										}
-									} else {
-										if (droppable == dropNew) {
-											droppable = $('W'+privateRoom); //This was a private room drop
-											$('U'+user.uid).addClass('priv'); //Show in room on online list
-											dragReturn.start($('chatList').getCoordinates());
-										} else {
-											dragReturn.start(droppable.getCoordinates());
-										}
-										//See if already in whisper with this user
-										if (addUser (user,droppable) ) {
-											var addUserToWhisperReq = new ServerReq('client/joinwhisper.php',function(response) {});
-											addUserToWhisperReq.transmit({
-												'wuid':user.uid,
-												'wid':droppable.get('id').substr(1).toInt()});
-										}
-									}
-								} else {
-									dragReturn.start(startPosition);  // should make dragman return on online list
-								}
-							},
-   							onEnter: function(element, droppable){
-								droppable.addClass('dragOver');
-							},
- 							onLeave: function(element, droppable){
-								droppable.removeClass('dragOver');
-							}							
-						});
-						drag.start(event);
 						$('content').setStyles(contentSize);
 					},
 					processMessage: function (msg) {
