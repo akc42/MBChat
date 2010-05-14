@@ -710,7 +710,7 @@ return {
 					    var ww = function(e) { 
 							MBchat.updateables.whispers.whisperWith(user,span,e);
 						};
-                        if(me.can(BLIND) {
+                        if(me.can(BLIND)) {
                             div.addEvent('click',ww);
                             div.addClass('whisperer');
                         } else { 
