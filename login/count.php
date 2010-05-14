@@ -22,7 +22,7 @@
 error_reporting(E_ALL);
 
 require_once('../inc/client.inc');
-require_once('../data/private.inc');
+require_once(DATA_DIR.'private.inc');
 
 $t = ceil(time()/300)*300;
 $r1 = md5(REMOTE_KEY.sprintf("%010u",$t));

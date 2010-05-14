@@ -42,8 +42,8 @@ CREATE TABLE parameters (
 -- The first group of parameters are needed by chat as it starts, but will not be needed again. There will be loaded (as a group) on demand from
 -- The chat page
 
-INSERT INTO parameters VALUES ('remote_error','http://mb.home/chat/index.php',1); --for redirecting users who come here before authentication
-INSERT INTO parameters VALUES ('guests_allowed','yes',1); -- if we are allowing guests?  yes if we are, anything else means no.
+INSERT INTO parameters VALUES ('remote_error','http://www.melindasbackups.com/chat2/index.php',1); --for redirecting users who come here before authentication
+INSERT INTO parameters VALUES ('guests_allowed','no',1); -- if we are allowing guests?  yes if we are, anything else means no.
 INSERT INTO parameters VALUES ('emoticon_dir','./emoticons',1); -- emoticon directory (either absolute or relative to the application)
 INSERT INTO parameters VALUES ('emoticon_url','emoticons/',1); -- emoticon url 
 
@@ -88,7 +88,7 @@ INSERT INTO parameters VALUES ('max_messages','100',4); -- maximum number of bac
 
 -- next parameter only enabled if we are going to encrypt messages
 -- INSERT INTO parameters VALUES ('des_key','0',9); -- placeholder for des-Key
-INSERT INTO parameters VALUES ('exit_location','http://mb.home/forum',9); -- where to exit to.
+INSERT INTO parameters VALUES ('exit_location','http://www.melindasbackups.com/forum',9); -- where to exit to.
 INSERT INTO parameters VALUES ('max_time','180',9); -- maximum number of minutes of back messages to display when entering a room
 INSERT INTO parameters VALUES ('tick_interval','10',9); -- how long (in seconds) that the server should check for exit
 INSERT INTO parameters VALUES ('check_ticks','6',9); -- how long (in tick intervals) should the server wait before testing the database for timeout

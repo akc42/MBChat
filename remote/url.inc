@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-define('SERVER_HOST','http://mb.home');
+define('SERVER_HOST','http://www.melindasbackups.com');
 define('SERVER_LOCATION',SERVER_HOST.'/chatserve/');   //Where the chat server 
 
 
