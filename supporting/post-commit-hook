@@ -10,18 +10,18 @@ if [ "$branch" == "old" ]; then
     java -jar /home/alan/dev/yuicompressor-2.4.2.jar mbchat.js -o mbchat-min-$version.js
     java -jar /home/alan/dev/yuicompressor-2.4.2.jar mbclite.js -o mbclite-min-$version.js
     echo "<?php echo '$version';?>" > version.php
-    rsync -axq --delete --exclude=supporting --exclude=pipes/ ./ mb:public_html/chat/
+    rsync -axq --delete --exclude=supporting --exclude=pipes/ --exclude=/.git/ ./ mb:public_html/chat/
 elif [ "$branch" == "old-test" ]; then
     git clean -f -x
     echo "<?php echo '$version';?>" > version.php
-    rsync -axq --delete --exclude=pipes/ ./ /home/alan/dev/mb.com/chat/
+    rsync -axq --delete --exclude=pipes/ --exclude=/.git/ ./ /home/alan/dev/mb.com/chat/
 elif [ "$branch" == "mb-com" ]; then
     git clean -f -x
     ./supporting/install/install 'http://mb.chandlerfamily.org.uk/chatserve/'
     echo "<?php echo '$version';?>" > inc/version.inc
     rsync -axq --delete remote/ mb:public_html/chat2/
     rsync -axq --delete inc/ nb:public_html/chat2/inc/
-    rsync -axq --delete --exclude=/remote/ --exclude=/supporting/ --exclude=/test/  --exclude=/data/ ./ www-data@piglet:mb.com/chatserve/
+    rsync -axq --delete --exclude=/remote/ --exclude=/supporting/ --exclude=/test/  --exclude=/data/ --exclude=/.git/ ./ www-data@piglet:mb.com/chatserve/
     rsync data/private.inc www-data@piglet:mb.com/chatserve/data/
 elif [ "$branch" == "mb-test" ]; then
     git clean -f -x
@@ -29,13 +29,13 @@ elif [ "$branch" == "mb-test" ]; then
     echo "<?php echo '$version';?>" > inc/version.inc
     rsync -axq --delete remote/ /home/alan/dev/mb.com/chat2/
     rsync -axq --delete inc/ /home/alan/dev/mb.com/chat2/inc/
-    rsync -axq --delete --exclude=/remote/ --exclude=/supporting/ --exclude=/test/  --exclude=/data/  ./ /home/alan/dev/mb.com/chatserve/
+    rsync -axq --delete --exclude=/remote/ --exclude=/supporting/ --exclude=/test/  --exclude=/data/ --exclude=/.git/  ./ /home/alan/dev/mb.com/chatserve/
     rsync data/private.inc /home/alan/dev/mb.com/chatserve/data/
     elif [ "$branch" == "demo" ]; then
     git clean -f -x
     ./supporting/install/install 'http://www.hartley-consultants.com/chat/'
     echo "<?php echo '$version';?>" > inc/version.inc
-    rsync -axq --delete  --exclude=/supporting/ --exclude=/test/  --exclude=/data/  --exclude=/remote/ ./ www-data@piglet:chandlerfamily.org.uk/chat/
+    rsync -axq --delete  --exclude=/supporting/ --exclude=/test/  --exclude=/data/  --exclude=/remote/ --exclude=/.git/ ./ www-data@piglet:chandlerfamily.org.uk/chat/
     rsync data/private.inc www-data@piglet:chandlerfamily.org.uk/chat/data/
 else
     git clean -f -X
