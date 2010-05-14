@@ -23,7 +23,7 @@ require_once('../inc/client.inc');
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<link rel="stylesheet" type="text/css" href="../css/header.css" />
-    <title>Hartley Chat</title>
+    <title>MB Chat</title>
 	<link rel="stylesheet" type="text/css" href="../css/chat.css" />
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="../css/chat-ie.css"/>

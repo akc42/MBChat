@@ -46,7 +46,7 @@ if ($rid == 99) {
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>Melinda's Backups Chat</title>
+	<title>MB Chat</title>
 	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
 </head>
 <body>
