@@ -55,11 +55,11 @@ $query['role'] = ((in_array(SMF_CHAT_HONORARY, $groups))? 'L' : (  // which role
 		    (in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
 		    (in_array(SMF_BOARD_MODERATOR, $groups) || in_array(SMF_MEMBERSHIP_MGR,$groups))? 'G' : 'R'))));
 
-$query['mod'] = (in_array(SMF_CHAT_MODERATOR,$groups)?'M':(in_array(SMF_CHAT_SPEAKER,$groups)?'S':'N'));
-
 $cap = 2; //everyone is a secretary
 if(in_array(SMF_CHAT_LITE,$groups)) $cap += 1;
 if($user_info['is_admin']) $cap += 4;
+if(in_array(SMF_CHAT_MODERATOR,$groups)) $cap += 8;
+if(in_array(SMF_CHAT_SPEAKER,$groups)) $cap += 16;
 if(in_array(SMF_CHAT_NO_WHISPER,$groups)) $cap+=32;
 
 $query['cap'] = $cap;
