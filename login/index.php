@@ -54,7 +54,7 @@ case '$$#':
         if(isset($_COOKIE['mbchat'])) {
             $data = json_decode($_COOKIE['mbchat']);
             $key = bcpowmod($data['key'],RSA_PRIVATE_KEY,RSA_MODULUS);
-            $msg = base64_decode($data['params');
+            $msg = base64_decode($data['params']);
             $iv = substr($msg, 0, 32);
             $msg = substr($msg, 32);
 
