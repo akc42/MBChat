@@ -65,7 +65,7 @@ function MBCAuth(soundcoord) {
                 }
             } else { 
                 if(externalAuth) {
-//                    window.location = remoteError;
+                    window.location = remoteError;
                 } else {
                     loginError(response.usererror);
                 }
@@ -122,11 +122,11 @@ function MBCAuth(soundcoord) {
                 }
  
                 var t1 = (Math.ceil(new Date().getTime()/300000)*300).toString();
-                while(t1.length < 12) {
+                while(t1.length < 10) {
                     t1 = '0'+t1;
                 }
                 var t2 = (Math.ceil(new Date().getTime()/300000)*300+300).toString();
-                while(t2.length < 12) {
+                while(t2.length < 10) {
                     t2 = '0'+t2;
                 }
                 document.id('rsa_generator').removeClass('hide');

@@ -28,7 +28,7 @@
 	<tr>
 	<td align="left" width="30" class="topbg_l" height="70">&nbsp;</td>
 	<td align="left" colspan="2" class="topbg_r" valign="top"><a href="/" alt="Main Site Home Page">
-		<img  style="margin-top: 24px;" src="../images/mb-logo-community.gif" alt="Melinda's Backups Community" border="0" /></a>	
+		<img  style="margin-top: 24px;" src="/static/images/mb-logo-community.gif" alt="Melinda's Backups Community" border="0" /></a>	
 	</td>
 	<td align="center" width="300" class="topbg_r" valign="middle">
 	    <a href="http://melindadoolittle.com" alt="Main Site Home Page" style="text-decoration:none;margin-top:5px;">
