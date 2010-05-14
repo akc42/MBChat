@@ -83,7 +83,7 @@ case '$$#':
     }
     cs_forbidden();
 case '$$R':
-    if ($_GET['pass1'] == $r1 || $GET['pass1'] == $r2 || $_GET['pass2'] == $r1 || $_GET['pass2'] == $r2) {
+    if ($_GET['pass1'] == $r1 || $_GET['pass1'] == $r2 || $_GET['pass2'] == $r1 || $_GET['pass2'] == $r2) {
         // We now have a valid requester - so we need to maka a cookie 
         // for testing, I want to check cookie contents, so I will keep it - in production we will make it a session cookie
         setcookie('mbchat-key',$_GET['key']);
