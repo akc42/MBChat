@@ -52,9 +52,12 @@ case '$$#':
             the chat can be redirected to go get the credentials checked.
         */
         if(isset($_COOKIE['mbchat'])) {
-            $data = json_decode($_COOKIE['mbchat']);
-            $key = bcpowmod($data['key'],RSA_PRIVATE_KEY,RSA_MODULUS);
-            $msg = base64_decode($data['params']);
+            $key = $_COOKIE['mbchat-key'];
+            $msg = $_COOKIE['mbchat-msg'];
+            $key = bcpowmod($key,RSA_PRIVATE_KEY,RSA_MODULUS);
+
+            
+            $msg = base64_decode($msg);
             $iv = substr($msg, 0, 32);
             $msg = substr($msg, 32);
 
@@ -80,10 +83,9 @@ case '$$#':
 case '$$R':
     if ($_GET['pass1'] == $r1 || $GET['pass1'] == $r2 || $_GET['pass2'] == $r1 || $_GET['pass2'] == $r2) {
         // We now have a valid requester - so we need to maka a cookie 
-        $return['key']=$_GET['key'];
-        $return['params']=$_GET['params'];
         // for testing, I want to check cookie contents, so I will keep it - in production we will make it a session cookie
-        setcookie('mbchat',json_encode($return),time()+60*60*24);
+        setcookie('mbchat-key',$_GET['key'],time()+60*60*24);
+        setcookie('mbchat-msg',$_GET['msg'],time()+60*60*24);
         //Now return a javascript program that sends us to chat
         echo "window.location = '".CHAT_URL."index.php'\n";
         exit;

@@ -100,7 +100,7 @@ mcrypt_generic_deinit($td);
 mcrypt_module_close($td);
 $msg = base64_encode($msg);
 
-$urlquery['params'] = $msg;
+$urlquery['msg'] = $msg;
 
 $url=SERVER_LOCATION.'login/index.php?'.http_build_query($urlquery);
 /* The trick here is to make the call to the url from the browser whilst it is loading the script.  The url is going to write a cookie
