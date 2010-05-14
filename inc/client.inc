@@ -22,8 +22,8 @@
 
 define('GOOGLE_ACCOUNT','UA-6767400-1');
 
-define('SERVER_DIR','/home/melindas/chatserver/server/');//Should be outside of web space
-define('DATA_DIR','/home/melindas/chatserver/data/');  //Should be outside of web space
+define('SERVER_DIR','/var/www/chatserver/server/');//Should be outside of web space
+define('DATA_DIR','/var/www/chatserver/data/');  //Should be outside of web space
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 
