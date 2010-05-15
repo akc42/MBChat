@@ -54,6 +54,7 @@ function MBCAuth() {
                     if(response.trial == checkNo.toString(10)) {
                         //matched
                         confirmedServer = true;
+                        coordinator.done('verify',{});
                         loginReq.post.delay(1,this,{user:'$$#',pass:remoteKey}); //now find out if I am supposed to prompt
                     } else {
                         confirmTimeout();
