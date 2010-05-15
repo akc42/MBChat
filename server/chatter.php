@@ -213,7 +213,7 @@ function markActive($uid) {
     
 
 
-$logfp = fopen(LOG_FILE,'a');
+$logfp = fopen(LOG_FILE,'w');
 $running = false; 
 declare(ticks = 1);
 try {
@@ -226,11 +226,11 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         logger("STARTING");
 
         if(!file_exists(DATABASE) ) {
-            $db = new SQLite3(DATABASE);
-            $db->exec(file_get_contents(INIT_FILE));
-        } else {
-            $db = new SQLite3(DATABASE);
+            throw new Exception("Database Does Not Exist");
         }
+
+        $db = new SQLite3(DATABASE);
+
         $db->exec("PRAGMA foreign_keys = ON");
 
 //Sets up the digest parameters so they can be returned rapidly whatever routine is called

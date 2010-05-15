@@ -21,7 +21,7 @@
 error_reporting(E_ALL);
 define('PURGE_GUEST_INTERVAL',5); //Days to leave guests in the database
 require_once('../inc/client.inc');
-require_once('../data/private.inc');
+require_once(DATA_DIR.'private.inc');
 
 
 if(!isset($_POST['user'])) {
@@ -29,18 +29,14 @@ if(!isset($_POST['user'])) {
 }
 $username = $_POST['user'];
 
-$t = ceil(time()/300)*300; //This is the 5 minute availablity password
-
 $return = Array();
 
-$db = new PDO('sqlite:../data/users.db');
+$db = new PDO('sqlite:'.DATA_DIR.'users.db');
 $db->exec("DELETE FROM users WHERE time < ".(time() - PURGE_GUEST_INTERVAL*86400)." AND isguest = 1"); //purge old guests
 
 switch(substr($username,0,3)) {
 case '$$$':
-    $r1 = md5(REMOTE_KEY.sprintf("%010u",$t));
-    $r2 = md5(REMOTE_KEY.sprintf("%010u",$t+300));
-    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+    if (cs_tcheck(REMOTE_KEY,$_POST['pass'])) {
         if(isset($_POST['trial'])) {
             echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS).'"}';
             exit;
@@ -48,9 +44,7 @@ case '$$$':
     }
     cs_forbidden();
 case '$$#':
-    $r1 = md5(REMOTE_KEY.sprintf("%010u",$t));
-    $r2 = md5(REMOTE_KEY.sprintf("%010u",$t+300));
-    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+    if (cs_tcheck(REMOTE_KEY,$_POST['pass'])) {
         /*  This particular version of chat requires that the chat itself prompts for a username and password.  Other 
             versions may well respond to this unique username with the authentication details (for instance because they can
             detect the user from a cookie.  This marker tells the other end to prompt for the details and when you have them
@@ -61,11 +55,8 @@ case '$$#':
     }
     cs_forbidden();
 case '$$G':
-
     //A guest
-    $r1 = md5('guest'.sprintf("%010u",$t));
-    $r2 = md5('guest'.sprintf("%010u",$t+300));
-    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+    if (cs_tcheck('guest',$_POST['pass'])) {
         $db->exec("INSERT INTO users (name,password,isGuest) VALUES ('$username','guest',1)");
         $return['login']['uid'] = $db->lastInsertID();
         $return['login']['name'] = substr($username,3).'_(G)';
@@ -73,9 +64,7 @@ case '$$G':
         $return['login']['cap'] = 0;
         $return['login']['rooms'] = '';
         $return['status'] = true;
-        $t = ceil(time()/60)*60; //This is the 1 minute availablity password
-        $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",$t));
-        $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%010",$t+60));
+        $return['login']['pass'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",ceil(time()/100)*100));
         break;
     } 
     cs_forbidden();
@@ -83,18 +72,13 @@ default:
     //Normal user
     $result = $db->query("SELECT password FROM users WHERE  name = '".strtolower($username)."' ");
     if($pass = $result->fetchColumn()){
-        $r1 = md5($pass.sprintf("%010u",$t));
-        $r2 = md5($pass.sprintf("%010u",$t+300));
-        $return['r1'] = $r1; $return['r2']=$r2;$return['pass'] = $pass;
-        if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+        if (cs_tcheck($pass,$_POST['pass'])) {
             $result->closeCursor();
             $result = $db->query("SELECT uid,role,cap,rooms FROM users WHERE name = '".strtolower($username)."'");
             $return['login'] = $result->fetch(PDO::FETCH_ASSOC);
             $return['login']['name'] = $username; //ensuring case is as we entered it
             $return['status'] = true;
-            $t = ceil(time()/60)*60; //This is the 1 minute availablity password
-            $return['login']['pass1'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",$t));
-            $return['login']['pass2'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",$t+60));
+            $return['login']['pass'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",ceil(time()/100)*100));
         } else {
             $return['status'] = false;
             $return['usererror'] = false;

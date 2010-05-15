@@ -59,17 +59,15 @@ if($chatting['chat']['des']) {
     <script src="js/base64.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
-$t = ceil(time()/300)*300; //This is the 5 minute availablity password
-$r1 = REMOTE_KEY.sprintf("%010u",$t);
-$r2 = REMOTE_KEY.sprintf("%010u",$t+300);
+
+
 ?>  <script type="text/javascript">
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
         var remoteError = "<?php echo $chatting['chat']['remote_error'];?>";
         var guestsAllowed = <?php echo (($chatting['chat']['guests_allowed'] == 'yes')?'true':'false'); ?>;
         var rsaExponent ="<?php echo RSA_EXPONENT;?>";
         var rsaModulus="<?php echo RSA_MODULUS;?>";
-        var remoteKey1="<?php echo $r1 ; ?>";
-        var remoteKey2="<?php echo $r2 ; ?>";
+        var remoteKey="<?php md5(REMOTE_KEY.sprintf("%010u",ceil(time()/100)*100)); ?>";
         
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
