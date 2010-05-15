@@ -93,9 +93,9 @@ if($user_info['is_guest']) {
 $groups =& $user_info['groups'];
 
 
-echo "loginOptions.uid = $ID_MEMBER ;\n";
+echo "loginRequestOptions.uid = $ID_MEMBER ;\n";
 
-echo "loginOptions.name = '".$user_info['name']."' ;\n";
+echo "loginRequestOptions.name = '".$user_info['name']."' ;\n";
 
 // SMF membergroup IDs for the groups that we have used to define characteristics which control Chat Group
 define('SMF_CHAT_BABY',		10);
@@ -113,7 +113,7 @@ define('SMF_PROMOTIONS',17);
 define('SMF_WEBSITE',18);
 define('SMF_MEMBERSHIP_MGR',29);
 
-echo "loginOptions.role = '".((in_array(SMF_CHAT_HONORARY, $groups))? 'L' : (  // which role 
+echo "loginRequestOptions.role = '".((in_array(SMF_CHAT_HONORARY, $groups))? 'L' : (  // which role 
 		    (in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 		    (in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
 		    (in_array(SMF_BOARD_MODERATOR, $groups) || in_array(SMF_MEMBERSHIP_MGR,$groups))? 'G' : 'R'))))."' ;\n";
@@ -125,7 +125,7 @@ if(in_array(SMF_CHAT_MODERATOR,$groups)) $cap += 8;
 if(in_array(SMF_CHAT_SPEAKER,$groups)) $cap += 16;
 if(in_array(SMF_CHAT_NO_WHISPER,$groups)) $cap+=32;
 
-echo "loginOptions.cap = $cap ;\n";
+echo "loginRequestOptions.cap = $cap ;\n";
 
 $rooms = Array();
 if(in_array(SMF_CHAT_HONORARY,$groups) || 
@@ -136,7 +136,7 @@ if(in_array(SMF_MALARIA,$groups)) $rooms[] = '8';
 if(in_array(SMF_PROMOTIONS,$groups)) $rooms[] = '9';
 if(in_array(SMF_WEBSITE,$groups)) $rooms[] = '10';
 
-echo "loginOptions.rooms = '".implode(':',$rooms)."' ;\n";
+echo "loginRequestOptions.rooms = '".implode(':',$rooms)."' ;\n";
 
 echo "coordinator.done('login',{});\n";
 
