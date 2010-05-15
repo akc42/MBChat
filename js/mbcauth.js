@@ -18,7 +18,7 @@
 function MBCAuth() {
         var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
-        var internal Auth = false;
+        var internalAuth = false;
         if(Browser.Engine.trident && Browser.Engine.version == 5) {
             document.id('rsa_generator').removeClass('loading');
             document.id('rsa_generator').removeClass('hide');  //just in case
@@ -54,7 +54,7 @@ function MBCAuth() {
                     if(response.trial == checkNo.toString(10)) {
                         //matched
                         confirmedServer = true;
-                        loginReq.post.delay(1,this,{user:'$$#',pass:hex_md5(remoteKey)}); //now find out if I am supposed to prompt
+                        loginReq.post.delay(1,this,{user:'$$#',pass:remoteKey}); //now find out if I am supposed to prompt
                     } else {
                         confirmTimeout();
                     }

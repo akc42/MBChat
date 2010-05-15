@@ -67,7 +67,7 @@ if($chatting['chat']['des']) {
         var guestsAllowed = <?php echo (($chatting['chat']['guests_allowed'] == 'yes')?'true':'false'); ?>;
         var rsaExponent ="<?php echo RSA_EXPONENT;?>";
         var rsaModulus="<?php echo RSA_MODULUS;?>";
-        var remoteKey="<?php md5(REMOTE_KEY.sprintf("%010u",ceil(time()/100)*100)); ?>";
+        var remoteKey="<?php echo md5(REMOTE_KEY.sprintf('%010u',ceil(time()/100)*100)); ?>";
         
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
