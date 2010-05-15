@@ -75,7 +75,7 @@ if($chatting['chat']['des']) {
 		    MBchat.sounds.init();		//start sound system
         });
         var loginRequestOptions = {};
-        var coordinator = new Coordinator(['rsa','login','dom'],function(activity){
+        var coordinator = new Coordinator(['rsa','login','dom','verify'],function(activity){
             loginRequestOptions.e = activity.get('rsa').e.toString();
             loginRequestOptions.n = activity.get('rsa').n.toString(10);
             loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;

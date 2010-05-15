@@ -54,6 +54,7 @@ function MBCAuth() {
                         if(response.trial == checkNo.toString(10)) {
                             //matched
                             confirmedServer = true;
+                            coordinator.done('verify',{});
                             loginReq.post.delay(1,this,{user:'$$#',pass:remoteKey}); //now find out if I am supposed to prompt
                         } else {
                             confirmTimeout();
@@ -63,7 +64,7 @@ function MBCAuth() {
                             internalAuth = true;  //we are being told to do internal authentication
                             document.id('rsa_generator').addClass('hide');
                             document.id('authblock').removeClass('hide');
-                            // and wait for user to respond
+                                // and wait for user to respond
                         } else {
                             loginRequestOptions = response.login;
                             coordinator.done('login',{});
