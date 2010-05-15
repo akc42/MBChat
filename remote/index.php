@@ -16,23 +16,86 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
+
+
+/*  Although it doesn't look like it, this file is supposed to return some javascript.  It is
+    requested by the browser as it loads the chat page - meaning that the browsers cookies for this
+    will be set, enabling us to determine login details.  We will either return some javascript that
+    immediately redirects the user to the chat.html page (saying what an interesting facility chat is, 
+    but you need to be logged on, or we will return some javascript which will ask the server to confirm who he
+    is and then co-ordinate with the rsa generation to allow logon
+*/
+
+
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
 
+include('./public.inc');
+
+
+function cs_tcheck($key,$pass) {
+    $t = ceil(time()/100)*100; 
+    $r1 = md5($key.sprintf("%010u",$t));
+    $r2 = md5($key.sprintf("%010u",$t+100));
+    $r3 = md5($key.sprintf("%010u",$t-100));
+    return ($pass == $r1 || $pass == $r2 || $pass == $r3);
+}
+//ensure we had a proper request from the chat software
+if (!cs_tcheck(REMOTE_KEY,$_GET['pass']))  {
+    header('HTTP/1.0 403 Forbidden');
+?><html>
+    <head>
+        <style type="text/css">
+            body {
+                font-family: Arial;
+                color: #345;
+            }
+            h1 {
+                border-bottom: 3px solid #345;
+            }
+            a {
+                color: #666;
+            }
+        </style>
+    </head>
+    <body>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-6767400-1']);
+  _gaq.push(['_trackPageview']);
+</script>        
+<h1>Forbidden</h1>
+        <p>This URL is intended to only be called by authorised applications</p>
+<!-- Google Analytics Tracking Code -->
+  <script type="text/javascript">
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+    })();
+  </script>
+
+    </body>
+</html>
+<?php
+exit;
+}
+
+
+
 require_once(dirname(__FILE__).'/../forum/SSI.php');
-//If not logged in to the forum, not allowed any further so redirect to page to say so
+//If not logged in to the forum, not allowed so send back the javascript to redirect to our error page
 if($user_info['is_guest']) {
-    header('Location: chat.html');
+    echo "window.location = 'http://mb.home/chat2/chat.html' ;\n"
     exit;
 }
 $groups =& $user_info['groups'];
 
-$query = Array();
 
-$query['uid'] = $ID_MEMBER;
+echo "loginOptions.uid = $ID_MEMBER ;\n";
 
-$query['name'] =& $user_info['name'];
+echo "loginOptions.name = '".$user_info['name']."' ;\n";
 
 // SMF membergroup IDs for the groups that we have used to define characteristics which control Chat Group
 define('SMF_CHAT_BABY',		10);
@@ -50,10 +113,10 @@ define('SMF_PROMOTIONS',17);
 define('SMF_WEBSITE',18);
 define('SMF_MEMBERSHIP_MGR',29);
 
-$query['role'] = ((in_array(SMF_CHAT_HONORARY, $groups))? 'L' : (  // which role 
+echo "loginOptions.role = '".((in_array(SMF_CHAT_HONORARY, $groups))? 'L' : (  // which role 
 		    (in_array(SMF_CHAT_BABY, $groups))? 'B' :(
 		    (in_array(SMF_CHAT_MELINDA, $groups))?'H' :(
-		    (in_array(SMF_BOARD_MODERATOR, $groups) || in_array(SMF_MEMBERSHIP_MGR,$groups))? 'G' : 'R'))));
+		    (in_array(SMF_BOARD_MODERATOR, $groups) || in_array(SMF_MEMBERSHIP_MGR,$groups))? 'G' : 'R'))))."' ;\n";
 
 $cap = 2; //everyone is a secretary
 if(in_array(SMF_CHAT_LITE,$groups)) $cap += 1;
@@ -62,7 +125,7 @@ if(in_array(SMF_CHAT_MODERATOR,$groups)) $cap += 8;
 if(in_array(SMF_CHAT_SPEAKER,$groups)) $cap += 16;
 if(in_array(SMF_CHAT_NO_WHISPER,$groups)) $cap+=32;
 
-$query['cap'] = $cap;
+echo "loginOptions.cap = $cap ;\n"
 
 $rooms = Array();
 if(in_array(SMF_CHAT_HONORARY,$groups) || 
@@ -72,50 +135,8 @@ if(in_array(SMF_SCHOLARSHIP,$groups)) $rooms[] = '7';
 if(in_array(SMF_MALARIA,$groups)) $rooms[] = '8';
 if(in_array(SMF_PROMOTIONS,$groups)) $rooms[] = '9';
 if(in_array(SMF_WEBSITE,$groups)) $rooms[] = '10';
-$rooms = implode(':',$rooms);
 
-$query['rooms'] = $rooms;
+echo "loginOptions.rooms = '".implode(':',$rooms)."' ;\n";
 
-include('./url.inc');
-include('./public.inc');
+echo "coordinator.done('login',{});\n";
 
-$urlquery = Array();
-
-$t = ceil(time()/300)*300; //This is the 5 minute availablity password proving who we are.
-$urlquery['pass1'] = md5(REMOTE_KEY.sprintf("%010u",$t));
-$urlquery['pass2'] = md5(REMOTE_KEY.sprintf("%010u",$t+300));
-
-$key = sprintf("%05u",rand(1,99999));
-$urlquery['user'] = '$$R';
-$urlquery['key']=bcpowmod($key,RSA_EXPONENT,RSA_MODULUS);
-
-$msg=serialize($query);
-
-$td = mcrypt_module_open('rijndael-256', '', 'ctr', '');
-$iv = mcrypt_create_iv(32, MCRYPT_RAND);
-mcrypt_generic_init($td, $key, $iv);
-$msg = mcrypt_generic($td, $msg) ;
-$msg = $iv . $msg;
-mcrypt_generic_deinit($td); 
-mcrypt_module_close($td);
-$msg = base64_encode($msg);
-
-$urlquery['msg'] = $msg;
-
-$url=SERVER_LOCATION.'login/index.php?'.http_build_query($urlquery);
-/* The trick here is to make the call to the url from the browser whilst it is loading the script.  The url is going to write a cookie
-    with a relatively short life time with the whole query string in it and return a simple javascript program that immediately
-    redirects the user to chat.
-
-    The user will arrive at chat, and the authentication part of the script will call the same url first checking it is a valid server and
-    then asking asking what it needs to do in relation to prompting the user for credentials.  If the cookie doesn't exist yet the user
-    has gone to the chat url directly (possibly because someone has given them that url for chat) and so will be immediately redirected
-    here so that the credentials can be checked.  
-
-    If they DO have the cookie, then this call will decrypt the whole query using its private key and essentially return the credentials so
-    the rest of chat can get started.
-
-    The important point is that only a valid server and no one else can decrypt the details.  The chat script will only talk to a server if it
-    proves it is valid.
-*/
-?><html><head><script type="text/javascript" src="<?php echo $url; ?>"></script></head><body></body></html>

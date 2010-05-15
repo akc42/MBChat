@@ -24,73 +24,17 @@ error_reporting(E_ALL);
 require_once('../inc/client.inc');
 require_once(DATA_DIR.'private.inc');
 
+if (!(isset($_POST['user']) && cs_tcheck(REMOTE_KEY,$_POST['pass'])) )  cs_forbidden();
 
-if(!isset($_REQUEST['user'])) {
-    cs_forbidden();
+$username = $_POST['user'];
+
+if ($username == '$$$') {
+    if (!cs_tcheck(REMOTE_KEY,$_POST['pass'])) cs_forbidden();
+
+    if(isset($_POST['trial'])) {
+        echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS).'"}';
+    }
+} else if ($username == '$$#') {
+
+    echo '{"status":true,"comment": "external authentication will finish the job"}';
 }
-$username = $_REQUEST['user'];
-
-
-$return = Array();
-
-switch(substr($username,0,3)) {
-case '$$$':
-    if (cs_tcheck(REMOTE_KEY,$_POST['pass'])) {
-        if(isset($_POST['trial'])) {
-            echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS).'"}';
-            exit;
-        }
-    }
-    cs_forbidden();
-case '$$#':
-    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
-        /*  This particular version of chat assumes the credentials will already have been placed into a cookie
-            by a previous call to the '$$R' case below.  If it has then fine, if not we need to declare an error so that 
-            the chat can be redirected to go get the credentials checked.
-        */
-        if(isset($_COOKIE['mbchat-key'])) {
-            $key = $_COOKIE['mbchat-key'];
-            $msg = $_COOKIE['mbchat-msg'];
-            $key = bcpowmod($key,RSA_PRIVATE_KEY,RSA_MODULUS);
-
-            
-            $msg = base64_decode($msg);
-            $iv = substr($msg, 0, 32);
-            $msg = substr($msg, 32);
-
-            $td = mcrypt_module_open('rijndael-256', '', 'ctr', '');
-            mcrypt_generic_init($td, $key, $iv);
-            $msg = mdecrypt_generic($td, $msg);
-            mcrypt_generic_deinit($td);
-            mcrypt_module_close($td); 
-            
-            $msg = unserialize($msg);
-
-             
-            $return['status'] = true;
-            $return['login'] = $msg;
-            $t = ceil(time()/60)*60;
-            $return['login']['pass1'] = md5('U'.$msg['uid']."P".sprintf("%010u",$t));
-            $return['login']['pass2'] = md5('U'.$msg['uid']."P".sprintf("%010u",$t+60));
-        } else {
-            $return['status'] = false;
-        }
-        echo json_encode($return);    
-        exit;
-    }
-    cs_forbidden();
-case '$$R':
-    if ($_GET['pass1'] == $r1 || $_GET['pass1'] == $r2 || $_GET['pass2'] == $r1 || $_GET['pass2'] == $r2) {
-        // We now have a valid requester - so we need to maka a cookie 
-        // for testing, I want to check cookie contents, so I will keep it - in production we will make it a session cookie
-        setcookie('mbchat-key',$_GET['key']);
-        setcookie('mbchat-msg',$_GET['msg']);
-        //Now return a javascript program that sends us to chat
-        echo "window.location = '".CHAT_URL."index.php'\n";
-        exit;
-    }
-    cs_forbidden();
-}
-
-
-

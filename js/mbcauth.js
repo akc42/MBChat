@@ -18,7 +18,7 @@
 function MBCAuth(soundcoord) {
         var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
-        var externalAuth = true;
+        var internalAuth = false;
         if(Browser.Engine.trident && Browser.Engine.version == 5) {
             document.id('rsa_generator').removeClass('loading');
             document.id('rsa_generator').removeClass('hide');  //just in case
@@ -50,33 +50,32 @@ function MBCAuth(soundcoord) {
             url:'login/index.php',
             link:'chain',
             onComplete:function(response,t) {
-            if(response && response.status) {
-                if(response.trial) { //responding with the returned security key
-                    if(response.trial == checkNo.toString(10)) {
-                        //matched
-                        confirmedServer = true;
-                        loginReq.post.delay(1,this,{user:'$$#',pass:hex_md5(remoteKey)}); //now find out if I am supposed to prompt
-                    } else {
-                        confirmTimeout();
+                if(response && response.status) {
+                    if(response.trial) { //responding with the returned security key
+                        if(response.trial == checkNo.toString(10)) {
+                            //matched
+                            confirmedServer = true;
+                            loginReq.post.delay(1,this,{user:'$$#',pass:hex_md5(remoteKey)}); //now find out if I am supposed to prompt
+                        } else {
+                            confirmTimeout();
+                        }
+                    } else if (response.login && confirmedServer) {
+                        if(response.login.uid == 0) {//special marker telling me that I must authenticate.
+                            internalAuth = true;  //we are being told to do internal authentication
+                            document.id('rsa_generator').addClass('hide');
+                            document.id('authblock').removeClass('hide');
+                            // and wait for user to respond
+                        } else {
+                            loginRequestOptions = response.login;
+                            coordinator.done('login',{});
+                        }
                     }
-                } else if (response.login && confirmedServer) {
-                    if(response.login.uid == 0) {//special marker telling me that I must authenticate.
-                        externalAuth = false;  //we are being told to do internal authentication
-                        document.id('rsa_generator').addClass('hide');
-                        document.id('authblock').removeClass('hide');
-                        // and wait for user to respond
-                    } else {
-                        loginRequestOptions = response.login;
-                        coordinator.done('login',{});
+                } else { 
+                    if(internalAuth) {
+                        loginError(response.usererror); //if we get a bad response and we are authenticating, then it was an error.
                     }
                 }
-            } else { 
-                if(externalAuth) {
-                    window.location = remoteError;
-                } else {
-                    loginError(response.usererror);
-                }
-            }
+                //External authentication will provide its own mechanism
             }
         });
 

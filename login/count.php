@@ -22,21 +22,15 @@
 error_reporting(E_ALL);
 
 require_once('../inc/client.inc');
-require_once('../data/private.inc');
+require_once(DATA_DIR.'private.inc');
 
-$t = ceil(time()/300)*300;
-$r1 = md5(REMOTE_KEY.sprintf("%010u",$t));
-$r2 = md5(REMOTE_KEY.sprintf("%010u",$t+300));
-
-if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {  //we can assume we have a valid user
-    if(cs_is_server_running()) {  //we don't want to start the server just to find out it wasn't running and no one is in chat
-        $count = cs_query('count');
-        echo $count['count'];
-    } else {
-        echo 0;  
-    }
+if (!cs_tcheck(REMOTE_KEY,$_POST['pass']) ) cs_forbidden();
+//we can assume we have a valid user
+if(cs_is_server_running()) {  //we don't want to start the server just to find out it wasn't running and no one is in chat
+    $count = cs_query('count');
+    echo $count['count'];
 } else {
-    cs_forbidden();
+    echo 0;  
 }
 
 

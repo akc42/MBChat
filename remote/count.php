@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009 Alan Chandler
+ 	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -16,8 +16,20 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-include('./url.inc');
+
+//If I was really concerned, I would include the following - but its only a count, so lets not worry too much
+/*
+require_once(dirname(__FILE__).'/../forum/SSI.php');
+//If not logged in to the forum, not allowed to do this
+if($user_info['is_guest']) {
+    header("Location : chat.html");
+    exit;
+}
+*/
+
 include('./public.inc');
+
+define('SERVER_LOCATION','http://mb.home/chatserve/login/count.php');   //Where the chat server 
 
 pcntl_signal(SIGALRM,"timeout"); //setup communications timer
 
@@ -25,14 +37,22 @@ function timeout($signal) {
     echo 0;
     exit;
 }
+
 declare(ticks = 1);
 pcntl_alarm(10);
 
-$t = ceil(time()/300)*300;
-
-$data = array('pass1' => md5(REMOTE_KEY.sprintf("%010u",$t)),'pass2'=> md5(REMOTE_KEY.sprintf("%010u",$t+300)));
-echo do_post_request(SERVER_LOCATION."login/count.php",$data );
+$data = array('pass' => md5(REMOTE_KEY.sprintf("%010u",ceil(time()/100)*100)));
 
 
+$opts = array('http' =>
+    array(
+        'method'  => 'POST',
+        'header'  => 'Content-type: application/x-www-form-urlencoded',
+        'content' => http_build_query($data)
+    )
+);
 
+$context  = stream_context_create($opts);
+
+echo  @file_get_contents(SERVER_LOCATION, false, $context,-1,50);
 
