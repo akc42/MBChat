@@ -21,7 +21,7 @@
 
 /* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
-define('REMOTE_AUTHENTICATOR', 'http://mb.home/chat2/index.php');
+define('REMOTE_AUTHENTICATOR', 'http://www.melindasbackups.com/chat2/index.php');
 
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
