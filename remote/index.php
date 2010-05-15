@@ -92,9 +92,10 @@ if($user_info['is_guest']) {
 }
 $groups =& $user_info['groups'];
 
-echo "loginRequestOptions.pass = '".$_GET['pass']."' ;\n" ;
-
 echo "loginRequestOptions.uid = $ID_MEMBER ;\n";
+
+echo "loginRequestOptions.pass = '".md5("U".$ID_MEMBER."P".sprintf("%010u",ceil(time()/100)*100))."' ;\n" ;
+
 
 echo "loginRequestOptions.name = '".$user_info['name']."' ;\n";
 
