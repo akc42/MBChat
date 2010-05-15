@@ -87,7 +87,7 @@ exit;
 require_once(dirname(__FILE__).'/../forum/SSI.php');
 //If not logged in to the forum, not allowed so send back the javascript to redirect to our error page
 if($user_info['is_guest']) {
-    echo "window.location = 'http://mb.home/chat2/chat.html' ;\n"
+    echo "window.location = 'http://mb.home/chat2/chat.html' ;\n";
     exit;
 }
 $groups =& $user_info['groups'];
