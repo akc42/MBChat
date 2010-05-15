@@ -42,7 +42,7 @@ CREATE TABLE parameters (
 -- The first group of parameters are needed by chat as it starts, but will not be needed again. There will be loaded (as a group) on demand from
 -- The chat page
 
-INSERT INTO parameters VALUES ('remote_error','http://mb.home/chat/index.php',1); --for redirecting users who come here before authentication
+INSERT INTO parameters VALUES ('remote_error','http://mb.home/chat2/chat.html',1); --for redirecting users do not authenticate remotely
 INSERT INTO parameters VALUES ('guests_allowed','yes',1); -- if we are allowing guests?  yes if we are, anything else means no.
 INSERT INTO parameters VALUES ('emoticon_dir','./emoticons',1); -- emoticon directory (either absolute or relative to the application)
 INSERT INTO parameters VALUES ('emoticon_url','emoticons/',1); -- emoticon url 
