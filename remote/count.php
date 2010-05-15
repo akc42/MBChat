@@ -29,7 +29,7 @@ if($user_info['is_guest']) {
 
 include('./public.inc');
 
-define('SERVER_LOCATION','http://mb.home/chatserve/login/count.php');   //Where the chat server 
+define('SERVER_LOCATION','http://chat.melindasbackups.com/login/count.php');   //Where the chat server 
 
 pcntl_signal(SIGALRM,"timeout"); //setup communications timer
 

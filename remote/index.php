@@ -30,7 +30,7 @@
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-
+define('NO_LOGIN_URL','http://www.melindasbackups.com/chat2/chat.html');
 include('./public.inc');
 
 
@@ -87,7 +87,7 @@ exit;
 require_once(dirname(__FILE__).'/../forum/SSI.php');
 //If not logged in to the forum, not allowed so send back the javascript to redirect to our error page
 if($user_info['is_guest']) {
-    echo "window.location = 'http://www.melindasbackups.com/chat2/chat.html' ;\n";
+    echo "window.location = '".NO_LOGIN_URL."' ;\n";
     exit;
 }
 $groups =& $user_info['groups'];
