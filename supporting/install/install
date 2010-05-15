@@ -3,7 +3,7 @@ DIR=$(dirname $0)
 RAN=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" ")
 
 openssl genrsa -out $DIR/newkey.pem 128
-$DIR/writepublickey.php  $RAN $1 > $DIR/../../inc/public.inc
+$DIR/writepublickey.php  $RAN > $DIR/../../inc/public.inc
 $DIR/writeprivatekey.php $RAN > $DIR/../../data/private.inc
 
 #Added for remote authentication
