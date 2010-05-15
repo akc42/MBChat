@@ -19,6 +19,13 @@ function MBCAuth(soundcoord) {
         var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
         var externalAuth = true;
+        if(Browser.Engine.trident && Browser.Engine.version == 5) {
+            document.id('rsa_generator').removeClass('loading');
+            document.id('rsa_generator').removeClass('hide');  //just in case
+            document.id('rsa_generator').set('html','<span class="error">Internet Explorer V7 is not supported.  Chat will work with Internet Explorer 6 and 8 as well as Firefox, Chrome, Safari and Opera.</span>');
+            return;
+        }
+             
         function confirmTimeout() {
             if(!confirmedServer) {
                 document.id('rsa_generator').removeClass('loading');
@@ -48,7 +55,7 @@ function MBCAuth(soundcoord) {
                     if(response.trial == checkNo.toString(10)) {
                         //matched
                         confirmedServer = true;
-                        loginReq.post.delay(1,this,{user:'$$#',pass1:hex_md5(remoteKey1),pass2:hex_md5(remoteKey2)}); //now find out if I am supposed to prompt
+                        loginReq.post.delay(1,this,{user:'$$#',pass:hex_md5(remoteKey)}); //now find out if I am supposed to prompt
                     } else {
                         confirmTimeout();
                     }
@@ -121,24 +128,20 @@ function MBCAuth(soundcoord) {
                     auth.U = '$$G'+auth.U;
                 }
  
-                var t1 = (Math.ceil(new Date().getTime()/300000)*300).toString();
+                var t1 = (Math.ceil(new Date().getTime()/100000)*100).toString();
                 while(t1.length < 10) {
                     t1 = '0'+t1;
-                }
-                var t2 = (Math.ceil(new Date().getTime()/300000)*300+300).toString();
-                while(t2.length < 10) {
-                    t2 = '0'+t2;
                 }
                 document.id('rsa_generator').removeClass('hide');
                 document.id('authblock').addClass('hide');
                 document.id('login_error').addClass('hide');
                 document.id(document.id('login').username).removeClass('error');
                 document.id(document.id('login').password).removeClass('error');
-                loginReq.post({user:auth.U,pass1:hex_md5(auth.P+t1),pass2:hex_md5(auth.P+t2)});
+                loginReq.post({user:auth.U,pass:hex_md5(auth.P+t1)});
             });
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
-            loginReq.post({user:'$$$',pass1:hex_md5(remoteKey1),pass2:hex_md5(remoteKey2),trial:encCheckNo.toString(10)});
-            confirmTimeout.delay(30000); //give server 30 seconds to come back with correct response.
+            loginReq.post({user:'$$$',pass:remoteKey,trial:encCheckNo.toString(10)});
+            confirmTimeout.delay(10000); //give server 10 seconds to come back with correct response.
         });
 };
 

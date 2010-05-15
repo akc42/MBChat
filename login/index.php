@@ -30,15 +30,12 @@ if(!isset($_REQUEST['user'])) {
 }
 $username = $_REQUEST['user'];
 
-$t = ceil(time()/300)*300; //This is the 5 minute availablity password
-$r1 = md5(REMOTE_KEY.sprintf("%010u",$t));
-$r2 = md5(REMOTE_KEY.sprintf("%010u",$t+300));
 
 $return = Array();
 
 switch(substr($username,0,3)) {
 case '$$$':
-    if ($_POST['pass1'] == $r1 || $_POST['pass1'] == $r2 || $_POST['pass2'] == $r1 || $_POST['pass2'] == $r2) {
+    if (cs_tcheck(REMOTE_KEY,$_POST['pass'])) {
         if(isset($_POST['trial'])) {
             echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS).'"}';
             exit;
