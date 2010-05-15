@@ -318,6 +318,7 @@ $statements['getlog'] = $db->prepare("SELECT lid, time AS utime, type, rid, uid 
                                          WHERE time > :start AND time < :finish AND rid = :rid ORDER BY lid ");
 
         $maxlid = $db->querySingle("SELECT max(lid) FROM log");
+        if(is_null($maxlid)) $maxlid = 0;  //empty database;
         $minlid = $maxlid+1;
 
     } else {
