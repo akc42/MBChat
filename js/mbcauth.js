@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-function MBCAuth(soundcoord) {
+function MBCAuth() {
         var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
         var internalAuth = false;
@@ -45,7 +45,6 @@ function MBCAuth(soundcoord) {
             }
         }
 
-        var loginRequestOptions = {};
         var loginReq = new Request.JSON({
             url:'login/index.php',
             link:'chain',
@@ -55,7 +54,7 @@ function MBCAuth(soundcoord) {
                         if(response.trial == checkNo.toString(10)) {
                             //matched
                             confirmedServer = true;
-                            loginReq.post.delay(1,this,{user:'$$#',pass:hex_md5(remoteKey)}); //now find out if I am supposed to prompt
+                            loginReq.post.delay(1,this,{user:'$$#',pass:remoteKey}); //now find out if I am supposed to prompt
                         } else {
                             confirmTimeout();
                         }
@@ -79,31 +78,6 @@ function MBCAuth(soundcoord) {
             }
         });
 
-
-        var coordinator = new Coordinator(['rsa','login'],function(activity){
-            loginRequestOptions.e = activity.get('rsa').e.toString();
-            loginRequestOptions.n = activity.get('rsa').n.toString(10);
-            loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
-            loginRequestOptions.msg += ' on:'+Browser.Platform.name;
-            MBchat.init(loginRequestOptions,activity.get('rsa'));
-            window.addEvent('beforeunload', function() {
-                MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
-            });
-            soundcoord.done('chat',{});
-        });
-
-        var rsa = new RSA();
-        function genResult (key,rsa) {
-            coordinator.done('rsa',key);
-        };
-        /*
-            We are kicking off a process to generate a rsa public/private key pair.  Typically this
-            takes about 1.2 seconds or so to run to completion with this key length, so should be done
-            before the user has completed his input - which is when we will need the result.  The genResult
-            function will be called when complete.  
-        */
-
-        rsa.generateAsync(64,65537,genResult);
 
 
         var encCheckNo = checkNo.modPow(new BigInteger(rsaExponent),new BigInteger(rsaModulus));
@@ -141,6 +115,7 @@ function MBCAuth(soundcoord) {
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
             loginReq.post({user:'$$$',pass:remoteKey,trial:encCheckNo.toString(10)});
             confirmTimeout.delay(10000); //give server 10 seconds to come back with correct response.
+            coordinator.done('dom',{});
         });
 };
 
