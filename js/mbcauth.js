@@ -15,10 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-function MBCAuth(soundcoord) {
+function MBCAuth() {
         var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
-        var externalAuth = true;
+        var internal Auth = false;
         if(Browser.Engine.trident && Browser.Engine.version == 5) {
             document.id('rsa_generator').removeClass('loading');
             document.id('rsa_generator').removeClass('hide');  //just in case
@@ -45,7 +45,6 @@ function MBCAuth(soundcoord) {
             }
         }
 
-        var loginRequestOptions = {};
         var loginReq = new Request.JSON({
             url:'login/index.php',
             link:'chain',
@@ -61,50 +60,23 @@ function MBCAuth(soundcoord) {
                     }
                 } else if (response.login && confirmedServer) {
                     if(response.login.uid == 0) {//special marker telling me that I must authenticate.
-                        externalAuth = false;  //we are being told to do internal authentication
+                        internalAuth = true;  //we are being told to do internal authentication
                         document.id('rsa_generator').addClass('hide');
                         document.id('authblock').removeClass('hide');
-                        // and wait for user to respond
+                            // and wait for user to respond
                     } else {
                         loginRequestOptions = response.login;
                         coordinator.done('login',{});
                     }
                 }
             } else { 
-                if(externalAuth) {
-//                    window.location = remoteError;
-                } else {
+                if(internalAuth) {
                     loginError(response.usererror);
                 }
             }
             }
         });
 
-
-        var coordinator = new Coordinator(['rsa','login'],function(activity){
-            loginRequestOptions.e = activity.get('rsa').e.toString();
-            loginRequestOptions.n = activity.get('rsa').n.toString(10);
-            loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
-            loginRequestOptions.msg += ' on:'+Browser.Platform.name;
-            MBchat.init(loginRequestOptions,activity.get('rsa'));
-            window.addEvent('beforeunload', function() {
-                MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
-            });
-            soundcoord.done('chat',{});
-        });
-
-        var rsa = new RSA();
-        function genResult (key,rsa) {
-            coordinator.done('rsa',key);
-        };
-        /*
-            We are kicking off a process to generate a rsa public/private key pair.  Typically this
-            takes about 1.2 seconds or so to run to completion with this key length, so should be done
-            before the user has completed his input - which is when we will need the result.  The genResult
-            function will be called when complete.  
-        */
-
-        rsa.generateAsync(64,65537,genResult);
 
 
         var encCheckNo = checkNo.modPow(new BigInteger(rsaExponent),new BigInteger(rsaModulus));
@@ -142,6 +114,7 @@ function MBCAuth(soundcoord) {
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
             loginReq.post({user:'$$$',pass:remoteKey,trial:encCheckNo.toString(10)});
             confirmTimeout.delay(10000); //give server 10 seconds to come back with correct response.
+            coordinator.done('dom',{});
         });
 };
 
