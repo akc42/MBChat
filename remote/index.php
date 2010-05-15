@@ -125,7 +125,7 @@ if(in_array(SMF_CHAT_MODERATOR,$groups)) $cap += 8;
 if(in_array(SMF_CHAT_SPEAKER,$groups)) $cap += 16;
 if(in_array(SMF_CHAT_NO_WHISPER,$groups)) $cap+=32;
 
-echo "loginOptions.cap = $cap ;\n"
+echo "loginOptions.cap = $cap ;\n";
 
 $rooms = Array();
 if(in_array(SMF_CHAT_HONORARY,$groups) || 
