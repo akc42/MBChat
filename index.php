@@ -21,6 +21,8 @@
 
 /* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
+define('REMOTE_AUTHENTICATOR', 'http://mb.home/chat2/index.php');
+
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
 
@@ -59,22 +61,46 @@ if($chatting['chat']['des']) {
     <script src="js/base64.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
-$t = ceil(time()/300)*300; //This is the 5 minute availablity password
-$r1 = REMOTE_KEY.sprintf("%010u",$t);
-$r2 = REMOTE_KEY.sprintf("%010u",$t+300);
+
+
 ?>  <script type="text/javascript">
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
         var remoteError = "<?php echo $chatting['chat']['remote_error'];?>";
         var guestsAllowed = <?php echo (($chatting['chat']['guests_allowed'] == 'yes')?'true':'false'); ?>;
         var rsaExponent ="<?php echo RSA_EXPONENT;?>";
         var rsaModulus="<?php echo RSA_MODULUS;?>";
-        var remoteKey1="<?php echo $r1 ; ?>";
-        var remoteKey2="<?php echo $r2 ; ?>";
+        var remoteKey="<?php echo md5(REMOTE_KEY.sprintf('%010u',ceil(time()/100)*100)); ?>";
         
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
         });
-        MBCAuth(soundcoord); //Authenticate user and start chat
+        var loginRequestOptions = {};
+        var coordinator = new Coordinator(['rsa','login','dom'],function(activity){
+            loginRequestOptions.e = activity.get('rsa').e.toString();
+            loginRequestOptions.n = activity.get('rsa').n.toString(10);
+            loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
+            loginRequestOptions.msg += ' on:'+Browser.Platform.name;
+            MBchat.init(loginRequestOptions,activity.get('rsa'));
+            window.addEvent('beforeunload', function() {
+                MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
+            });
+            soundcoord.done('chat',{});
+        });
+
+        var rsa = new RSA();
+        function genResult (key,rsa) {
+            coordinator.done('rsa',key);
+        };
+        /*
+            We are kicking off a process to generate a rsa public/private key pair.  Typically this
+            takes about 1.2 seconds or so to run to completion with this key length, so should be done
+            before the user has completed his input - which is when we will need the result.  The genResult
+            function will be called when complete.  
+        */
+
+        rsa.generateAsync(64,65537,genResult);
+
+        MBCAuth(); //Authenticate server and do internal authentication
         soundManager.url = '/js/';
         soundManager.flashVersion = 9; // optional: shiny features (default = 8)
 
@@ -115,6 +141,10 @@ $r2 = REMOTE_KEY.sprintf("%010u",$t+300);
             }
         });
     </script>
+    <script type="text/javascript" src="<?php
+        $data = array( 'pass' => md5(REMOTE_KEY.sprintf('%010u',ceil(time()/100)*100)));
+        echo  REMOTE_AUTHENTICATOR.'?'.http_build_query($data);       
+            ?>"></script>
     <style type="text/css">
     
         /* these are the classes related to user types */

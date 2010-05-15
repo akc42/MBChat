@@ -194,14 +194,10 @@ MBchat = function () {
 	                    var roomTransition = new Fx.Transition(Fx.Transitions.Bounce, 6);
                         var exitfx = new Fx.Morph(exit, {link: 'cancel', duration: 500, transition: roomTransition.easeOut});
                         exit.addEvent('mouseenter',function(e) {
-                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-	                            exitfx.start({width:100});
-	                        }
+                            exitfx.start({width:100});
                         });
                         exit.addEvent('mouseleave', function(e) {
-                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-	                            exitfx.start({width:50});
-	                         }
+                            exitfx.start({width:50});
                         });
 	                    var roomgroups = $$('.rooms');
 	                    roomgroups.each( function (roomgroup,i) {
@@ -220,9 +216,7 @@ MBchat = function () {
 							                    if (w != 67) obj[j] = {'width': [w, 67]};
 						                    }
 					                    });
-			                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-                       					    fx.start(obj);
-                       					}
+                       					fx.start(obj);
 					                    // Set up online list for this room 
                        					MBchat.updateables.online.show(door.get('id').substr(1).toInt());
                  					} else {
@@ -234,9 +228,7 @@ MBchat = function () {
 				                    rooms.each(function(other, j){
 					                    obj[j] = {'width': [other.getStyle('width').toInt(), 105]};
 				                    });
-		                            if(!(Browser.Engine.trident && Browser.Engine.version == 5)) { 
-                   					    fx.start(obj);
-                   					}
+                   					fx.start(obj);
 				                    if(room.rid == 0 ) {
                        					MBchat.updateables.online.show(0);
 				                    }
@@ -311,8 +303,7 @@ return {
 	    delete me.e;
 	    delete me.n;
 	    delete me.msg;
-	    delete me.pass1;
-	    delete me.pass2;
+	    delete me.pass;
         rsaKeys = keys;
 	    logged_in = false;
         messageSubmit = function(event) {

@@ -137,6 +137,15 @@ function cs_validate() {
     $uid = $_REQUEST['uid'];
 }
 
+function cs_tcheck($key,$pass) {
+    $t = ceil(time()/100)*100; 
+    $r1 = md5($key.sprintf("%010u",$t));
+    $r2 = md5($key.sprintf("%010u",$t+100));
+    $r3 = md5($key.sprintf("%010u",$t-100));
+    return ($pass == $r1 || $pass == $r2 || $pass == $r3);
+}
+
+
 
 
 
