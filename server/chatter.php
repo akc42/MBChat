@@ -34,7 +34,7 @@ if(strpos($datadir,'/',strlen($datadir)-1) === false) {
 define('DATA_DIR',$datadir);  //Should be outside of web space
 
 define('DATABASE',DATA_DIR.'chat.db');
-define('INIT_FILE','./database.sql');
+define('INIT_FILE',DATA_DIR.'database.sql');
 
 
 define('MAX_CMD_LENGTH',200); //It can be longer as we will loop until we have it all
@@ -226,7 +226,10 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         logger("STARTING");
 
         if(!file_exists(DATABASE) ) {
-            throw new Exception("Database Does Not Exist");
+            $db = new SQLite3(DATABASE);
+            $db->exec(file_get_contents(INIT_FILE));
+        } else {
+            $db = new SQLite3(DATABASE);
         }
 
         $db = new SQLite3(DATABASE);
