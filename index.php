@@ -21,6 +21,8 @@
 
 /* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
+define('REMOTE_AUTHENTICATOR', 'http://mb.com/chat2/index.php');
+
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
 
@@ -139,6 +141,10 @@ if($chatting['chat']['des']) {
             }
         });
     </script>
+    <script type="text/javascript" src="<?php
+        $data = array( 'pass' => md5(REMOTE_KEY.sprintf('%010u',ceil(time()/100)*100)));
+        echo  REMOTE_AUTHENTICATOR.'?'.http_build_query($data);       
+            ?>"></script>
     <style type="text/css">
     
         /* these are the classes related to user types */
