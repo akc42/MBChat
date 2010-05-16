@@ -38,25 +38,16 @@ $chatting = cs_query('chats');
 		<link rel="stylesheet" type="text/css" href="css/chat-ie.css"/>
 	<![endif]-->
     <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/ns.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
-    <script src="js/cipher/binary.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/cipher/BigInteger.init1.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/RSA.init1.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/SecureRandom.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/BigInteger.init2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/RSA.init2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/BigInteger.init3.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher/RSA.init3.js" type="text/javascript" charset="UTF-8"></script> 
     <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script> 
     <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 if($chatting['chat']['des']) {
 ?>  <script src="js/des.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/base64.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
 
