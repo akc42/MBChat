@@ -29,6 +29,11 @@ if(!isset($_POST['user'])) {
 }
 $username = $_POST['user'];
 
+if(!file_exists(DATA_DIR.'users.db') ) {
+    $db = new SQLite3(DATA_DIR.'users.db');
+    $db->exec(file_get_contents(DATA_DIR.'users.sql'));
+}
+
 $return = Array();
 
 $db = new PDO('sqlite:'.DATA_DIR.'users.db');
