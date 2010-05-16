@@ -28,6 +28,7 @@ if (!(isset($_POST['user']) && cs_tcheck(REMOTE_KEY,$_POST['pass'])) )  cs_forbi
 
 $username = $_POST['user'];
 
+
 if ($username == '$$$') {
     if (!cs_tcheck(REMOTE_KEY,$_POST['pass'])) cs_forbidden();
 

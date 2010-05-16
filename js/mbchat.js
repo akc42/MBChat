@@ -375,13 +375,10 @@ return {
 	logout: function () {
 	    if(logged_in) {
 	        MBchat.updateables.poller.logout(); //Stop Poller Function completely
-    		var logoutRequest = new ServerReq('client/logout.php',function(r){});
-    		logoutRequest.transmit({ident:identString});
+    		var logoutRequest = new Request.JSON({url:'client/logout.php',async:false});
+    		logoutRequest.post($merge(auth,{ident:identString}));
             logged_in = false;
-            var leaver = function() {
-			    window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
-			}
-			leaver.delay(400); //just wait to allow the logout request some time to happen.
+		    window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
         }
 	},
 	sounds: function () {
