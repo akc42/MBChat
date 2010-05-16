@@ -1,17 +1,1 @@
-var Coordinator = new Class({
-    initialize: function(activities,callback) { //an array of activity names
-        this.activities = new Hash();
-        activities.each(function(activity) {
-            this.activities.set(activity,false);
-        }.bind(this));
-        this.callback = callback;
-    },
-    done: function(activity,parameters) {
-        this.activities.set(activity,parameters);
-        if (this.activities.every(function(activity) {
-            var i=0;
-            return activity;
-            })) this.callback(this.activities);
-    }
-});
-
+var Coordinator=new Class({initialize:function(a,b){this.activities=new Hash();a.each(function(c){this.activities.set(c,false)}.bind(this));this.callback=b},done:function(b,a){this.activities.set(b,a);if(this.activities.every(function(d){var c=0;return d})){this.callback(this.activities)}}});
