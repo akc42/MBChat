@@ -428,7 +428,7 @@ while($running) {
                         $mod = 'S';
                     
                     $u->bindValue(':mod',$mod,SQLITE3_TEXT);
-                    $u->bindValue(':cap',($cmd['params'][2] & 39),SQLITE3_INTEGER);
+                    $u->bindValue(':cap',($cmd['params'][2]),SQLITE3_INTEGER);
                     $u->bindValue(':rooms',$cmd['params'][3],SQLITE3_TEXT);
                     $u->bindValue(':time',time(),SQLITE3_INTEGER);
                     $u->execute();
@@ -652,7 +652,7 @@ while($running) {
                     $message = '{"status":true}'; 
 	                $u = $statements['question'];
 	                $mtype = '' ;
-	                if ($type == 3 && $role != 'M' && $role != 'S' ) {
+	                if (($type == 3 && $role != 'M' && $role != 'S') || ($type = 2 && $role == 'B') ) {
 	                //we are in a moderated room and not allowed to speak, so we just update the question we want to ask
 		                if( $text == '') {
 		                    $u->bindValue(':q',null,SQLITE3_NULL);
@@ -660,16 +660,12 @@ while($running) {
                 		} else {
 		                    $u->bindValue(':q',$text,SQLITE3_TEXT);
                 		    $mtype = "MQ";
-		                    }
+                        }
 	                } else {
 		                $u->bindValue(':q',null,SQLITE3_NULL);
 		            //just indicate presence
 		                if ($text != '') {  //only insert non blank text - ignore other
-		                    if($type == 2 && $role == 'B') {
-                                $message = '{"status":false,"reason":"Message ignored (Guests may not speak in Operational rooms)"}'; 
-                            } else {
-		                        $mtype = "ME";
-		                    }
+	                        $mtype = "ME";
                         }
 		            }
                     $u->bindValue(':time',time(),SQLITE3_INTEGER);
@@ -680,46 +676,6 @@ while($running) {
 	                if ($mtype != '') {
 	                    sendLog($uid, $row['name'],$role,$mtype,$rid,$text);
                     }
-                    break;
-                case 'demote':
-                    markActive($uid);
-                    $rid = $cmd['params'][0];
-                    $u = $statements['demote'];
-                    $user = $db->querySingle("SELECT uid, name, role, rid, mod FROM users WHERE uid = $uid",true);
-
-                	if ($user['role'] == 'M' && $user['rid'] == $rid ) {
-                	    $u->bindValue(':role',$user['mod'],SQLITE3_TEXT);
-                	    $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
-                        $u->bindValue(':time',time(),SQLITE3_INTEGER);
-                        $u->execute();
-                        $u->reset();
-                        sendLog($uid, $user['name'],$user['mod'],"RN",$rid,"");
-                    }
-                    $message = '{"status":true}';
-                    break; 
-                case 'promote':
-                    markActive($uid);
-                    $puid = $cmd['params'][0];
-                    $user = $db->querySingle("SELECT uid, name, role, rid, mod, question  FROM users WHERE uid = $puid ",true);
-
-	                if ($user['role'] == 'M' || $user['role'] == 'S') {
-		                //already someone special 
-		                $mod =$user['mod'];
-	                } else {
-		                $mod = $user['role'];
-	                }
-	    
-            	    $u = $statements['promote'];
-            	    $u->bindValue(':mod',$mod,SQLITE3_TEXT);
-            	    $u->bindValue(':uid',$puid,SQLITE3_INTEGER);
-                    $u->bindValue(':time',time(),SQLITE3_INTEGER);
-                    $u->execute();
-                    $u->reset();
-	                sendLog($puid,$user['name'],"M","RM",$user['rid'],'');
-	                if ($user['question'] != '' ) {
-                        sendLog($puid, $user['name'],"M","ME",$user['rid'],$user['question']);	
-	                }
-                    $message = '{"status":true}';
                     break;
                 case 'release':
                     markActive($uid);

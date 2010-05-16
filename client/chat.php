@@ -49,6 +49,9 @@ function getRoomClass ($type) {
     case 5:
         $class .= " guest";
         break;
+    case 6:
+        $class .= " dungeon";
+        break;
     default:
     }
     return $class;

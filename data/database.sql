@@ -21,7 +21,7 @@ BEGIN;
 CREATE TABLE rooms (
   rid integer primary key NOT NULL,
   name varchar(30) NOT NULL,
-  type integer NOT NULL -- 0 = Open, 1 = meeting, 2 = guests can't speak, 3 moderated, 4 members(adult) only, 5 guests(child) only
+  type integer NOT NULL -- 0 = Open, 1 = meeting, 2 = guests can't speak, 3 moderated, 4 members(adult) only, 5 guests(child) only, 6 creaky door
 ) ;
 INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (1, 'Members Lounge',0);
 INSERT INTO `rooms` (`rid`, `name`, `type`) VALUES (2, 'The Blue Room', 4);
