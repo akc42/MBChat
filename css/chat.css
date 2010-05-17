@@ -112,7 +112,7 @@ body
 	font-size:1.5em;
 	font-weight: bold;
 	color:white;
-	margin:0px;
+	margin:5px;
 }
 
 .rooms {
@@ -131,7 +131,7 @@ body
 	position:relative;
 	float: left;
 	cursor: pointer;
-	height: 85px;
+	height: 90px;
 	width: 105px;
 	padding: 5px;
 	border-right: 5px solid #4A7DB5;
