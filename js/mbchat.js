@@ -113,6 +113,7 @@ MBchat = function () {
 		    MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,r.reason); 
         }
 	});
+	var releaseReq = new ServerReq('client/release.php',function (r) {});
 	var whisperReq = new ServerReq('client/whisper.php',function (r) {});
 	var privateReq = new ServerReq('client/private.php',function (r) {});
 	var goPrivate = function() {
@@ -589,56 +590,51 @@ return {
 						}
 						span.addClass('priv');  //makes them Italic to show its private
 					} else {
-						if (room.type === MODERATED || room.type === OPS) {
-							if ((room.type === MODERATED && me.is(MOD)) || (room.type === OPS && !me.role == 'B')) {
-								if (user.uid != me.uid) {
-									if (user.question) {
-										span.addClass('ask');
-										div.store('question',user.question);
-										div.addClass('hasQuestion');
-									}
-									// I am a moderator in a moderated room - therefore I need to be able to moderate others
-									div.addEvents({
-										'click' : function(e) {
+						if ((room.type === MODERATED && me.is(MOD)) || (room.type === OPS && me.role != 'B')) {
+							if (user.uid != me.uid) {
+								if (user.question) {
+									span.addClass('ask');
+									div.store('question',user.question);
+									div.addClass('hasQuestion');
+								}
+								// I am a moderator in a moderated room - therefore I need to be able to moderate others
+								div.addEvents({
+									'click' : function(e) {
+										var qtext = div.retrieve('question');
+										if (qtext) { // only send one if there is one
+											releaseReq.transmit({'quid':user.uid});
+										}
+									},
+									'mouseenter' : function(e) {
+										var span = div.getFirst();
+										if ((room.type == MODERATED && 
+										        !(span.hasClass('M') || span.hasClass('S'))) ||
+										        (room.type == OPS && span.hasClass('B'))) { 											
 											var qtext = div.retrieve('question');
-											if (qtext) { // only send one if there is one
-												var request = new ServerReq('client/release.php',function (response) {
-//														MBchat.updateables.poller.pollResponse(response);
-												}).transmit({
-													'lid':MBchat.updateables.poller.getLastId(),
-													'rid':room.rid,
-													'quid':user.uid});
-											}
-										},
-										'mouseenter' : function(e) {
-											var span = div.getFirst();
-											if ((room.type == MODERATED && 
-											        !(span.hasClass('M') || span.hasClass('S'))) ||
-											        (room.type == OPS && span.hasClass('B'))) { 											
-												var qtext = div.retrieve('question');
-												if (qtext) {
-												    var question = new Element('div', {'id' : 'Q'+user.uid});
-													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
-													qtext = replaceEmoticons(qtext); //Then replace emoticons.
-													question.set('html',
-														'<p><b>Click to Release Question<br/>',
-														'<p>',qtext,'</p>'); 
-													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
-    												question.inject(document.body);
-												}
-											}
-										},
-										'mouseleave' : function(e) {
-											div.removeClass('hasQuestion');
-											var question = $('Q'+user.uid);
-											if (question) {
-												question.destroy();
+											if (qtext) {
+											    var question = new Element('div', {'id' : 'Q'+user.uid,'class':'question'});
+												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
+												qtext = replaceEmoticons(qtext); //Then replace emoticons.
+												question.set('html',
+													'<h4>Click to Release Question</h4>',
+													'<p>',qtext,'</p>'); 
+												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
+												question.inject(document.body);
 											}
 										}
-									});
-									div.getFirst().addClass('whisperer'); //Adds cursor pointer
-								}
-							} else {
+									},
+									'mouseleave' : function(e) {
+										div.removeClass('hasQuestion');
+										var question = $('Q'+user.uid);
+										if (question) {
+											question.destroy();
+										}
+									}
+								});
+								div.getFirst().addClass('whisperer'); //Adds cursor pointer
+							}
+						} else {
+    						if (room.type === MODERATED || room.type === OPS) {
 								if (user.question) {
 									span.addClass('ask');
 								}
@@ -655,7 +651,7 @@ return {
 												var qtext = div.retrieve('question');
 												if (qtext) {
 												    var question = new Element('div', 
-													    {'id' :  'Q'+div.get('id').substr(1)});
+													    {'id' :  'Q'+div.get('id').substr(1),'class':'question'});
 													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
 													qtext = replaceEmoticons(qtext); //Then replace emoticons.
 													question.set('html','<p>',qtext,'</p>'); 
@@ -674,21 +670,21 @@ return {
 									});
 								} 
 							}
+					        // Figure out if we can whisper together
+					        if (user.uid != me.uid && !me.is(NO_WHISPER) 
+					                      && (crossWhisper || (me.role != 'B' && user.role != 'B') || ( me.role == 'B' && user.role === 'B' ))) {
+					            var ww = function(e) { 
+							        MBchat.updateables.whispers.whisperWith(user,span,e);
+						        };
+                                if(me.is(BLIND)) {
+                                    div.addEvent('click',ww);
+                                    div.addClass('whisperer');
+                                } else { 
+						            span.addEvent('mousedown',ww);
+						            div.getFirst().addClass('whisperer');
+						        }
+					        }
 						} 
-					}
-					// Figure out if we can whisper together
-					if (user.uid != me.uid && !me.is(NO_WHISPER) 
-					              && (crossWhisper || (me.role != 'B' && user.role != 'B') || ( me.role == 'B' && user.role === 'B' ))) {
-					    var ww = function(e) { 
-							MBchat.updateables.whispers.whisperWith(user,span,e);
-						};
-                        if(me.is(BLIND)) {
-                            div.addEvent('click',ww);
-                            div.addClass('whisperer');
-                        } else { 
-						    span.addEvent('mousedown',ww);
-						    div.getFirst().addClass('whisperer');
-						}
 					}
 					var qtext = div.retrieve('question');
 					if (qtext) {
@@ -754,7 +750,7 @@ return {
 							    if (me.uid == msg.user.uid) {
 				                    /*  It is me that has been logged off.  For this to happen it means my comms is broken.  THe best
 				                        thing for me to do is to exit */
-                                    window.location('./client/index.php');
+                        		    window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
 							    } else {
 								    if (userDiv) {
 									    removeUser(userDiv)
@@ -823,8 +819,6 @@ return {
 									    user.question = msg.message;
 									    userDiv = addUser(user);
 								    }
-								    var span = userDiv.getFirst();
-    							    span.addClass('ask');
 							    }
 							    break;
 						    case 'MR' :
@@ -1142,7 +1136,7 @@ return {
 							if (msg.rid == room.rid) {
 								switch(msg.type) {
 								case 'ME' :
-									this.displayMessage(lastId,msg.time,msg.user,msg.message);
+									if(msg.message) this.displayMessage(lastId,msg.time,msg.user,msg.message);
 									MBchat.sounds.messageArrives();
 									break;
 								case 'LT' :
