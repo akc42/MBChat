@@ -305,8 +305,6 @@ $statements['exit'] = $db->prepare("UPDATE users SET rid = 0, time = :time, role
 //Message
 $statements['question'] = $db->prepare("UPDATE users SET time = :time, question = :q , rid = :rid WHERE uid = :uid ");
 //Managing Moderation
-$statements['demote'] = $db->prepare("UPDATE users SET role = :role , mod = 'N', time = :time WHERE uid = :uid ");
-$statements['promote'] = $db->prepare("UPDATE users SET role = 'M',  mod = :mod, time = :time, question = NULL WHERE uid = :uid ");
 $statements['release'] = $db->prepare("UPDATE users SET question = NULL WHERE uid = :uid ");
 //Whispering
 $statements['join'] = $db->prepare("INSERT INTO participant (wid,uid) VALUES (:wid, :uid)");

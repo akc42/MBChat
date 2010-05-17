@@ -211,7 +211,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 }
 
 /* circumstances when name is bold (others name will be in normal weight) */
-#onlineList.0, #onlineList.1,#chatList span.A,#chatList span.L,span.H,span.G,span.S,span.M,#chatList span.B, #chatList span.R,#chatList  span.S {
+#chatList span.A,#chatList span.L,span.H,span.G,span.S,span.M,#chatList span.B, #chatList span.R,#chatList  span.S {
 	font-weight: bold;
 }
 
@@ -248,7 +248,7 @@ span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
 	display: none;
 }
 
-#question {
+.question {
 	position:absolute;
 	width:150px;
 	z-index:10;
