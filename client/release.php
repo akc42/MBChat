@@ -21,5 +21,5 @@ require_once('../inc/client.inc');
 
 cs_validate();
 
-cs_fetch('release',$uid,$_POST['quid']);
+cs_fetch('release',$_POST['quid']);
 
