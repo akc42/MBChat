@@ -645,7 +645,6 @@ while($running) {
                     } else {
                         $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false); //No encryption means we have to be careful with difficult chars
                     }
-                    $text = $cmd['params'][1];
                     $row = $db->querySingle("SELECT uid, users.name, role, question, users.rid, type ".
                                         "FROM users LEFT JOIN rooms ON users.rid = rooms.rid WHERE uid=".$uid,true);
     	
