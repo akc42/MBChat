@@ -848,7 +848,8 @@ while($running) {
                     } else {
 	                    $sql .= '= '.$rid.' ORDER BY lid ;';
                     }
-                    $message = '{"chatbot":"'.$db->querySingle("SELECT value FROM parameters WHERE name ='chatbot_name'").'","rows":[';
+                    $message = '{"status":true,"des":'.(($des_key !=0)?'true':'false'); //say if des is in place, but can't send it in the open
+                    $message .= ',"chatbot":"'.$db->querySingle("SELECT value FROM parameters WHERE name ='chatbot_name'").'","rows":[';
                     $result = $db->query($sql);
                     $df=false;
                     while($row = $result->fetchArray(SQLITE3_ASSOC)) {
@@ -861,7 +862,13 @@ while($running) {
                     $message .= ']}';
                     $result->finalize();
                     break;         
-//TODO add in the commands we support
+                case 'getdes':
+                    if ($des_key !=0) {
+                        $message = '{"status":true,"des":"'.$des_key.'"}';
+                    } else {
+                        $message = '{"status":false,"reason":"des not used in this system"}';
+                    }
+                    break;
                 default:
                     logger("Command: ".$cmd['cmd']." :NOT IMPLEMENTED: Raw Message:$read");
                     $message = '{"status":false,"reason":"Command '.$cmd['cmd'].' NOT IMPLEMENTED"}';

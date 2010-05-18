@@ -57,7 +57,6 @@ function cs_query() {
         exit;
     }
 
-    //$read should contain either {"status":true, or {"status":false
     $message = '';
     while($read = socket_read($socket,1024)) {
         $message .= $read;
