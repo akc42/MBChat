@@ -133,9 +133,9 @@ MBchat = function () {
         url:'client/login.php',
         link:'chain',
         onSuccess: function(response,t) {
-            document.id('rsa_generator').addClass('hide');
+            $('rsa_generator').addClass('hide');
             if(response && response.status) {
-                document.id('chatblock').removeClass('hide');
+                $('chatblock').removeClass('hide');
                 logged_in = true;
                 chatBot = {uid:0, name : response.params.chatbot_name, role: 'C'};  //Make chatBot like a user
                 messageListSize = response.params.max_messages;  //Size of message list
@@ -158,7 +158,22 @@ MBchat = function () {
                 room = new Room();
                 room.set(entranceHall);
                 var roomReq = new Request({url:'client/chat.php',onSuccess:function (html) {
-                    document.id('entranceHall').set('html',html);
+                    $('entranceHall').set('html',html);
+                    if(desKey) {
+                        //we need to get at the security message and decrypt it
+                        var chunks = $$('#security span');
+                        var sm = '';
+                        var bi128 = new BigInteger(128);
+                        chunks.each(function(chunk) {
+                            var c = new BigInteger(chunk.get('text'));
+                            var m = c.modPow(rsaKeys.d,rsaKeys.n);
+                            do {
+                                sm += String.fromCharCode( m.mod(bi128).intValue());
+                            } while ((m = m.divide(bi128)).compareTo(BigInteger.ZERO) > 0);
+
+                        });
+                        $('security').empty().set('text',sm);
+                    }
                     var exit = $('exit');
                     if(me.is(BLIND)) {
 		                document.addEvent('keydown',function(e) {
@@ -275,7 +290,7 @@ MBchat = function () {
 		                    }
 	                    }
                     });
-                    document.id('messageForm').addEvent('submit', function(e) {
+                    $('messageForm').addEvent('submit', function(e) {
 		                messageSubmit(e);
 		                return false;
 	                });
@@ -288,7 +303,11 @@ MBchat = function () {
 			        reqQueue.callChain();
 	            }});
 	            var roomReqSend = function() {
-    		        roomReq.post(auth);
+	                if(desKey) {
+	                    roomReq.post($merge(auth,{e:rsaKeys.e.toString(),n:rsaKeys.n.toString(10)})); //send keys to get back encrypted security message
+	                } else {
+        		        roomReq.post(auth);
+        		    }
     		    }
                 if (reqRunning) {
                     reqQueue.chain(roomReqSend.bind(this));
@@ -343,17 +362,17 @@ return {
 
 	    if(me.is(BLIND)) {
             //I am blind
-            document.id('emoticonContainer').addClass('hide');
-            document.id('soundEnabled').checked = false; //switch off sound as it interferes with screen reader
-            document.id('autoScroll').checked = false;
-            document.id('userOptions').addClass('hide');
+            $('emoticonContainer').addClass('hide');
+            $('soundEnabled').checked = false; //switch off sound as it interferes with screen reader
+            $('autoScroll').checked = false;
+            $('userOptions').addClass('hide');
             //replace exit div with a button
-            document.id('exit').dispose();
+            $('exit').dispose();
             var el = new Element('input',{id:'exit',type:'button',value:'Exit'});
-            el.inject(document.id('chatblock'),'top');
+            el.inject($('chatblock'),'top');
             //remove send buttons as ctrl+s is used.
-            document.id(document.id('messageForm').submit).dispose();
-            document.id(document.id('whisperBoxTemplate').getElement('form').submit).dispose();
+            $($('messageForm').submit).dispose();
+            $($('whisperBoxTemplate').getElement('form').submit).dispose();
         } else {
         	//Set up emoticons
 	        var regExpStr = ':('; //start to make an regular expression to find them (the all start with :)

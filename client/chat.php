@@ -57,10 +57,30 @@ function getRoomClass ($type) {
     return $class;
 }
     
-
-
-
-
+if(isset($rooms['security'])) {
+    /* We are concerned about security so in this instance we take the security message and encrypt it with the 
+        public key and send it to him.  He will decrypt and correct the display - allowing a visual check that its the 
+        security message set by the admin of this server.  This prevents another server taking over our servers role and
+        capturing all the messages
+    */
+?><div class="security"><span>Security Check:<span id="security">
+<?php
+    $message = $rooms['security'];
+    do {
+        //we split into 8 character chunks
+        $chunk = substr($message,0,8);
+        $chunk = str_pad($chunk,8,"\0\0\0\0\0\0\0\0");
+        $digits = '0';
+        for($i = 7; $i >= 0; $i--) {
+            $digits = bcadd(bcmul($digits,'128'),ord($chunk[$i]));
+        }
+        $cipher = bcpowmod($digits,$_POST['e'],$_POST['n']); //encrypt using public key
+?><span class="sc"><?php echo $cipher; ?></span>
+<?php
+    } while($message = substr($message,8));
+?></span></div>
+<?php
+}
 ?><div  id="mainRooms" class="rooms">
 	    <h3>Main Rooms</h3>
 <?php
