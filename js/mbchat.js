@@ -1619,9 +1619,15 @@ return {
 						message('Leaves whisper no: ' + msg.rid);
 						break;
 					case 'ME':
+			            if(msg.message && desKey) {
+			                msg.message = des(desKey,Base64.decode(msg.message),false).replace(/\0+/g,'');
+			            }
 						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,msg.message,true);
 						break;
 					case 'WH':
+			            if(msg.message && desKey) {
+			                msg.message = des(desKey,Base64.decode(msg.message),false).replace(/\0+/g,'');
+			            }
 						MBchat.updateables.message.displayMessage(msg.lid,msg.time,msg.user,'(whispers to :' +msg.rid+')'+msg.message,true);
 						break;
 					case 'LH':
