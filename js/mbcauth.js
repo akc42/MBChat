@@ -20,28 +20,28 @@ function MBCAuth() {
         var confirmedServer = false;
         var internalAuth = false;
         if(Browser.Engine.trident && Browser.Engine.version == 5) {
-            document.id('rsa_generator').removeClass('loading');
-            document.id('rsa_generator').removeClass('hide');  //just in case
-            document.id('rsa_generator').set('html','<span class="error">Internet Explorer V7 is not supported.  Chat will work with Internet Explorer 6 and 8 as well as Firefox, Chrome, Safari and Opera.</span>');
+            $('rsa_generator').removeClass('loading');
+            $('rsa_generator').removeClass('hide');  //just in case
+            $('rsa_generator').set('html','<span class="error">Internet Explorer V7 is not supported.  Chat will work with Internet Explorer 6 and 8 as well as Firefox, Chrome, Safari and Opera.</span>');
             return;
         }
              
         function confirmTimeout() {
             if(!confirmedServer) {
-                document.id('rsa_generator').removeClass('loading');
-                document.id('rsa_generator').removeClass('hide');  //just in case
-                document.id('rsa_generator').set('html','<span class="error">Security Alert, Server NOT confirmed.  Please notify security</span>');
+                $('rsa_generator').removeClass('loading');
+                $('rsa_generator').removeClass('hide');  //just in case
+                $('rsa_generator').set('html','<span class="error">Security Alert, Server NOT confirmed.  Please notify security</span>');
             }
         }
         var loginError = function(usernameError) { 
-            document.id('rsa_generator').addClass('hide');
-            document.id('authblock').removeClass('hide');
-            document.id('login_error').removeClass('hide');
+            $('rsa_generator').addClass('hide');
+            $('authblock').removeClass('hide');
+            $('login_error').removeClass('hide');
             if(usernameError) {
-                document.id(document.id('login').username).addClass('error');
-                document.id(document.id('login').password).addClass('error');
+                $($('login').username).addClass('error');
+                $($('login').password).addClass('error');
             } else {
-                document.id(document.id('login').password).addClass('error');
+                $($('login').password).addClass('error');
             }
         }
 
@@ -62,8 +62,8 @@ function MBCAuth() {
                 } else if (response.login && confirmedServer) {
                     if(response.login.uid == 0) {//special marker telling me that I must authenticate.
                         internalAuth = true;  //we are being told to do internal authentication
-                        document.id('rsa_generator').addClass('hide');
-                        document.id('authblock').removeClass('hide');
+                        $('rsa_generator').addClass('hide');
+                        $('authblock').removeClass('hide');
                             // and wait for user to respond
                     } else {
                         loginRequestOptions = response.login;
@@ -83,11 +83,11 @@ function MBCAuth() {
         var encCheckNo = checkNo.modPow(new BigInteger(rsaExponent),new BigInteger(rsaModulus));
 
         window.addEvent('domready',function () {
-            document.id('login').addEvent('submit', function(e) {
+            $('login').addEvent('submit', function(e) {
                 e.stop();
                 var auth = {};
-                auth.U = document.id('login').username.value;
-                auth.P = document.id('login').password.value;
+                auth.U = $('login').username.value;
+                auth.P = $('login').password.value;
                 if(auth.U.contains('$')) {
                     loginError(false);
                     return ;
@@ -105,11 +105,11 @@ function MBCAuth() {
                 while(t1.length < 10) {
                     t1 = '0'+t1;
                 }
-                document.id('rsa_generator').removeClass('hide');
-                document.id('authblock').addClass('hide');
-                document.id('login_error').addClass('hide');
-                document.id(document.id('login').username).removeClass('error');
-                document.id(document.id('login').password).removeClass('error');
+                $('rsa_generator').removeClass('hide');
+                $('authblock').addClass('hide');
+                $('login_error').addClass('hide');
+                $($('login').username).removeClass('error');
+                $($('login').password).removeClass('error');
                 loginReq.post({user:auth.U,pass:hex_md5(auth.P+t1)});
             });
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
