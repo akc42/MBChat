@@ -247,6 +247,7 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
                 $des_key = sprintf("%05u",rand(1,65000)).sprintf("%05u",rand(1,65000));
                 $db->exec("UPDATE parameters SET value = '$des_key' WHERE name = 'des_key'");
             }
+            $security_message = $db->querySingle("SELECT value FROM parameters WHERE name ='security_msg'");
         }
 
         $user_timeout = $db->querySingle("SELECT value FROM parameters WHERE name ='user_timeout'");
@@ -394,6 +395,9 @@ while($running) {
                 case 'rooms':
                     $rooms = $db->querySingle("SELECT rooms,cap,role FROM users WHERE uid = $uid",true);
                     $message = '{"status":true,"cap":"'.$rooms['rooms'].'","blind":'.((($rooms['cap'] & 1) == 1)?'true':'false');
+                    if ($des_key !=0) {
+                        $message .= ',"security":"'.$security_message.'"' ;
+                    }
                     $message .= ',"role":"'.$rooms['role'].'"';
                     $rooms = Array();
                     $result = $db->query("SELECT * FROM rooms");
