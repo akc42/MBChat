@@ -95,7 +95,7 @@ INSERT INTO parameters VALUES ('tick_interval','10',9); -- how long (in seconds)
 INSERT INTO parameters VALUES ('check_ticks','6',9); -- how long (in tick intervals) should the server wait before testing the database for timeout
 INSERT INTO parameters VALUES ('user_timeout','270',9); -- how long (in seconds) to timeout a user as no longer present
 INSERT INTO parameters VALUES ('purge_message_interval','20',9); -- messages older than this number of days will be purged from the database
-
+INSERT INTO parameters VALUES ('security_msg','Be Sure To Check',9); --security message, only used if des_key set
 
 
 

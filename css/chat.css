@@ -581,6 +581,12 @@ span.whisper {
     border:2px solid red;
 }
 
+div.security span {
+    color:red;
+}
+#security {
+    color:yellow;
+}
 
 
 
