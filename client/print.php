@@ -48,15 +48,41 @@ if ($rid == 99) {
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>MB Chat</title>
 	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
-</head>
+<?php
+if($print['des']) {
+    /* if we have selected a des key. then the messages we have received are encrypted and we need
+        to decrypt them. Therefore we are loading a script to do that.
+
+        Firstly, we have to create a rsa key pair and send the key to the server, where it will encrypt
+        the des key and send it back to us.  We send the Request.JSON to 'getdes.php' which does that.  When
+        that request completes we then descrypt it back to the proper value before passing it to a routine
+        which looks at all the messages we have and takes each one and decrypts them
+    */
+?>  <script src="../js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="../js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="../js/cipher.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="../js/des.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="../js/mbcprint.js" type="text/javascript" charset="UTF-8"></script>
+    <script type="text/javascript">
+        var uid = <?php echo $_GET['uid']; ?>;
+        var pass = "<?php echo md5("U".$_GET['uid']."P".sprintf("%010u",ceil(time()/100)*100)); ?>";
+        var coord = MBCprint(uid,pass);
+        window.addEvent('domready', function() {
+            coord.done('dom',{});
+        });
+        
+    </script>
+<?php
+}
+?></head>
 <body>
 <script type="text/javascript">
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', GOOGLE_ACCOUNT]);
+  _gaq.push(['_setAccount','<?php echo GOOGLE_ACCOUNT; ?>']);
   _gaq.push(['_trackPageview']);
 </script>        
 <!-- It is important that chat is called without parameters.  If external authorisation is in place it will jump back to that authentication -->
-<a id="exitPrint" href="../index.php"><img src="../images/exit.gif"/></a>
+<a id="exitPrint" href="../index.php"><img src="../images/exit-forum.gif"/></a>
 <h1>Chat History Log</h1>
 <h2><?php echo $room; ?></h2> 
 <h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3>
@@ -72,7 +98,7 @@ global $row, $i,$hephaestus,$nomessages,$tzo;
 function umessage($txt) {
 global $row,$i,$nomessages,$tzo;
 	echo '<span class="time">'.date("D h:i:s a",$row['time']-$tzo).'</span> <span class=';
-	echo '"'.$row['role'].'">'.$row['name'].':</span> <span>'.$txt.'</span><br/>';
+	echo '"'.$row['role'].'">'.$row['name'].':</span> <span class="dmsg">'.$txt.'</span><br/>';
 	echo "\n";
 	$nomessages = false;
 }
@@ -118,7 +144,7 @@ foreach($print['rows'] as $row) {
 			message('Reads Log');
 			break;
 		default:
-		    umessage('Unknown message type '.$row['type']);
+		    message('Unknown message type '.$row['type']);
 		// Do nothing with these
 			break;
 		}
