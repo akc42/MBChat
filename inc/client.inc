@@ -26,6 +26,7 @@ define('SERVER_DIR','/var/chat/server/');//Should be outside of web space
 define('DATA_DIR','/var/chat/mb.com/');  //Should be outside of web space
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
+define('MAX_CMD_LENGTH',2000);
 
 $uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
 
@@ -47,7 +48,11 @@ function cs_server($args) {
          exit;
     }
     $message = '{"cmd":"'.$args[0].'","uid":'.$uid.',"params":'.json_encode(array_slice($args,1))."}\n";
-    socket_write($socket,$message);
+    if(strlen($message) > MAX_CMD_LENGTH) {
+        $socket = false;
+    } else {
+        socket_write($socket,$message);
+    }
 }
 
 function cs_query() {

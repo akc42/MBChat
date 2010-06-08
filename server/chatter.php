@@ -37,7 +37,7 @@ define('DATABASE',DATA_DIR.'chat.db');
 define('INIT_FILE',DATA_DIR.'database.sql');
 
 
-define('MAX_CMD_LENGTH',200); //It can be longer as we will loop until we have it all
+define('MAX_CMD_LENGTH',2000); 
 define('LOG_FILE',DATA_DIR.'server.log');
 define('SERVER_LOCK',DATA_DIR.'server.lock');
 define('SERVER_RUNNING',DATA_DIR.'server.run');
