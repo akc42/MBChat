@@ -41,7 +41,7 @@ function timeout($signal) {
 declare(ticks = 1);
 pcntl_alarm(10);
 
-$data = array('pass' => md5(REMOTE_KEY.sprintf("%010u",ceil(time()/100)*100)));
+$data = array('pass' => md5(REMOTE_KEY);
 
 
 $opts = array('http' =>
