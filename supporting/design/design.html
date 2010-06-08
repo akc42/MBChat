@@ -43,7 +43,7 @@ DAMAGE.
 <!--}}}-->
 
 <!--PRE-HEAD-END-->
-<title> MBChat - Design Documentation for Pipe Version </title>
+<title> MBChat - Design Documentation for a Secure Chat progam </title>
 <style id="styleArea" type="text/css">
 #saveTest {display:none;}
 #messageArea {display:none;}
@@ -512,25 +512,77 @@ Also see [[AdvancedOptions]]</pre>
 </div>
 <!--POST-SHADOWAREA-->
 <div id="storeArea">
-<div title="Basic Operation" modifier="AlanChandler" created="200908270620" modified="201004160957" changecount="9">
-<pre>The mode of initialisation is fractionally different dependent upon whether that application is being called across different domains (a restriction created by the limitations of the shared hosting service used by melindasbackups.com).  In the remote mode, there are two functions requiring cross domain support:-
-# Starting the application after getting the users credentials from the forum membership database
-# Getting the number of users currently in chat to display in the forum header.
+<div title="AuthenticationBlock" creator="AlanChandler" modifier="AlanChandler" created="201005201731" modified="201005201731" tags="functionality" changecount="3">
+<pre>This block contains the simple form for users to log into the system.  It is only displayed when internal authentication takes place.</pre>
+</div>
+<div title="Basic Operation" modifier="AlanChandler" created="200908270620" modified="201005211602" tags="design" changecount="10">
+<pre>As described in OverallStructure, the main operational software is embedded within the files that make up the ClientApplication.  These are loaded when the user accesses the main //index.php// file for the entire application.
 
-The latter function simply embedds a getfilecontents stream call to get the output from the remote end, so the design does not have to be considered further.  The initiation routine is also relatively straight forward.  The forum in queried for all the appropriate parameters, and then a //form// is submitted to the chatserver url with all the various parameters as //post variables//. This remote version can of course be used locally where the chatserver and forum are on the same machine.  This software was available in V1 and will not fundamentally change.
+//index.php// is a script that builds the basic framework for the page.  Before doing so, it needs to get information about key parameters for this, and needs to contact TheChatter to retrieve this.  The interface to TheChatter is provided within the include file ''inc/client.inc'' which also contains routines to validate the user in various circumnstances and to enable the display of a standard &quot;403 Forbidden&quot; message.
 
-Where the chat server is local and we are not validating users from a forum, we will use the sqllite database (see [[Database Design]]) to hold some permanent users who have additional priviledges (such as moderator for the Auditorium). And allocate the remaining users dynamically
+</pre>
+</div>
+<div title="ChatList" creator="AlanChandler" modifier="AlanChandler" created="201005201725" tags="functionality" changecount="1">
+<pre>This is the main panel in a room where messages appear when people ''speak''.  A smaller version also exists in the entrance hall (mainly to show whispers and system messages).</pre>
+</div>
+<div title="ClientApplication" creator="AlanChandler" modifier="AlanChandler" created="201005201246" modified="201005201651" tags="design javascript" changecount="3">
+<pre>The ClientApplication is a combination of Javascript in the main ''index.php'' page of the application and separate javascript files that are loaded from this page.
 
+When the application is first started, there are several parallel activities going on, all of which have to be co-ordinated.  A special [[Mootools]] CoordinationClass is used to make sure each step can only proceed when all the dependent parts have finished.  The key events to be coordinated are:-
+* RSA KeyGeneration
+* Dom Ready
+* Sound System Initialised
+* User login credentials confirmed (remembering that external authenticators will not be dependent on Dom Ready
+* Client verified that server is who they say they are.
 
-As each new person enters chat, we create in a special //Data// directory a pipe with a name &quot;MSGnnn&quot; where nnn is the uid of the person.  The javascript will (using chaining) queue two requests to read from the pipe the next message.  As each new message is read, an additional request is queued.  This should replace the existing POLL
+There are three main components:-
 
-Upon generating an event that would previously have been written to the log, as well as writing it to the log, a message is copied to ''every pipe that exists'' to that all participants also see it.  Note: ''This will include whispers not intended for the client - it is important that it detects that and properly throws them away''
+* ''mbcauth.js'' controls the authentication of the user, potentially sending the users name and password (hidden via a md5 hash) to the LoginScripts.  Once the details of the user are available for login, it hands over to
+* ''mbchat.js'' which is the main chat application.  It controls everything about the process, except
+* ''mbcprint.js'' which is called to control (mainly decrypt messages) in the printing of log message via the ClientScripts //print.php// script.
+</pre>
+</div>
+<div title="ClientScripts" creator="AlanChandler" modifier="AlanChandler" created="201005201722" modified="201005201723" tags="design" changecount="2">
+<pre>ClientScripts are the collective name for the server side php scripts that act on behalf of the client in talking to TheChatter.  Each script is designed to fufil a separate step in the applications. The scripts all validate the caller in the mechanisms described in SecurityDesign
 
-(need to [[Prevent Multiple Presences]])
+The following scripts are provided:-
+* ''chat.php'' returns the initial entrance hall (the visual display of the rooms) after the user has logged in and we know from their capabilities which rooms they should see, and whether they should be displayed as coloured blocks which grow when the mouse hovers over them (the normal case) or as an input button (the case when a user has CapabilityBlind)
+* ''exit.php'' is the transaction that occurs when a user leaves a room and returns to the entrance hall (or to the room he was previously in if he had been in a PrivateRoom)
+* ''getdes.php'' encrypts (using the users public key) the Des Key used in encrypting messages.  It is needed to decrypt the messages contained in a printout of the messages in a room (see //print.php//).
+* ''getwhisperers.php'' is used to get a list of people who are sharing a given WhisperBox with you
+* ''index.php'' is the script responsible for returning you to the correct //exit location// (as described in the ChatDatabase).
+* ''joinwhisper.php'' is the script that connects a user you have requested into a WhisperBox which already which you have created.
+* ''leavewhisper.php'' removes you from a WhisperBox
+* ''log.php'' is the script which replays messages from the past in a room into the ChatList.  It is used when a person with the CapabilitySecretary or CapabilityAdmin enters a room for the purpose of printing its past history.
+* ''login.php'' is used to formally log a user into the system and return the encryption keys he needs to continue further.
+* ''logout.php'' is used to log a user out of the system
+* ''message.php'' is used to deliver a message that the user has typed in (or an encrypted version of it) to TheChatter
+* ''newwhisper.php'' creates a whisper id (called a ''wid'') which is used to identify WhisperBox representing a conversation between the user and someone else
+* ''online.php'' retrieves a list of people in a room in order that they be presented to the user in the OnlineList panel
+* ''presence.php'' informs TheChatter that the user is still present and should not be timed out.
+* ''print.php'' is used to provide a printer friendly version of the ChatList with messages from the past (it Logs the user out when this list has been produced)
+* ''private.php'' is used to indicate that a user has turned a WhisperBox of which he is a member into a PrivateRoom.  This allows others to alter how they see him (users not in the WhisperBox see him leave the room, for the ones he is whispering with see his name turn //italic// in the OnlineList
+* ''read.php'' is used to request the latest changes to the system.  the ClientApplication continually makes a request to this script which it will immediatley repeat when satisfied for the latest event on the system.  The events arriving at the ClientApplication is what allows it to show new messages or people coming in and out of rooms to the user.
+* ''release.php'' in a ModeratedRoom such as the Auditorium, the a user with CapabilityModerator can release a UserQuestion to the audience.  Similarly any one who is not IsGuest can release questions from IsGuest users into a OperationsGallery
+* ''room.php'' processes the fact that a user has entered a room.  It collects all the past messages (up to the limits defined in the ChatDatabase) and returns them to the ClientApplication for display in the ChatList
+* ''whisper.php'' is the whisper equivalent to //message.php// and is used to send a whisper to all those in the same WhisperBox (messages are always delivered to ''all'' users, it is the ClientApplication that filters them to only display those the user is entitiled to see). </pre>
+</div>
+<div title="CoordinationClass" creator="AlanChandler" modifier="AlanChandler" created="201005201628" modified="201005201732" tags="implementation" changecount="3">
+<pre>The Coordination Class is a simple class designed to await multiple events and when all are complete perform an action.  This is slightly simplifying the situation in that each event may have parameters it wishes to pass through to the final action, and the class provides a mechanism for that to happen.
 
-(see [[DirectoryStructure]])
+A new coordination is created as follows
+{{{
+var coordination = new Coordinator(['event-name-1','event-name-2',...],function(activity) {
+    var aParam = activity.get('event-name-1');
+});
+}}}
+where the function is called when all the event named by the preceeding array of strings has completed.
 
-(see [[Session Management]])</pre>
+To indicate that a particular event has completed, the application calls
+{{{
+coordination.done('event-name-1',resultObject);
+}}}
+where //resultObject// is an object which can be retrieved via the activity.get call shown for the constructor (the activity object passed into the completion function is a [[Mootools]] Hash object with the key the name of each activity and the value the result object from that activity.)</pre>
 </div>
 <div title="Database Design" modifier="AlanChandler" created="201004091340" modified="201004160902" changecount="10">
 <pre>The database will used will be SQLite.  A text file used to build the database (named database.sql) will be shipped with the application, and this will be used during initialisation to create the database if its not already there.  If you wish to change the default values with which it is shipped, you can either edit the master copy (creating a backup first) before first run or edit the created database with the sqlite3 command line application afterwards.
@@ -549,7 +601,7 @@ There are three key differences with the use of sqlite:-
 
 </pre>
 </div>
-<div title="DefaultTiddlers" modifier="AlanChandler" created="200908270613" modified="201004081120" changecount="3">
+<div title="DefaultTiddlers" modifier="AlanChandler" created="200908270613" modified="201005190939" changecount="5">
 <pre>[[Overview]]
 </pre>
 </div>
@@ -572,10 +624,27 @@ There are three key differences with the use of sqlite:-
 :This is a directory in the distribution which contains the versions of mootools and mootools more required by the application.  It should (ideally) be mapped from url.php/js to a common directory on the server.
 </pre>
 </div>
+<div title="EmoticonsContainer" creator="AlanChandler" modifier="AlanChandler" created="201005201747" modified="201005201748" tags="design functionality" changecount="2">
+<pre>The EmoticonsContainer contains the emoticons selected for the system. A typical display is as follows
+
+[img[Emoticons|emoticon.png]]
+
+The emoticon container is loaded via parameters specified in the ChatDatabase</pre>
+</div>
+<div title="EntranceHall" creator="AlanChandler" modifier="AlanChandler" created="201005201737" tags="functionality" changecount="1">
+<pre>The entrance hall is the main area that the user sees when he has logged in.  It provides a visual indication of the rooms he can see.</pre>
+</div>
+<div title="LoginScripts" creator="AlanChandler" modifier="AlanChandler" created="201005201801" tags="Design" changecount="1">
+<pre>These two scripts control the process of authenticating the user.</pre>
+</div>
 <div title="MainMenu" modifier="AlanChandler" created="201004061332" modified="201004081119" changecount="2">
 <pre>[[Overall Structure]]
 [[Basic Operation]]
 [[Database Design]]
+</pre>
+</div>
+<div title="MessageInput" creator="AlanChandler" modifier="AlanChandler" created="201005201754" tags="functionality" changecount="1">
+<pre>The input line at the bottom of the screen where the user can input his message.  A send button is provided unless the user has CapabilityBlind (in which case he should use Cntl S to send the message.
 </pre>
 </div>
 <div title="Mootools" modifier="AlanChandler" created="200910231536" modified="201004081205" changecount="2">
@@ -589,64 +658,314 @@ The following capabilies are required in Mootools More for chat
 * Drag.Move
 * Request.Queue</pre>
 </div>
-<div title="Overall Structure" modifier="AlanChandler" created="201004081234" modified="201004110723" changecount="16">
-<pre>This section of the design describes how we structure the application in terms of directories, urls and git branches to provide the appropriate parts of the applications.
+<div title="NestedClosureOrientedProgramming" creator="AlanChandler" modifier="AlanChandler" created="201005201022" modified="201005201050" tags="design security" changecount="5">
+<pre>Nested Closer Oriented Programming is a technique described by  [[Atsushi Oka|http://oka.nu/]]. To quote his original words
 
-In simple terms we use these three concepts as follows:-
-;directories
-:We need to provide separation for the following key elements
-:* Supporting documentation and raw images (such as .xcf files) which need to be processed to make the images actually used, and the raw script used to create the master.db database file  - this is the ''supporting'' directory
-:* The components that provide the ''front end'' of the application when (and only when) the application is split.  These will be located in the ''remote'' directory. (It does not require any site templates)
-:* The web application itself will be stored (at least the components that need to be at a //chat// url) at the ''app'' directory.  It will contain two subdirectories:-
-:** ''data'' which will be set so that the application can write into it - it will contain:-
-:*** the operating version of the database (copied from the master)
-:*** the //pipes// created by the application for communication between the users directory writeable by the web server
-:** ''template'' which is a symlink to where ever the template.php file is stored.
-:* The application includes a template in the top level call to provide a basic layout around the chat rooms.  This will be specific to the site on which it is loaded and I am moving towards a common template for Melinda's Backups and chandlerfamily.org.uk.  However to enable others to demonstrate the chat application a demonstrate template is also provided.  This will be located in the ''template'' directory.
-:* There are common javascript libraries that might be of interest to other applications.  These may well be provided separately from the application (although the exact components of the Mootools More library (see [[Mootools]]) need to be consided.  These are stored in the ''js'' directory
-:* A default set of emoticons will be provided in the ''emoticon'' directory.  The database holds the location, and the default setup points to this set' However it is not essential and other sites might decide to link to alternative sources. 
-;url and directory mapping
-:The application has to assume certain relationship between various components of the application.  These components are either combined using php includes (in which case the relative location of directories is important) or via url paths (where the directories may not be in relation to the each other, but mapped to different directory locations via the web server.  Paths can be relative to the current location or to web server document root. The following relationships exist:-
-:* ''template'' is a //directory// relative to application to hold the site template.  The application looks for the //template.php// file. The general expectation is that this directory will be a symlink to whereever the site template is stored
-:* ''js'' is a  //url// relative to document root to hold the common javascript components.  [[Mootools]] and [[SoundManager]] libraries are stored here 
-:* ''data'' is a //directory// relative to where the application is stored holding the pipes and database.
-:* ''emoticons'' is a //directory// whose location is specified in the database.  The default location is as a parallel location to the application itself (ie ../emoticons), but it can be altered to other places if that is more convenient.  
-;git branches
-:Different git branches will hold different variations of the code for different sites. A //post commit// git hook (also symlinked from //post merge// is used to set up compressed and versioned versions of the javascript for the production sites. 
-:* ''master'' is the key application and will be such that an immediate operation of the chat program with the &quot;demo&quot; template can operate from the url http://chat.home/, and the //remote// capability tested from http://chat.home/remote/ (where http://chat.home is a place holder for whatever url has been setup locally.  Note the mapping between the directory structure above and the relative positioning of the //remote// directory and //remote// url).
-:* ''mb-test'' local testing version of the Melinda's Backups flavor of the application located at http://mb.home/chat2 with the main server application located at http://mb.home/chatserve
-:* ''mb-com'' the production version at Melinda's Backups located at http://www.melindasbackups.com/chat2/ and with the main server application at http://mb.chandlerfamily.org.uk/chatserve (we use the subdirectory because occasionally other files from the melindasbackups.com domain (mapped by rewrite rules to other urls at the mb.chandlerfamily.org.uk domain)
-:* ''demo''  this will be the demo version on http://www.chandlerfamily.org.uk/chat 
-:* ''old'' used for pre version 2 copies of chat and loaded onto http://www.melindasbackups.com/chat/
-:* ''old-test'' for pre version 2 copies of chat for testing in the http://mb.home/chat location
-:Note that at some point in the future version 1 will be fully retired and the old and old test branches will disappear and the mb-com and mb-test urls will lose their 2 suffix.
+&lt;&lt;&lt;
+~JavaScript has a strict limitation of execution speed. When a function calling takes long time to return, most ~JavaScript's execution environments such as web-browsers will look frozen. And after a certain period of time, it show a message box that warns that the browser is running slower and ask if the user want to quit the script or not.  This is not necessary when you know that you are executing heavy process and this will look very awkward.
+
+If you are using Java, you can use Thread object,too. Thread is a solution for such situation.  But ~JavaScript does not have Thread. 
+
+My solution is to break-up your function. See below examples.
+
+Ordinary way :
+
+{{{
+    for ( var i=0; i&amp;lt;10; i++ ) {
+
+        for ( var j=0; j&amp;lt;10; j++ ) {
+
+            for ( var k=0; k&amp;lt;10; k++ ) {
+
+                trace( &quot;i=&quot; + i + &quot; j=&quot; + j + &quot; k=&quot; + k );
+
+            }
+
+        }
+
+    }
 
 
+}}}
+My idea :
+{{{
 
+    var i=0;
+
+    return function() {
+
+        if ( i++&amp;lt;10 ) {
+
+            var j=0;
+
+            return function() {
+
+                if ( j++&amp;lt;10 ) {
+
+                    var k=0;
+
+                    return function() {
+
+                        if ( k++&amp;lt;10 ) {
+
+                            trace( &quot;i=&quot;+i + &quot; j=&quot;+j + &quot; k=&quot;+ k );
+
+                            return true;
+
+                        } else {
+
+                            return false;
+
+                        }
+
+                    }
+
+                } else {
+
+                    return false;
+
+                }
+
+            }
+
+        } else {
+
+            return false;
+
+        }
+
+    };
+
+ 
+}}}
+These two codes above have loosely same logical meaning.  The former example is written in normal style.  The latter is written by using multi-nested closure. There are some differences there. The former code will be fully executed by one function calling so that it takes several minutes to return. In the latter example, it will return immediately as it finishes only one step.  And it is also necessary to call the closure until the function returns false in order to finish entire procedure.
+
+I named the latter style as &quot;Nested Closure Oriented Programming&quot;.
+
+In fact, nested closure oriented code looks very complicated and ugly but it has some interesting advantages.  Because each function calling returns in a very small amount of time so you will not get &quot;slower script&quot; alert anymore. Once you convert your logic as nested closure oriented, it does not matter how much time a function calling takes to finish its execution.  Your program is done without slow-downing or freezing.
+&lt;&lt;&lt;
+
+He then goes on to embed this concept in a javascript library he calls //nonstructured.js// and to build an RSA key generation mechanism around this library.  Unfortunately, he uses changes to the prototypes of Object and Array which conflict with the [[Mootools]] libraries that we use.
+
+[[Atsushi Oka|http://oka.nu/]] uses the return value of false from the routines to determine that the function is not yet complete.  But in actual fact that doesn't have to be the case.  Any mechanism that can run one of the functions as a single step and get feedback that all steps are now complete could be used. 
+
+I therefore wrote a [[Mootools]] class ''NS'' which provides a similar framework to //nonstructured.js// and ported the RSA generation routines to it. This class and its design in described in NonStructured.
 
 </pre>
 </div>
-<div title="Overview" modifier="AlanChandler" created="200908270613" modified="201004092142" changecount="10">
-<pre>Chat is a simple application designed originally for Melinda's Backups to enable the Leadership Team there to hold meetings.  It evolved into a fully functional multi-room chat.  The original concept utilised a MYSQL database to hold both the basic structure of the application and the messages that people had typed in chat.  A two second polling mechanism from each client would check the database for new data and output it.  The current (v2 onwards) evolution of chat uses named pipes (fifo) to speed up communication between partipants - although it is still necessary to put the data into a database as late arrivals to a room need to be able to see the history.
+<div title="NonStructured" creator="AlanChandler" modifier="AlanChandler" created="201005201117" modified="201005201247" tags="implementation javascript security" changecount="10">
+<pre>This describes the class NS which implements a variation of the NestedClosureOrientedProgramming technique.  NS is based around the following elements.
 
-This document contains the overall design of the application to help understand how it is build.  It is the nature of this document that it may not be as up to date as the code itself.  Please suggest changes if you find that to be the case.
+;A context
+:A context is a execution environment for a small portion of the overall task.  It consists of a series of steps which undertaken to complete either the complete task or some subsection of it.
+;A step
+:In its basic form, a step consists of a function which can perform a small portion of the overall task, either completely within itself - or by setting up the javascript variables to form a environment for a new context which then spawned to break the step into smaller substeps.  
+;A Do loop
+:A series of Steps which are executed in a loop.  Generally a new context is created in which to run the loop
+;A Step completion indicator
+:A way of indicating that instead of just performing the next step (or returning to the beginning in a Do loop if it was the last step) an alternative.  Three exist:-
+#Continue - just repeats the step
+#Again - starts the Do loop from the beginning
+#Done - exit the Do loop and pop to the next level
+;A result
+:A special object that may be used to propagate a result 
 
-The application itself is a mixture of php (server side scripts) controlled by a main Javascript application.  There are //currently// two forms of the application
-* The full application
-* A cut down version that is designed for a blind person to be able to use via the JAWS screen reader
+
+The NS class constructor takes one or two parameters.  The first is the top level function for the task.  It is this function that initiates the execution. The second parameter is a boolean &quot;unique&quot;.  If true it allows the key methods of the class to be created as functions of the window object; this means for instance that we can call
+
+{{{
+ return DONE();
+}}}
+
+rather than
+
+{{{
+ return this.DONE();
+}}}
+
+In the descriptions below we will assume that the unique parameter is true.
+
+Once the constructor has been created the EXEC function is used to start the execution, hand over the initial parameters and collect the result.  It takes two parameters
+* An array of parameters to pass to the function created with the constructor
+* A function to execute when the execution is complete.  Like all step functions it is called with the Result object as its parameter
+
+By way of illustration, this is how the RSA key generation process is started.
+
+{{{
+    RSA.prototype.generateAsync = function(keylen,exp,result) {
+	var self=this;
+	var generator = new NS( stepping_generate,true);
+	var _result = function(keyPair) {
+	    result( self );
+	};
+	generator.EXEC([keylen,exp],_result);
+}}}
+
+
+The main utility method is DO.  This is called as part of the return function of the constructor, but may also be called during the return of a step function to initiate a lower level context.  DO takes a single parameter, an Array of steps to be executed in a loop.  Each step can be one of
+* function - in which case it will an executed step
+* array - in which case there is an embedded DO assumed
+* EXIT - which is the number 0 bound to the window object meaning this loop should exit at this point (normally this is the last element of a DO loop)
+Originally other values (such as a string representing a jump label) where allowed, but it turned out that the RSA key generation didn't need them and so they were removed for simplicity.
+
+A similar method called STEP.  This just takes a single step parameter(as described above).
+
+To illustrate how these functions may be called this is a small snippet from the stepping_generate function of RSA
+{{{
+function stepping_generate (myArgs) {
+    var B,E;
+    B = myArgs[0];
+    E = myArgs[1];
+    var rng;
+
+    var qs = self.splitBitLength( B );
+    self._e(E);
+    var ee = new BigInteger(self.e);
+    var p1; 
+    var q1; 
+    var phi;
+    return DO([
+
+		// Step1.ver2
+		    function () {
+				RSA.log(&quot;RSAEngine:1.1&quot;);
+				self.p = new BigInteger();
+				rng = new SecureRandom();
+		    },
+		    function () {
+				RSA.log(&quot;RSAEngine:1.2&quot;);
+				return self.p.stepping_fromNumber1( qs[0], 1, rng );
+		    },
+			[
+	              // Step1.3 ver3
+				function () {
+					RSA.log(&quot;RSAEngine:1.3.1&quot;);
+                 			if ( self.p.subtract(BigInteger.ONE).gcd(ee).compareTo(BigInteger.ONE) != 0 ) return AGAIN();
+				},
+
+         ....
+}}}
+
+The above illustration shows the use of the //return AGAIN();// construct.  This tells the engine to repeat that loop (which is the above case is just that first step of the sub loop started with the array indicator just above the Step 1.3 comment).
+
+There are three such methods,  AGAIN(), CONTINUE() and DONE() - each of which sets the step completion indicator.  There methods also optionally take a single parameter - which is the value of the result object - its use is illustrated below
+
+{{{
+					if ( x[0] == lowprimes[i] ) {
+						BigInteger.log( &quot;stepping_isProbablePrime.1 EXIT&quot; );
+						//return true;
+						return DONE(true);
+					}
+					BigInteger.log( &quot;stepping_isProbablePrime.2 EXIT&quot; );
+					// return false;
+					return DONE(false);
+}}}
+
+and then a step which is using this result (its a layer above because of the return from a DO loop signalled by the DONE() call ).  The result
+parameter is always available as the (only) parameter of a step function.
+{{{
+function (result) {
+	RSA.log(&quot;RSAEngine:1.3.3 : returned stepping_isProbablePrime&quot; + result );
+	if ( result ) {
+		RSA.log(&quot;RSAEngine:1.3.3=&gt;EXIT&quot;);
+		return DONE();
+	} else {
+		RSA.log(&quot;RSAEngine:1.3.3=&gt;AGAIN&quot;);
+		return AGAIN();
+	}
+},
+}}}
+Occassionally you may with to set the result but not immediately return from the function.  The SET method allows this
+This is illustrated below - (the x.stepping_millerRabin(t) function will change the result
+{{{
+function(result) {
+        BigInteger.log( &quot;stepping_isProbablePrime No.2: calling millerRabin : subparam.result=&quot; + result );
+		SET(null);
+		return x.stepping_millerRabin(t);
+	},
+	function(result) {
+		BigInteger.log( &quot;stepping_isProbablePrime No.3: returning millerRabin : subparam.result=&quot; + result );
+		BigInteger.log( &quot;stepping_isProbablePrime No.3: param.result=&quot; + result );
+		return DONE();
+	}
+}}}
+
+
+Internally the NS class operates in two phases.  These are driven around the call to DO or STEP.  In the first phase these calls build a Step based structure in a context and returns. In the second phase these steps are executed step by step using a &quot;ticker&quot; function which is called every tick and executes a single step, calling the function embedded within the step definition.  If one of the executing step functions comes across a further embedded DO or STEP function, the engine temporarily switches back to context construction mode and builds the new steps into the structure and then returns, having set up the ticker execution function to execute them when it is activated on the next tick.
+
+
+Behind the scenes this execution engine manages the contexts, and passes the result object around.</pre>
+</div>
+<div title="OnlineList" creator="AlanChandler" modifier="AlanChandler" created="201005201730" modified="201005201731" tags="functionality" changecount="2">
+<pre>The OnlineList is the Panel on the right of the screen which lists the people in a room. For normal users the list is a simple text display of the users name (coloured to represent the UserRole of the user).
+
+It is used in whispering (you drag the persons name to the MessageInput box  - or click on the name if you have CapabilityBlind - to create a WhisperBox in order to whisper with them).
+
+In ModeratedRoom or OperationsGallery rooms if the user is allowed to moderate, he also can mouseover the name and see the UserQuestion being asked</pre>
+</div>
+<div title="OptionsBlock" creator="AlanChandler" modifier="AlanChandler" created="201005201751" modified="201005201754" tags="functionality" changecount="2">
+<pre>This is a small block located at the bottom right under the OnlineList which gives the key options, related mostly to sound that the use can select.
+
+The default settings is illustrated below
+
+[img[Options Block|options.png]]</pre>
+</div>
+<div title="Overall Structure" modifier="AlanChandler" created="201004081234" modified="201005210952" tags="design" changecount="20">
+<pre>In this section we describe in general terms how the application is structured.  There are the following key components:-
+
+;Chat
+:This is the main script located in ''index.php'' at the URL that is published for chat.  It is responsible for creating the basic page structure of the application and loading the ClientApplication as a series of Javascript files. The page structure contains the PageHeader,  EntranceHall (although the contents are are retrieved later), the ChatList the OnlineList, the AuthenticationBlock,the EmoticonsContainer, the OptionsBlock and the MessageInput block.
+;ClientApplication
+:This is a series of Javascript files which between them conduct most of the client side part of the application (the exception to this is the PrintLog capability which provides a log of a conversation in a room in printable format).  This is turn is split into different parts each part fulfilling a different stage of the process.  The majority of the application itself is contained within the single ''mbchat.js'' file, the others are managing the login process and encryption/decryption of messages.
+;TheChatter
+:This is a program that acts as a server daemon for the chat session currently taking place.  It starts as the first requests for information about the chat instance are made (from the Chat index.php script) and automatically exits shortly after the last user has logged out of chat.  Whilst it is running it services requests made to it from ClientScripts and processes them by maintaining the state of chat in the main ChatDatabase.
+:It uses a //Unix Socket// as the vehicle for communications with its clients, receiving commands (in JSON format) over this socket and returning responses (also in JSON format) to each command it receives.  Most commands are processed sequentially, there is the special case of a //Read// command where the request is added to a pending queue and only responded to when one of the other commands means there is information to send.
+;ClientScripts
+:These are short php scripts which manage each of the key transactions on behalf of the ClientApplication.  They are the middle man between the application and TheChatter.  The majority do very little other than validate the caller (a key part of the SecurityDesign) and then call TheChatter with the correct parameters and return the result.
+;LoginScripts
+:These scripts are server side scripts which manage the authentication of the user.  Chat supports authentication of the user against its own database (and these scripts manage that process - using a separate ~SQLite database to hold the user details) or authentication against a separate authentication system in the RemoteScripts section.
+;RemoteScripts
+:These scripts generally reside on a server separate from chat and are used to provide authentication of a user remotely.  They also provide an interface for an application on this remote server to make an ajax request for the number of people in chat.
+
+DirectoryLayout describes how the source code for these scripts is laid out.</pre>
+</div>
+<div title="Overview" modifier="AlanChandler" created="200908270613" modified="201005211023" changecount="20">
+<pre>Chat is a simple application designed originally for Melinda's Backups to enable the Leadership Team there to hold meetings.  It evolved into a fully functional multi-room chat.  The original concept utilised a MYSQL database to hold both the basic structure of the application and the messages that people had typed in chat.  A two second polling mechanism from each client would check the database for new data and output it.  The second (v2) evolution of chat used named pipes (fifo) to speed up communication between participants - although it is was still necessary to put the data into a database as late arrivals to a room need to be able to see the history. In taking the application away from Melinda's Backups, it was decided to try and migrate from ~MySQL to the ~SQLlite database.  Initially a straight port of version 2 was undertaken, but when testing in volume was tried, it became apparent that ~SQLite does not really support parallel users attempting to access the same database.  However, what was seen was that it was lightening speed fast when conducting multiple activities within the scope of one transaction.  Therefore the concept of a small, chat server named TheChatter was born.
+
+At the same time, it became apparent that there was an requirement outside of Melinda's Backups for security.  Although potentially being used in the hostile environment of the internet an objective became to prevent any conversation being seen by an unauthorised third party.  This is more fully described in SecurityConsiderations.  So the current version (version 3) was developed to meet these requirements - with a PerformanceObjective of supporting 200 people simultaneously in chat on minimal hardware (say a [[Sheeva Plug|http://www.newit.co.uk/shop/products.php?cat=5]]) 
+
+This document contains the overall design of the application to help understand how it is built.  It is the nature of this document that it may not be as up to date as the code itself.  Please suggest changes if you find that to be the case.
+
+The application itself is a mixture of php (server side scripts) controlled by a main Javascript application supported by other modules. This provides the main chat functionality (including special actions for supporting blind people using the JAWS application to read the screen for them).
 
 This document is divided into three key sections
-* [[Overall Structure]] which shows how the application is designed to provide for key requirements.  In particular the pipe management requires long running php threads (one per user) and the shared host for Melinda's Backups seems to abort the threads without warning.  However since the users get capabilities depending on membership criteria determined in the forum that is located there the application therefore has to support a component that operates on the melindasbackups domain to collect the information necessary from/for the forum as well as a component that works on a separate host where long running threads are not a problem.
+* [[Overall Structure]] which shows how the application is designed to provide for key requirements. In particular the use of a secondary [[Chat Server|TheChatter]] to handle the majority of the transactions, and the layout of the code and other files that make up the entire application.
 * [[Database Design]] defines the structure of the database and lists each table and its purpose
-* [[Basic Operation]] shows how the application works in terms of meeting the basic requirements of the functionality (see chat.html in the main application)
+* [[Basic Operation]] shows how the application works in terms of meeting the objectives and functionality.  In particular the way the applications autheticates itself and the user is covered in the SecurityDesign section whilst the details of the ClientApplication, a javascript application (using [[Mootools]] as its core javascript library) is covered.
 
-The application uses [[Mootools]] as its core javascript library
+The source code for the application is maintained in a [[git repository|http://git-scm.com/]] in which different configurations are held in different branches.  In particular, the ''master'' branch holds the basic code, which includes the modules configured to prompt for username and password and authenticate the user against a database which is part of the application, whilst other branches include alternative authentication mechanisms.  In particular the ''mb.com'' branch shows how the user may be authenticated against the SMF forum database.
+</pre>
+</div>
+<div title="PageHeader" creator="AlanChandler" modifier="AlanChandler" created="201005201735" tags="design functionality" changecount="1">
+<pre>Each instance of chat displays the page header defined in the ''inc/header.inc'' directory at the top of the page. It can be any form dependant on the needs of the environment in which chat is embedded, but should have room for a RoomNameContainer in the middle of it.</pre>
+</div>
+<div title="PerformanceObjective" creator="AlanChandler" modifier="AlanChandler" created="201005190906" modified="201005201216" tags="requirements" changecount="3">
+<pre>The chat software is to support up to 200 users on a server which consists of a linux environment running a sheeva plug.  The database and software will be loaded on an SD card (class 4 or better) and the security (encryption of messages) can be turned off (it is unlikely to effect the results as the server does not do anything but relay encrypted messages, but it makes any test suite considerably more complex to have to deal with the encryption).
+
 </pre>
 </div>
 <div title="Prevent Multiple Presences" modifier="AlanChandler" created="200908270629" changecount="1">
 <pre>We need to find a way such that two clients with the same UID do not exist at the same time (because effectively there will be two read requests on the same pipe at the same time).
 
 The issue however, is that its possible for older versions to become //stuck// and so if we do not find a way to get rid of them, newer versions will not be able to start.</pre>
+</div>
+<div title="PrintLog" creator="AlanChandler" modifier="AlanChandler" created="201005210901" tags="functionality" changecount="1">
+<pre>A facility exists for suitably priviledged users to access the history of a room, and for a particular time period select to print out the messages there.  For a MainRoom the person has to have CapabilityAdmin to be able to look at and print these messages, for a MeetingRoom the user has to have access to the room and they have to have CapabilitySecretary
+
+</pre>
+</div>
+<div title="RemoteScripts" creator="AlanChandler" modifier="AlanChandler" created="201005201801" changecount="1">
+<pre>When a user is to be authenticated remotely, these scripts are involved.</pre>
 </div>
 <div title="Role and Moderator Codes" creator="AlanChandler" modifier="AlanChandler" created="201004160943" modified="201004160947" changecount="4">
 <pre>There are a set of codes which define how each user looks to the others, and which the facilities they have.  There are two such codes:-
@@ -664,12 +983,77 @@ The issue however, is that its possible for older versions to become //stuck// a
  
 These codes are designed to be extended as required to differenciate between users by capability and/or colour as required (although the //groups// capability should be used to define who has access to which committee room).</pre>
 </div>
-<div title="SiteSubtitle" modifier="AlanChandler" created="200908270606" changecount="1">
-<pre>Design Documentation for Pipe Version</pre>
+<div title="RoomNameContainer" creator="AlanChandler" modifier="AlanChandler" created="201005201736" tags="design functionality" changecount="1">
+<pre>Is a block, normally an absolutely positioned div, which holds the name of the room the user is currently in.</pre>
+</div>
+<div title="SecurityConsiderations" creator="AlanChandler" modifier="AlanChandler" created="201005190930" modified="201005200827" tags="requirements" changecount="2">
+<pre>The assumption should be that there is a hostile attacker out there wishing to find the contents of the messages being transmitted to and from the various components of the chat system.  The system itself will involve clients out on the open internet, contacting a server - where it can be assumed that
+
+* physical access is restricted, and
+* access to the accounts (via a remote connection) where the software is located is also restricted.
+
+This means that the following things need to be considered
+* Any message (standard message entered into a room ''or'' a whisper message should not be transmitted in open text. (//Note that it is assumed acceptable to show other details of the message - such as who is speaking, provided the content of this cannot be determined//)
+* Encryption should be to a reasonable standard - the current release will use a single DES encryption algorithm based on a limited key length of 10 decimal digits.  Later releases should increase that to a full triple DES with CBC mode and a 56bit key.
+* For all clients to be able to see the messages from others, all clients must have access to the same encryption/decryption key.  This cannot be transmitted to the client in the clear, nor can it be loaded with the software (since this is effect transmitting it in the clear).
+* Clients need to authenticate themselves.  However in doing so, they should not send their password over the internet in either plain text, or as a cryptographic hash that can be copied and replayed by a hacker at some point in the future. 
+* We need to prevent a hostile attacker finding a way to sit in the communication path between client and server and act in a way that allows him discover the required details to then become a valid client in his own right .
+
+</pre>
+</div>
+<div title="SecurityDesign" creator="AlanChandler" modifier="AlanChandler" created="201005200956" modified="201005201051" tags="design security" changecount="9">
+<pre>Because the program has quite difficult security considerations, the design of security has had quite a major impact on the application.  The security problem can be broken down into separate areas:-
+;Generating and saving a Key for encrypting and descrypting the messages
+
+:When the server starts and it detects from the database configuration that a DES encryption/decryption key is needed, it creates one by generating two random numbers each of 5 digits (actually between 1 and 65000) and concatenating the result to make a non zero 10 digit number (later releases will create a longer key - but it will need to be split into chunks to pass to the ClientApplication) 
+
+;Encypting and Decrypting messages (ie the main point of security in the first instance)
+
+:The software uses DES encryption/decryption software to process messages (text typed into the send box of a room) and whispers (text typed into a WhisperBox).  Messages are encrypted by the ClientApplication and transmitted to the ClientScripts, and thence on TheChatter where they are stored (still encrypted) in the database.  When the messages are returned to a different instance of the ClientApplication (because it already has a read request outstanding, or as part of a replay of messages as the user enters a new room), the message is sent back to the ClientApplication where it decrypts it with the key.  After encryption the binary cipher text is encoded in Base64 text for sending over the network.  Similarly data being received is decoded from Base64 back to binary before being passed to the decryption software.  Finally - encryption pads messages with nulls before encryption, the decryption process has to remove those additional nulls from the message before displaying them to the client. 
+
+;Getting the Key used in the encryption/decryption process to the ClientApplication
+
+:It is quite difficult to get the key used in encyption/decryption of message to the  ClientApplication.  It cannot be included in the program as it is loaded via the index.php call at the start of the whole application because in doing so the key would have been sent in the clear - enabling an eavesdropping attacker to get access to it, and from there to be able to see all the messages being sent.  A moments thought will confirm that the only way to do this is for the ClientApplication to generate a asymetric key pair, send its public key to the server who encrypts the main key with this public key, where it can then be sent over the network to the ClientApplication who will the decrypt it with is private key.  Although it is easy to see this as an approach practically it is quite difficult as key generation is a compute intensive processes - and the ClientApplication running in the browser would cause the browser to generate slow script warnings.  In order to overcome this we use the process described in KeyGeneration to generate an RSA key set.  I initially tried the NestedClosureOrientedProgramming approach described by [[Atsushi Oka|http://oka.nu/]] (who also has written and RSA key generation routine using this approach).  Unfortunately the actual implementation conflicted with the [[Mootools]] library that we use for the rest of chat, and after some abortive attempts to fix these I eventually wrote a new class described in NonStructured and ported the code to use this.
+
+;Ensuring that all URLs (except the initial entry point at ''index.php'') will reject attempts from a user who is not a valid chat users from accessing data
+
+:We use three separate techniques to validate all url requests to ClientScripts, LoginScripts or RemoteScripts.  Both techniques require the client to send a parameter (as either a GET parameter in the query string, or as a POST parameter in the request payload data) called &quot;pass&quot;.  This parameter contains the MD5 hash of a &quot;password&quot; (dependent on which of the two techniques are used).
+
+:Before the user has been identified a time limited password approach is used.  A ''//remote key//'' which is loaded with the original index.php is generated to be different for each chat application.  It is concatenated with a string which represents the time on the client rounded up to the next 150 second boundary of the time in seconds since 1st January 1970 UTC. This string is fed into the md5 hash described above.  The server can then check this (although it has to check against three separate values - see [[Using time as a password]] as to why).
+
+:Once the user has been identified and allocated a ''uid'' but before he has had a chance to login and send his own public key to the ClientScripts, the LoginScripts create a different time limited password based not on the //remote key// but instead on the string &quot;U&quot;.uid.&quot;P&quot;.time .  This is returned to the ClientApplication which should soon afterwards complete the RSA key generation process and login with this password as one of its parameters.
+
+:During the formal login mentioned above, TheChatter returns (via the login.php ClientScripts) a randomly generated session key encrypted with the users Public Key.  This is then used to generate a session password that user which consists of the string &quot;U&quot;.uid.&quot;P&quot;.session_key (which is then put through the MD5 hash algorithmn to generate the session password).
+
+;Ensuring that the ClientApplication is confident that the server he is talking to is the correct one before sending security credentials
+
+:During the installation process for a chat instance (and refreshed on every software update), the installation software creates a public/private RSA key pair. The Private Key is retained on the server, the Public Key is shipped with the application in the ''index.php'' script.  The ClientApplication generates a random number, encrypts it with th public key and sends it to the server.  If the server is the correct one, it can decrypt this random number with his Private Key and send the result back to the ClientApplication.  The ClientApplication gives the server 20 seconds to respond with the correct value, otherwise it declares a potential security breach.
+
+:This check does not prevent a completely different instance of the application hijacking the complete domain name and serving up both the original ClientApplication via its own ''index.php'' script and performing all the rest of the actions described above.  So as a final check against this attack vector, the software is structured to allow the true admin of the application to generate a simple text string that will be displayed to all users.  He will announce to contents of that check string to all users via alternative means.  The ClientApplication does not display the EntranceHall to users when it intially loads.  Instead this is passed back to the user after he has logged in via the ClientScripts ''chat.php'' script.  This script expects the RSA public key of the user to be passed to it, and takes the admin generated security message and encrypts it with this key.  It is received back in the ClientApplication which then injects it into the main page and decrypts it.  Users can then check that the message is the one they expect to be confident that their server has not been hijacked</pre>
+</div>
+<div title="SiteSubtitle" modifier="AlanChandler" created="200908270606" modified="201005201759" changecount="5">
+<pre>Design Documentation for a Secure Chat progam</pre>
 </div>
 <div title="SiteTitle" modifier="AlanChandler" created="200908270606" changecount="1">
 <pre>MBChat
 </pre>
+</div>
+<div title="TheChatter" creator="AlanChandler" modifier="AlanChandler" created="201005201537" changecount="1">
+<pre>TheChatter is a standalone php script designed to run from the command line.  It is passed (on the command line) a single parameter, the directory where all the operational data resides (//the data directory//).  This allows a single version of chatter have several copies of itself operational simultaneously each supporting a particular installation of chat.
+
+Apart from the ChatDatabase, more of which below, TheChatter creates (if they don't exist) and uses 4 other files in the //data directory//.  
+* ''server.run'' is a file which determines if TheChatter is running.  It holds the time of the last request to run the server
+* ''server.lock'' is a lock file which chat takes a lock on for a small period of time.  Whilst it holds the lock, it can check if the server is already running (using the //server.run// file and if it is, just write the current time into it and exit.  If it is not running, this request starts the server.  Just prior to shutting down, the server takes the lock again and checks the time in the //server.run// file.  If it is recent and determines there was a recent attempt to run the server it does not shut down in this case, otherwise it knows it can shutdown and deletes the server running file and releases the lock and finally shuts dwon.  Any following attempt would, in this instance, see there was no server running and start one.
+* ''server.log'' is a log file that can be used by the server to record significant actions.  It normally records server start time and during shutdown a set of statistics as to how many of each type of transaction it has processed.
+* ''message.sock'' is a Unix communications socket used by the ClientScripts (and others) to communicate with TheChatter.  TheChatter listens on this socket for connection attempts and processes the command when it arrives.
+
+TheChatter starts operation in //blocking mode//, suspended on listening for an incoming request on the //message.sock// socket. As soon as it has a valid command, it switches to //non blocking mode// and issues a database start transaction.  It then processes the command and immediately tries to start another command.  If it finds one, it processes that and repeats until there are no more in the queue.  Once the queue is empty it then commits the transaction and goes back to blocking mode.  This approach means that when the server is loaded, and messages start to queue for it, it handles all the messages within the one transaction.  As intimated in the [[Overview]] the sqlite3 database is lightening fast in this mode and is what allows chat to handle a very high number of users (as needed by the PerformanceObjective).
+
+Apart from the &quot;Read&quot; commands it handles each new request in a giant switch statement, completing the command and sending a response to the requester all in a single pass.  &quot;Read&quot; commands are not processed immediately (unless there is data available to respond to) but instead placed in a &quot;//pending//&quot; array index on the socket received from the requester.  Each read request sends an id (the //lid//) of the next entry in the log file it wishes to see.  TheChatter keeps a record of the minimum value of this.  Eventually, just prior to commiting any set of transactions from other commands, TheChatter checks for new messages in the log file.  If there are, it sends them back to each of the //pending// reads all transactions between the minimum lid value from all the pending reads.  Finally it vempties the pending array.
+
+Adjustable from database parameters, TheChatter has a timeout routine that is entered regularly.  It first checks to see if it has not already decided to shutdown, but provided it hasn't it will first purge old messages from the log file (again dependent on database parameters) and then checks to see if users should be timed out. If there are it does that.  Finally it checks to see of there no more users left and that there hasn't been a request to start the server in the last two seconds and shuts itself down.
+
+TheChatter also responds to system delivered kill requests and shuts itself down if requested.</pre>
 </div>
 <div title="Transaction Retry Framework" creator="AlanChandler" modifier="AlanChandler" created="201004160954" modified="201004160954" changecount="2">
 <pre>The transaction framework is designed to allow transactions to be rolled back and re-tried if the database reports a busy error.  The idea is that a base DB class calls a ''doWork'' method, and the derived classes include their transaction logic in it.  The transaction routine is called via the base classes ''transact''.
@@ -714,8 +1098,15 @@ The core of the transact method is
 
 }}}</pre>
 </div>
-<div title="Using time as a password" creator="AlanChandler" modifier="AlanChandler" created="201005181259" modified="201005181301" changecount="2">
-<pre>[img[three cases of relative time|three_cases.png]]</pre>
+<div title="Using time as a password" creator="AlanChandler" modifier="AlanChandler" created="201005181259" modified="201005190930" tags="design" changecount="6">
+<pre>There are several times when a time limited password is sent from the client to the server.  There are three cases to consider, as the diagram below shows.
+# The normal case, when the client and servers perception of time is away from the 150 second tick (counting time from 1 Jan 1970 UTC).  Regardless of which one is ahead they will both see the same boundary ahead
+# When the time is close to the boundary and the servers time is ahead of the client, it is possible for the two to straddle the tick mark.  The server therefore has to look back one tick mark to match the client
+# When the client is slightly ahead of the server and their time difference straddles the tick mark, then the server has to look two tick marks ahead to match the server
+
+[img[three cases of relative time|three_cases.jpg]]
+
+The server therefore always considers the three cases - checking them in order for a match when checking time based passwords.</pre>
 </div>
 </div>
 <!--POST-STOREAREA-->
