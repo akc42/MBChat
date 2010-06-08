@@ -21,11 +21,12 @@ error_reporting(E_ALL);
 
 
 require_once('../inc/client.inc');
+require_once(DATA_DIR.'private.inc');
 
 
 if(!isset($_POST['uid'])) cs_forbidden();
 $uid = $_POST['uid'];
-if(!cs_tcheck('U'.$uid."P",$_POST['pass']))  cs_forbidden();
+if(!cs_tcheck('U'.$uid."P".REMOTE_KEY,$_POST['pass']))  cs_forbidden();
 
 if(!isset($_POST['rooms'])) 
     $rooms = null;

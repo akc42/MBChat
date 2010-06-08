@@ -101,16 +101,12 @@ function MBCAuth() {
                     auth.U = '$$G'+auth.U;
                 }
  
-                var t1 = (Math.ceil(new Date().getTime()/100000)*100).toString();
-                while(t1.length < 10) {
-                    t1 = '0'+t1;
-                }
                 $('rsa_generator').removeClass('hide');
                 $('authblock').addClass('hide');
                 $('login_error').addClass('hide');
                 $($('login').username).removeClass('error');
                 $($('login').password).removeClass('error');
-                loginReq.post({user:auth.U,pass:hex_md5(auth.P+t1)});
+                loginReq.post({user:auth.U,pass:hex_md5(auth.P)});
             });
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
             loginReq.post({user:'$$$',pass:remoteKey,trial:encCheckNo.toString(10)});

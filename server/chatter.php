@@ -657,7 +657,7 @@ while($running) {
                     $message = '{"status":true}'; 
 	                $u = $statements['question'];
 	                $mtype = '' ;
-	                if (($type == 3 && $role != 'M' && $role != 'S') || ($type = 2 && $role == 'B') ) {
+	                if (($type == 3 && $role != 'M' && $role != 'S') || ($type == 2 && $role == 'B') ) {
 	                //we are in a moderated room and not allowed to speak, so we just update the question we want to ask
 		                if( $text == '') {
 		                    $u->bindValue(':q',null,SQLITE3_NULL);
