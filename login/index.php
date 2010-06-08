@@ -69,7 +69,7 @@ case '$$G':
         $return['login']['cap'] = 0;
         $return['login']['rooms'] = '';
         $return['status'] = true;
-        $return['login']['pass'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",ceil(time()/100)*100));
+        $return['login']['pass'] = md5('U'.$return['login']['uid']."P".REMOTE_KEY);
         break;
     } 
     cs_forbidden();
@@ -83,7 +83,7 @@ default:
             $return['login'] = $result->fetch(PDO::FETCH_ASSOC);
             $return['login']['name'] = $username; //ensuring case is as we entered it
             $return['status'] = true;
-            $return['login']['pass'] = md5('U'.$return['login']['uid']."P".sprintf("%010u",ceil(time()/100)*100));
+            $return['login']['pass'] = md5('U'.$return['login']['uid']."P".REMOTE_KEY);
         } else {
             $return['status'] = false;
             $return['usererror'] = false;
