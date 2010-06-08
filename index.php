@@ -133,7 +133,7 @@ if($chatting['chat']['des']) {
         });
     </script>
     <script type="text/javascript" src="<?php
-        $data = array( 'pass' => md5(REMOTE_KEY.sprintf('%010u',ceil(time()/100)*100)));
+        $data = array( 'pass' => md5(REMOTE_KEY));
         echo  REMOTE_AUTHENTICATOR.'?'.http_build_query($data);       
             ?>"></script>
     <style type="text/css">
