@@ -130,7 +130,14 @@ if($chatting['chat']['des']) {
             }
         });
     </script>
-    <style type="text/css">
+<?php if(EXTERNAL_AUTHENTICATION) {
+?>    <script type="text/javascript" src="<?php
+        $data = array( 'pass' => md5(REMOTE_KEY));
+        echo  EXTERNAL_AUTHENTICATOR.'?'.http_build_query($data);       
+            ?>"></script>
+<?php 
+}
+?>    <style type="text/css">
     
         /* these are the classes related to user types */
         /* admin */

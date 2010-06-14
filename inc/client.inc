@@ -17,12 +17,15 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-//The following 2 keys need to be adjusted for each installation.  
+//The following 5 keys need to be adjusted for each installation.  
 
 define('GOOGLE_ACCOUNT','UA-6767755-1');
 
 define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web space
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
+
+define('EXTERNAL_AUTHENTICATION',false);
+define('EXTERNAL_AUTHENTICATOR','http://www.melindasbackups.com/chat2/index.php'); //Only needed if EXTERNAL_AUTHENTICATION is true
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);
