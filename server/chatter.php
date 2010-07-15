@@ -571,32 +571,33 @@ while($running) {
                 case 'exit':
                     markActive($uid);
                     $rid = $cmd['params'][0];
-                    if(($room = $db->querySingle("SELECT rid, name, type FROM rooms where rid = $rid ",true)) != 0) {
-                        $user = $db->querySingle("SELECT uid, name, role, mod FROM users WHERE uid = $uid ",true);
-
+                    $room = $db->querySingle("SELECT rid, name, type FROM rooms where rid = $rid ",true);
+                    $user = $db->querySingle("SELECT uid, name, role, mod FROM users WHERE uid = $uid ",true);
+                    if(isset($room['rid']) && isset($user['uid'])) { //we got both 
                         if ($room['type'] == 3  && $user['mod'] != 'N') {
                         //This is a moderated room, and this person is not normal - so swap them out of moderated room role
-	                        $role = $user['mod'];
-	                        $mod = $user['role'];
+                            $role = $user['mod'];
+                            $mod = $user['role'];
                         } else {
-	                        $role = $user['role'];
-	                        $mod = $user['mod'];
+                            $role = $user['role'];
+                            $mod = $user['mod'];
                         }
-	                    $name = $user['name'];
+                        $name = $user['name'];
 
                         $u = $statements['exit'];
                         $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
-	                    $u->bindValue(':role',$role,SQLITE3_TEXT);
-	                    $u->bindValue(':mod',$mod,SQLITE3_TEXT);
-	                    $u->bindValue(':time',time(),SQLITE3_INTEGER);
-	                    $u->execute();
-	                    $u->reset();
-	                    sendLog($uid, $name,$role,"RX",$rid,'');
-	                    
+                        $u->bindValue(':role',$role,SQLITE3_TEXT);
+                        $u->bindValue(':mod',$mod,SQLITE3_TEXT);
+                        $u->bindValue(':time',time(),SQLITE3_INTEGER);
+                        $u->execute();
+                        $u->reset();
+                        sendLog($uid, $name,$role,"RX",$rid,'');
+                        
                     } else {
-                        $message = '{"status":false,"reason":"Invalid Room on Exit"}';
+                        $message = '{"status":false,"reason":"Invalid Room or User on Exit"}';
                         break;
                     }
+                    
                     $message = '{"status":true,"messages" : [';
                     $u = $statements['room_whi_start'];
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
@@ -651,36 +652,37 @@ while($running) {
                     }
                     $row = $db->querySingle("SELECT uid, users.name, role, question, users.rid, type ".
                                         "FROM users LEFT JOIN rooms ON users.rid = rooms.rid WHERE uid=".$uid,true);
-    	
-	                $role = $row['role'];
-	                $type = $row['type'];
-                    $message = '{"status":true}'; 
-	                $u = $statements['question'];
-	                $mtype = '' ;
-	                if (($type == 3 && $role != 'M' && $role != 'S') || ($type == 2 && $role == 'B') ) {
-	                //we are in a moderated room and not allowed to speak, so we just update the question we want to ask
-		                if( $text == '') {
+    	            if(isset($row['uid'])) { //user still around? (occasssionally they seem to have left)
+	                    $role = $row['role'];
+	                    $type = $row['type'];
+	                    $u = $statements['question'];
+	                    $mtype = '' ;
+	                    if (($type == 3 && $role != 'M' && $role != 'S') || ($type == 2 && $role == 'B') ) {
+	                    //we are in a moderated room and not allowed to speak, so we just update the question we want to ask
+		                    if( $text == '') {
+		                        $u->bindValue(':q',null,SQLITE3_NULL);
+                    			$mtype = "MR";
+                    		} else {
+		                        $u->bindValue(':q',$text,SQLITE3_TEXT);
+                    		    $mtype = "MQ";
+                            }
+	                    } else {
 		                    $u->bindValue(':q',null,SQLITE3_NULL);
-                			$mtype = "MR";
-                		} else {
-		                    $u->bindValue(':q',$text,SQLITE3_TEXT);
-                		    $mtype = "MQ";
+		                //just indicate presence
+		                    if ($text != '') {  //only insert non blank text - ignore other
+	                            $mtype = "ME";
+                            }
+		                }
+                        $u->bindValue(':time',time(),SQLITE3_INTEGER);
+                        $u->bindValue(':rid',$rid,SQLITE3_INTEGER);
+                        $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
+                        $u->execute();
+                        $u->reset();
+	                    if ($mtype != '') {
+	                        sendLog($uid, $row['name'],$role,$mtype,$rid,$text);
                         }
-	                } else {
-		                $u->bindValue(':q',null,SQLITE3_NULL);
-		            //just indicate presence
-		                if ($text != '') {  //only insert non blank text - ignore other
-	                        $mtype = "ME";
-                        }
-		            }
-                    $u->bindValue(':time',time(),SQLITE3_INTEGER);
-                    $u->bindValue(':rid',$rid,SQLITE3_INTEGER);
-                    $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
-                    $u->execute();
-                    $u->reset();
-	                if ($mtype != '') {
-	                    sendLog($uid, $row['name'],$role,$mtype,$rid,$text);
                     }
+                    $message = '{"status":true}'; 
                     break;
                 case 'release':
                     markActive($uid);
@@ -713,9 +715,9 @@ while($running) {
                     break;
                 case 'newwhi':
                     $wuid = $cmd['params'][0];
-
-                    if(($wuser = $db->querySingle("SELECT uid,name,role,mod FROM users WHERE uid = $wuid",true)) &&
-                        ($user = $db->querySingle("SELECT uid,name,role,mod FROM users WHERE uid = $uid",true))) {
+                    $wuser = $db->querySingle("SELECT uid,name,role,mod FROM users WHERE uid = $wuid",true);
+                    $user = $db->querySingle("SELECT uid,name,role,mod FROM users WHERE uid = $uid",true);
+                    if(isset($wuser['uid']) && isset($user['uid'])) {
                         markActive($uid);
                         $statements['seq']->execute();
                         $statements['seq']->reset();
@@ -740,7 +742,8 @@ while($running) {
                     $wuid = $cmd['params'][0];
                     $wid = $cmd['params'][1];
                     $num = $db->querySingle("SELECT count(*) FROM participant WHERE uid = $uid AND wid = $wid ");
-                    if($num != 0 && ($row = $db->querySingle("SELECT name, role FROM users WHERE uid = $wuid ;",true))) {
+                    $row = $db->querySingle("SELECT uid,name, role FROM users WHERE uid = $wuid ;",true);
+                    if($num != 0 && isset($row['uid'])) {
                         markActive($uid);
                         //I am in this whisper group, so am entitiled to add the new person
                         $u = $statements['join'];
@@ -756,8 +759,9 @@ while($running) {
                     break;
                 case 'leave':
                     $wid = $cmd['params'][0];
-                    if($row = $db->querySingle("SELECT  name, role FROM users JOIN participant ON users.uid = participant.uid 
-                                                    WHERE users.uid = $uid AND wid = $wid ",true)){
+                    $row = $db->querySingle("SELECT users.uid, name, role FROM users JOIN participant ON users.uid = participant.uid 
+                                                    WHERE users.uid = $uid AND wid = $wid ",true);
+                    if(isset($row['uid'])){
                         markActive($uid);
                         $u = $statements['leave'];
                         $u->bindValue(':wid',$wid,SQLITE3_INTEGER);
@@ -793,9 +797,10 @@ while($running) {
                     $wid = $cmd['params'][0];
 //                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
                     $text= $cmd['params'][1];
-                    if($row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
+                    $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
                                                 LEFT JOIN users ON users.uid = participant.uid WHERE
-                                                    participant.uid = $uid AND wid = $wid ",true)) {
+                                                    participant.uid = $uid AND wid = $wid ",true);
+                    if(isset($row['uid'])) {
                         markActive($uid);
                         
                         if($text != '') sendLog($uid, $row['name'],$row['role'],"WH",$wid,$text);	

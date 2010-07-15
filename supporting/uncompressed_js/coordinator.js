@@ -9,7 +9,6 @@ var Coordinator = new Class({
     done: function(activity,parameters) {
         this.activities.set(activity,parameters);
         if (this.activities.every(function(activity) {
-            var i=0;
             return activity;
             })) this.callback(this.activities);
     }
