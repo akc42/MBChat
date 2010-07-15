@@ -21,8 +21,6 @@
 
 /* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
-define('REMOTE_AUTHENTICATOR', 'http://www.melindasbackups.com/chat2/index.php');
-
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
 
@@ -132,11 +130,14 @@ if($chatting['chat']['des']) {
             }
         });
     </script>
-    <script type="text/javascript" src="<?php
+<?php if(EXTERNAL_AUTHENTICATION) {
+?>    <script type="text/javascript" src="<?php
         $data = array( 'pass' => md5(REMOTE_KEY));
-        echo  REMOTE_AUTHENTICATOR.'?'.http_build_query($data);       
+        echo  EXTERNAL_AUTHENTICATOR.'?'.http_build_query($data);       
             ?>"></script>
-    <style type="text/css">
+<?php 
+}
+?>    <style type="text/css">
     
         /* these are the classes related to user types */
         /* admin */

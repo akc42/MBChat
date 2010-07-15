@@ -1,1 +1,1 @@
-var Coordinator=new Class({initialize:function(a,b){this.activities=new Hash();a.each(function(c){this.activities.set(c,false)}.bind(this));this.callback=b},done:function(b,a){this.activities.set(b,a);if(this.activities.every(function(d){var c=0;return d})){this.callback(this.activities)}}});
+var Coordinator=new Class({initialize:function(a,b){this.activities=new Hash();a.each(function(c){this.activities.set(c,false)}.bind(this));this.callback=b},done:function(b,a){this.activities.set(b,a);if(this.activities.every(function(c){return c})){this.callback(this.activities)}}});
