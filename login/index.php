@@ -107,8 +107,3 @@ if(EXTERNAL_AUTHENTICATION) {
     echo json_encode($return);    
 }
 
-
-
-
-    echo '{"status":true,"comment": "external authentication will finish the job"}';
-
