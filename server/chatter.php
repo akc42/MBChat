@@ -922,5 +922,6 @@ while($running) {
 
 logger("Shutting Down".print_r($stats,true));
 fclose($logfp); //close log file
+$db->close(); //close database
 exit();
 
