@@ -25,7 +25,7 @@ define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web sp
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
 
 define('EXTERNAL_AUTHENTICATION',false);
-define('EXTERNAL_AUTHENTICATOR','http://www.melindasbackups.com/chat2/index.php'); //Only needed if EXTERNAL_AUTHENTICATION is true
+define('EXTERNAL_AUTHENTICATOR','http://www.melindasbackups.com/chat/index.php'); //Only needed if EXTERNAL_AUTHENTICATION is true
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);
