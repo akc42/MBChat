@@ -22,11 +22,11 @@
 
 define('GOOGLE_ACCOUNT','UA-6767400-1');
 
-define('SERVER_DIR','/var/chat/server/');//Should be outside of web space
-define('DATA_DIR','/var/chat/mb.com/');  //Should be outside of web space
+define('SERVER_DIR','/home/alan/dev/mb/com/chatserve/server/');//Should be outside of web space
+define('DATA_DIR','/home/alan/dev/mb/com/chatserve/data/');  //Should be outside of web space
 
 define('EXTERNAL_AUTHENTICATION',true);
-define('EXTERNAL_AUTHENTICATOR','http://mb.home/chat2/index.php'); //Only needed if EXTERNAL_AUTHENTICATION is true
+define('EXTERNAL_AUTHENTICATOR','http://mb.home/chat/index.php'); //Only needed if EXTERNAL_AUTHENTICATION is true
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);
