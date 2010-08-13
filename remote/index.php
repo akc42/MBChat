@@ -30,7 +30,7 @@
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-define('NO_LOGIN_URL','http://www.melindasbackups.com/chat2/chat.html');
+define('NO_LOGIN_URL','http://www.melindasbackups.com/chat/chat.html');
 include('./public.inc');
 
 
@@ -38,7 +38,7 @@ function cs_tcheck($key,$pass) {
     return ($pass == md5($key));
 }
 //ensure we had a proper request from the chat software
-if (!cs_tcheck(REMOTE_KEY,$_GET['pass']))  {
+if (!(isset($_GET['pass']) && cs_tcheck(REMOTE_KEY,$_GET['pass']))  {
     header('HTTP/1.0 403 Forbidden');
 ?><html>
     <head>
