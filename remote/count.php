@@ -31,15 +31,6 @@ include('./public.inc');
 
 define('SERVER_LOCATION','http://chat.melindasbackups.com/login/count.php');   //Where the chat server 
 
-pcntl_signal(SIGALRM,"timeout"); //setup communications timer
-
-function timeout($signal) {
-    echo 0;
-    exit;
-}
-
-declare(ticks = 1);
-pcntl_alarm(10);
 
 $data = array('pass' => md5(REMOTE_KEY));
 
