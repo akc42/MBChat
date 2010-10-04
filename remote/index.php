@@ -87,10 +87,15 @@ if($user_info['is_guest']) {
     exit;
 }
 $groups =& $user_info['groups'];
+if(isset($user_info['id'])) { //check if this is SMFv2
+    $uid =& $user_info['id'];
+} else {
+    $uid = $ID_MEMBER;
+}
 
-echo "loginRequestOptions.uid = $ID_MEMBER ;\n";
+echo "loginRequestOptions.uid = $uid ;\n";
 
-echo "loginRequestOptions.pass = '".md5("U".$ID_MEMBER."P".REMOTE_KEY)."' ;\n" ;
+echo "loginRequestOptions.pass = '".md5("U".$uid."P".REMOTE_KEY)."' ;\n" ;
 
 
 echo "loginRequestOptions.name = '".$user_info['name']."' ;\n";
