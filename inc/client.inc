@@ -31,6 +31,7 @@ define('EXTERNAL_AUTHENTICATOR','http://mb.home/chat/index.php'); //Only needed 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);
 
+
 $uid = 0; //This is the number we will use for non UID based calls to the server (such as when chat is populating its page at the beginning
 
 
@@ -147,19 +148,4 @@ function cs_validate() {
 function cs_tcheck($key,$pass) {
     return ($pass == md5($key));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
