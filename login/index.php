@@ -98,10 +98,12 @@ if(EXTERNAL_AUTHENTICATION) {
             } else {
                 $return['status'] = false;
                 $return['usererror'] = false;
+                $return['comment'] = "wrong user password";
             }
         } else {
             $return['status'] = false;
             $return['usererror'] = true;
+            $return['comment'] = "user not found";
         }
         $result->closeCursor();
     }

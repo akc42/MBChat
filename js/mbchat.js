@@ -139,14 +139,18 @@ MBchat = function () {
                 logged_in = true;
                 chatBot = {uid:0, name : response.params.chatbot_name, role: 'C'};  //Make chatBot like a user
                 messageListSize = response.params.max_messages;  //Size of message list
-                var c = new BigInteger(response.key);
-                var m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
                 auth.uid = me.uid;
-                auth.pass = hex_md5('U'+auth.uid+'P'+padDigits(m.toString(10),5));
-                if(response.des) {
-                    var d = new BigInteger(response.des);
-                    desKey = padDigits(d.modPow(rsaKeys.d,rsaKeys.n).toString(10),10);
-                }
+                if(rsaKeys) {
+	                var c = new BigInteger(response.key);
+    	            var m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
+	                auth.pass = hex_md5('U'+auth.uid+'P'+padDigits(m.toString(10),5));
+		            if(response.des) {
+		                var d = new BigInteger(response.des);
+		                desKey = padDigits(d.modPow(rsaKeys.d,rsaKeys.n).toString(10),10);
+		            }
+		        } else {
+		        	auth.pass = 'mbchat';
+		        }
                 logOptions.fetchdelay = response.params.log_fetch_delay.toInt();
                 logOptions.spinrate = response.params.log_spin_rate.toInt();
                 logOptions.secondstep = response.params.log_step_seconds.toInt();
@@ -329,8 +333,10 @@ return {
 	    me = $extend(me,loginOptions);
 	    me.uid = me.uid.toInt();
 	    me.cap = me.cap.toInt();
-	    delete me.e;
-	    delete me.n;
+	    if(keys) {
+		    delete me.e;
+		    delete me.n;
+		}
 	    delete me.msg;
 	    delete me.pass;
         rsaKeys = keys;
