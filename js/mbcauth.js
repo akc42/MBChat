@@ -16,7 +16,6 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 function MBCAuth() {
-        var checkNo = new BigInteger(32,new SecureRandom()); 
         var confirmedServer = false;
         var internalAuth = false;
         if(Browser.Engine.trident && Browser.Engine.version == 5) {
@@ -51,13 +50,14 @@ function MBCAuth() {
             onComplete:function(response,t) {
             if(response && response.status) {
                 if(response.trial) { //responding with the returned security key
-                    if(response.trial == checkNo.toString(10)) {
+                    if(response.trial == checkNo) {
                         //matched
                         confirmedServer = true;
                         coordinator.done('verify',{});
                         loginReq.post.delay(1,this,{user:'$$#',pass:remoteKey}); //now find out if I am supposed to prompt
                     } else {
                         confirmTimeout();
+                        confirmedServer = true; //not really, but stops timeout from trying to do same thing
                     }
                 } else if (response.login && confirmedServer) {
                     if(response.login.uid == 0) {//special marker telling me that I must authenticate.
@@ -77,10 +77,6 @@ function MBCAuth() {
             }
             }
         });
-
-
-
-        var encCheckNo = checkNo.modPow(new BigInteger(rsaExponent),new BigInteger(rsaModulus));
 
         window.addEvent('domready',function () {
             $('login').addEvent('submit', function(e) {
@@ -106,10 +102,10 @@ function MBCAuth() {
                 $('login_error').addClass('hide');
                 $($('login').username).removeClass('error');
                 $($('login').password).removeClass('error');
-                loginReq.post({user:auth.U,pass:hex_md5(auth.P)});
+                loginReq.post({user:auth.U,pass:hex_md5(auth.P)}); //only get here when not EXTERNAL_AUTHENTICATION so hex_md5 will be available
             });
             // This initial request will see if it can authenticate without needing to put up the form - we also want to verify the server
-            loginReq.post({user:'$$$',pass:remoteKey,trial:encCheckNo.toString(10)});
+            loginReq.post({user:'$$$',pass:remoteKey,trial:encCheckNo});
             confirmTimeout.delay(10000); //give server 10 seconds to come back with correct response.
             coordinator.done('dom',{});
         });

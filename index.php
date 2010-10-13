@@ -59,7 +59,9 @@ if(!(EXTERNAL_AUTHENTICATION) && $chatting['chat']['des']) {
         var rsaExponent ="<?php echo RSA_EXPONENT;?>";
         var rsaModulus="<?php echo RSA_MODULUS;?>";
         var remoteKey="<?php echo md5(REMOTE_KEY); ?>";
-        
+        var checkNo = <?php $checkkey = rand(1,9000); echo $checkkey; ?> ;
+       	var encCheckNo = "<?php echo bcpowmod($checkkey,RSA_EXPONENT,RSA_MODULUS); ?>" ;
+
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
         });
@@ -81,12 +83,12 @@ if(!(EXTERNAL_AUTHENTICATION)){
         });
 <?php
 if(!(EXTERNAL_AUTHENTICATION)){
-?>
-        var rsa = new RSA();
+?>      var rsa = new RSA();
         function genResult (key,rsa) {
 <?php
 } else {
 ?>		var key = false;
+
 <?php
 }
 ?>            coordinator.done('rsa',key);
