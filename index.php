@@ -40,13 +40,17 @@ $chatting = cs_query('chats');
     <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
-<?php if(!(EXTERNAL_AUTHENTICATION)){?>    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script><?php } ?>
+<?php if($chatting['chat']['rsa'] == 'yes'){?>    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script><?php } ?>
 	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
-<?php if(!(EXTERNAL_AUTHENTICATION)){?>    <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script><?php } ?> 
-    <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+if($chatting['chat']['rsa'] == 'yes' || !(EXTERNAL_AUTHENTICATION)){
+?>  <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+} 
+?>  <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
-if(!(EXTERNAL_AUTHENTICATION) && $chatting['chat']['des']) {
+if($chatting['chat']['des']) {
 ?>  <script src="js/des.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 }
@@ -68,7 +72,7 @@ if(!(EXTERNAL_AUTHENTICATION) && $chatting['chat']['des']) {
         var loginRequestOptions = {};
         var coordinator = new Coordinator(['rsa','login','dom','verify'],function(activity){
 <?php
-if(!(EXTERNAL_AUTHENTICATION)){
+if($chatting['chat']['rsa'] == 'yes'){
 ?>          loginRequestOptions.e = activity.get('rsa').e.toString();
             loginRequestOptions.n = activity.get('rsa').n.toString(10);
 <?php
@@ -82,18 +86,18 @@ if(!(EXTERNAL_AUTHENTICATION)){
             soundcoord.done('chat',{});
         });
 <?php
-if(!(EXTERNAL_AUTHENTICATION)){
+if($chatting['chat']['rsa'] == 'yes'){
 ?>      var rsa = new RSA();
         function genResult (key,rsa) {
 <?php
 } else {
-?>		var key = false;
+?>		var key = {};
 
 <?php
 }
 ?>            coordinator.done('rsa',key);
 <?php
-if(!(EXTERNAL_AUTHENTICATION)){
+if($chatting['chat']['rsa'] == 'yes'){
 ?>        };
         /*
             We are kicking off a process to generate a rsa public/private key pair.  Typically this

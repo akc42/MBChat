@@ -35,8 +35,13 @@ else
     
 $q = cs_query('login',$_POST['name'],$_POST['role'],$_POST['cap'],$rooms,$_POST['msg']); //log on!.
 if($q['status']) {
-    $q['key'] = bcpowmod($q['key'],$_POST['e'],$_POST['n']);
-    if(isset($q['des'])) $q['des'] = bcpowmod($q['des'],$_POST['e'],$_POST['n']);
+	if(isset($_POST['e'])) {
+    	$q['key'] = bcpowmod($q['key'],$_POST['e'],$_POST['n']);
+    	    if(isset($q['des'])) $q['des'] = bcpowmod($q['des'],$_POST['e'],$_POST['n']);
+
+	} else {
+		$q['key'] = md5('U'.$uid."P".$q['key']);
+	} 
 }
 echo json_encode($q);    
 

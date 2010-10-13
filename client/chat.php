@@ -57,7 +57,7 @@ function getRoomClass ($type) {
     return $class;
 }
     
-if(isset($rooms['security'])) {
+if(isset($rooms['security']) && isset($_POST['e'])) {
     /* We are concerned about security so in this instance we take the security message and encrypt it with the 
         public key and send it to him.  He will decrypt and correct the display - allowing a visual check that its the 
         security message set by the admin of this server.  This prevents another server taking over our servers role and
