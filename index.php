@@ -40,10 +40,14 @@ $chatting = cs_query('chats');
     <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script>
+<?php if($chatting['chat']['rsa'] == 'yes'){?>    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script><?php } ?>
 	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
-    <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script> 
-    <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+if($chatting['chat']['rsa'] == 'yes' || !(EXTERNAL_AUTHENTICATION)){
+?>  <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+} 
+?>  <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 if($chatting['chat']['des']) {
@@ -59,15 +63,21 @@ if($chatting['chat']['des']) {
         var rsaExponent ="<?php echo RSA_EXPONENT;?>";
         var rsaModulus="<?php echo RSA_MODULUS;?>";
         var remoteKey="<?php echo md5(REMOTE_KEY); ?>";
-        
+        var checkNo = <?php $checkkey = rand(1,9000); echo $checkkey; ?> ;
+       	var encCheckNo = "<?php echo bcpowmod($checkkey,RSA_EXPONENT,RSA_MODULUS); ?>" ;
+
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
         });
         var loginRequestOptions = {};
         var coordinator = new Coordinator(['rsa','login','dom','verify'],function(activity){
-            loginRequestOptions.e = activity.get('rsa').e.toString();
+<?php
+if($chatting['chat']['rsa'] == 'yes'){
+?>          loginRequestOptions.e = activity.get('rsa').e.toString();
             loginRequestOptions.n = activity.get('rsa').n.toString(10);
-            loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
+<?php
+}
+?>          loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
             loginRequestOptions.msg += ' on:'+Browser.Platform.name;
             MBchat.init(loginRequestOptions,activity.get('rsa'));
             window.addEvent('beforeunload', function() {
@@ -75,11 +85,20 @@ if($chatting['chat']['des']) {
             });
             soundcoord.done('chat',{});
         });
-
-        var rsa = new RSA();
+<?php
+if($chatting['chat']['rsa'] == 'yes'){
+?>      var rsa = new RSA();
         function genResult (key,rsa) {
-            coordinator.done('rsa',key);
-        };
+<?php
+} else {
+?>		var key = {};
+
+<?php
+}
+?>            coordinator.done('rsa',key);
+<?php
+if($chatting['chat']['rsa'] == 'yes'){
+?>        };
         /*
             We are kicking off a process to generate a rsa public/private key pair.  Typically this
             takes about 1.2 seconds or so to run to completion with this key length, so should be done
@@ -88,7 +107,9 @@ if($chatting['chat']['des']) {
         */
 
         rsa.generateAsync(64,65537,genResult);
-
+<?php
+}
+?>
         MBCAuth(); //Authenticate server and do internal authentication
         soundManager.url = '/js/';
         soundManager.flashVersion = 9; // optional: shiny features (default = 8)

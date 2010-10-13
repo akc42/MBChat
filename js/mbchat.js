@@ -128,7 +128,7 @@ MBchat = function () {
 
     var desKey = false;
     var auth = {};
-	var rsaKeys;
+	var rsaKeys = false;
     var loginReq = new Request.JSON({
         url:'client/login.php',
         link:'chain',
@@ -139,14 +139,21 @@ MBchat = function () {
                 logged_in = true;
                 chatBot = {uid:0, name : response.params.chatbot_name, role: 'C'};  //Make chatBot like a user
                 messageListSize = response.params.max_messages;  //Size of message list
-                var c = new BigInteger(response.key);
-                var m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
                 auth.uid = me.uid;
-                auth.pass = hex_md5('U'+auth.uid+'P'+padDigits(m.toString(10),5));
-                if(response.des) {
-                    var d = new BigInteger(response.des);
-                    desKey = padDigits(d.modPow(rsaKeys.d,rsaKeys.n).toString(10),10);
-                }
+                if(rsaKeys) {
+	                var c = new BigInteger(response.key);
+    	            var m = c.modPow(rsaKeys.d,rsaKeys.n);// This decrypts the key we need for the next stage.
+	                auth.pass = hex_md5('U'+auth.uid+'P'+padDigits(m.toString(10),5));
+		            if(response.des) {
+		                var d = new BigInteger(response.des);
+		                desKey = padDigits(d.modPow(rsaKeys.d,rsaKeys.n).toString(10),10);
+		            }
+		        } else {
+		        	auth.pass = response.key;
+		        	if (response.des) {
+		        		desKey = response.key;
+		        	}
+		        }
                 logOptions.fetchdelay = response.params.log_fetch_delay.toInt();
                 logOptions.spinrate = response.params.log_spin_rate.toInt();
                 logOptions.secondstep = response.params.log_step_seconds.toInt();
@@ -159,7 +166,7 @@ MBchat = function () {
                 room.set(entranceHall);
                 var roomReq = new Request({url:'client/chat.php',onSuccess:function (html) {
                     $('entranceHall').set('html',html);
-                    if(desKey) {
+                    if(rsaKeys && desKey) {
                         //we need to get at the security message and decrypt it
                         var chunks = $$('#security span');
                         var sm = '';
@@ -303,7 +310,7 @@ MBchat = function () {
 			        reqQueue.callChain();
 	            }});
 	            var roomReqSend = function() {
-	                if(desKey) {
+	                if(rsaKeys && desKey) {
 	                    roomReq.post($merge(auth,{e:rsaKeys.e.toString(),n:rsaKeys.n.toString(10)})); //send keys to get back encrypted security message
 	                } else {
         		        roomReq.post(auth);
@@ -313,7 +320,7 @@ MBchat = function () {
                     reqQueue.chain(roomReqSend.bind(this));
                 } else {
                     reqRunning = true;
-		            roomReqSend();;
+		            roomReqSend();
 		        }
             } else {
                 window.location = 'login/logout.php';
@@ -329,11 +336,13 @@ return {
 	    me = $extend(me,loginOptions);
 	    me.uid = me.uid.toInt();
 	    me.cap = me.cap.toInt();
-	    delete me.e;
-	    delete me.n;
+	    if(keys.d) {
+		    delete me.e;
+		    delete me.n;
+        	rsaKeys = keys;
+		}
 	    delete me.msg;
 	    delete me.pass;
-        rsaKeys = keys;
 	    logged_in = false;
         messageSubmit = function(event) {
 		    event.stop();
