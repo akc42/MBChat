@@ -41,10 +41,10 @@ $chatting = cs_query('chats');
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
 <?php if(!(EXTERNAL_AUTHENTICATION)){?>    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script><?php } ?>
-	<script src="js/mbchat-min-<?php include('./inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script> 
+	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
 <?php if(!(EXTERNAL_AUTHENTICATION)){?>    <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script><?php } ?>  
     <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/mbcauth-min-<?php include('./inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 if(!(EXTERNAL_AUTHENTICATION) && $chatting['chat']['des']) {
 ?>  <script src="js/des.js" type="text/javascript" charset="UTF-8"></script>
