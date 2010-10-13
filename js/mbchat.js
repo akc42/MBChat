@@ -128,7 +128,7 @@ MBchat = function () {
 
     var desKey = false;
     var auth = {};
-	var rsaKeys;
+	var rsaKeys = false;
     var loginReq = new Request.JSON({
         url:'client/login.php',
         link:'chain',
@@ -149,7 +149,10 @@ MBchat = function () {
 		                desKey = padDigits(d.modPow(rsaKeys.d,rsaKeys.n).toString(10),10);
 		            }
 		        } else {
-		        	auth.pass = 'mbchat';
+		        	auth.pass = response.key;
+		        	if (response.des) {
+		        		desKey = response.key;
+		        	}
 		        }
                 logOptions.fetchdelay = response.params.log_fetch_delay.toInt();
                 logOptions.spinrate = response.params.log_spin_rate.toInt();
@@ -163,7 +166,7 @@ MBchat = function () {
                 room.set(entranceHall);
                 var roomReq = new Request({url:'client/chat.php',onSuccess:function (html) {
                     $('entranceHall').set('html',html);
-                    if(desKey) {
+                    if(rsaKeys && desKey) {
                         //we need to get at the security message and decrypt it
                         var chunks = $$('#security span');
                         var sm = '';
@@ -307,7 +310,7 @@ MBchat = function () {
 			        reqQueue.callChain();
 	            }});
 	            var roomReqSend = function() {
-	                if(desKey) {
+	                if(rsaKeys && desKey) {
 	                    roomReq.post($merge(auth,{e:rsaKeys.e.toString(),n:rsaKeys.n.toString(10)})); //send keys to get back encrypted security message
 	                } else {
         		        roomReq.post(auth);
@@ -317,7 +320,7 @@ MBchat = function () {
                     reqQueue.chain(roomReqSend.bind(this));
                 } else {
                     reqRunning = true;
-		            roomReqSend();;
+		            roomReqSend();
 		        }
             } else {
                 window.location = 'login/logout.php';
@@ -333,13 +336,13 @@ return {
 	    me = $extend(me,loginOptions);
 	    me.uid = me.uid.toInt();
 	    me.cap = me.cap.toInt();
-	    if(keys) {
+	    if(keys.d) {
 		    delete me.e;
 		    delete me.n;
+        	rsaKeys = keys;
 		}
 	    delete me.msg;
 	    delete me.pass;
-        rsaKeys = keys;
 	    logged_in = false;
         messageSubmit = function(event) {
 		    event.stop();
