@@ -81,7 +81,7 @@ INSERT INTO parameters VALUES ('log_step_6hours','6',4); -- number of spin steps
 INSERT INTO parameters VALUES ('entrance_hall','Entrance Hall',4); -- entrance hall name
 INSERT INTO parameters VALUES ('whisper_restrict','true',4);  -- if true, then non B's and B's can't whisper to each other
 INSERT INTO parameters VALUES ('max_messages','100',4); -- maximum number of back messages to display when entering a room
-
+INSERT INTO parameters VALUES ('read_timeout','45',4); --time in seconds to refresh reads that haven't had any response
 
 -- The following are used operationally and as such are required individually throughout operation.
 -- Most will be cached into named variables on server start up (and so will not see any changes during the running of the server),

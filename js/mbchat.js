@@ -74,7 +74,7 @@ MBchat = function () {
 	
 	var ServerReq = new Class({
 		initialize: function(url,process) {
-			this.request = new Request.JSON({url:url, link:'chain',onComplete: function(response,errorMessage) {
+			this.request = new Request.JSON({url:url, link:'cancel',onComplete: function(response,errorMessage) {
 				if(response) {
    					process(response);
 				} else {
@@ -515,7 +515,7 @@ return {
 				var pollInterval;
 				var wid;
                 
-    			var pollRequest = new Request.JSON({url:'client/read.php',link:'ignore',onComplete:function (r,t) {
+    			var pollRequest = new Request.JSON({url:'client/read.php',link:'cancel',onComplete:function (r,t) {
     			    readComplete.delay(10,this,[r,t]);
     			}}); 
 
@@ -534,8 +534,8 @@ return {
 				    } else {
 				        if(errorMessage) {
 				            displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
-				            fullPoll = 0;  //At this point we are getting read fails, so lets just stop the polling
 				        }
+				        fullPoll = 0;  //At this point we are getting read fails, so lets just stop the polling
 				    }
 				    if (fullPoll == 2) {
 				        pollRequest.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1}); //Should chain (we are in previous still)
