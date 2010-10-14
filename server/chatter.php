@@ -92,7 +92,7 @@ function sig_term ($signal) {
 }
 
 function timeout ($signal) {
-    global $statements,$running,$socket,$db,$blocking,$purge_message_interval,$user_timeout,$tick_interval,$check_ticks,$ticks;
+    global $statements,$running,$socket,$db,$blocking,$purge_message_interval,$user_timeout,$tick_interval,$check_ticks,$ticks,$pending_reads;
     pcntl_alarm($tick_interval); //Setup to timeout again
 
     if($running) {
@@ -119,6 +119,18 @@ function timeout ($signal) {
             }
             $result->finalize();
             $t->reset();
+
+/*
+			If there are pending reads send them nothing to cause them to refresh themselves (unless we are not blocked)
+*/
+			if($blocking) {
+		        foreach($pending_reads as $reader) {
+		            @socket_write($reader,'{"status":true,"messages":[]}');
+		            @socket_close($reader);
+		        }
+		        $pending_reads = array();
+			}
+
 
             $handle = fopen(SERVER_LOCK,'r+');
             flock($handle,LOCK_EX);
