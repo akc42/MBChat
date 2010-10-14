@@ -92,7 +92,7 @@ function sig_term ($signal) {
 }
 
 function timeout ($signal) {
-    global $statements,$running,$socket,$db,$blocking,$purge_message_interval,$user_timeout,$tick_interval,$check_ticks,$ticks,$pending_reads;
+    global $statements,$running,$socket,$db,$blocking,$purge_message_interval,$user_timeout,$tick_interval,$check_ticks,$ticks,$pending_reads,$last_read_satisfy,$read_timeout;
     pcntl_alarm($tick_interval); //Setup to timeout again
 
     if($running) {
@@ -120,16 +120,6 @@ function timeout ($signal) {
             $result->finalize();
             $t->reset();
 
-/*
-			If there are pending reads send them nothing to cause them to refresh themselves (unless we are not blocked)
-*/
-			if($blocking) {
-		        foreach($pending_reads as $reader) {
-		            @socket_write($reader,'{"status":true,"messages":[]}');
-		            @socket_close($reader);
-		        }
-		        $pending_reads = array();
-			}
 
 
             $handle = fopen(SERVER_LOCK,'r+');
@@ -155,6 +145,18 @@ function timeout ($signal) {
             }
             if($blocking) $db->exec("COMMIT");
         } 
+/*
+		If there are pending reads outstanding for over 45 seconds and we are currently blocked (ie we won't release them shortly)
+		then send them a zero messages reply to cause them to refresh themselves
+*/
+		if($blocking && (time()-$read_timeout) > $last_read_satisfy) {
+	        foreach($pending_reads as $reader) {
+	            @socket_write($reader,'{"status":true,"messages":[]}');
+	            @socket_close($reader);
+	        }
+	        $pending_reads = array();
+	        $last_read_satisfy = time();
+		}
 
     }
 }
@@ -269,12 +271,14 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         $max_time = $db->querySingle("SELECT value FROM parameters WHERE name ='max_time'");
         $tick_interval = $db->querySingle("SELECT value FROM parameters WHERE name ='tick_interval'");
         $check_ticks = $db->querySingle("SELECT value FROM parameters WHERE name ='check_ticks'");
+        $read_timeout = $db->querySingle("SELECT value FROM parameters WHERE name ='read_timeout'");
 
         $running = true;
         $ticks = $check_ticks;
-        pcntl_alarm($tick_interval);
-        $blocking = true;
         $pending_reads = Array();
+        $last_read_satisfy = time();
+        $blocking = true;
+        pcntl_alarm($tick_interval);
 
 //These are all the prepared statements the system uses.
 
@@ -911,6 +915,7 @@ while($running) {
                     @socket_close($reader);
                 }
                 $pending_reads = array();
+                $last_read_satisfy = time();
             }        
             $minlid = $maxlid+1;
 
