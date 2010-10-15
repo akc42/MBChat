@@ -19,7 +19,6 @@
 
 /* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
 
-/* gets time boundary - either next 5 minutes (twoup = 0) or further five minutes after that (as 12 char string). */
 
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
