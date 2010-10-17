@@ -1,6 +1,6 @@
 <?php
 /*
- 	Copyright (c) 2009,2010 Alan Chandler
+ 	Copyright (c) 2010 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -19,8 +19,7 @@
 
 require_once('../inc/client.inc');
 
-
 cs_validate();
-cs_fetch('msg',$_POST['rid'],$_POST['text']);
+cs_fetch('fail',$_POST['msg']);
 
 

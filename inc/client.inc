@@ -136,10 +136,17 @@ exit;
 
 function cs_validate() {
     global $uid;
-    if(!(isset($_REQUEST['uid']) && isset($_REQUEST['pass']))) cs_forbidden();
+    if(!(isset($_REQUEST['uid']) && isset($_REQUEST['pass']))) {
+    	$return = cs_query('fail',"Missing uid or pass");
+    	cs_forbidden();
+    }
     $return = cs_query('auth');
     $key = $return['key'];
-    if(md5("U".$_REQUEST['uid']."P".$key) != $_REQUEST['pass']) cs_forbidden();
+    $expected = md5("U".$_REQUEST['uid']."P".$key);
+    if( $expected != $_REQUEST['pass']) {
+    	$return = cs_query('fail',"Incorrect Password, Expected $expected , Received ".$_REQUEST['pass']);
+    	cs_forbidden();
+    }
     $uid = $_REQUEST['uid'];
 }
 
