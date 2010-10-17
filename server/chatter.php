@@ -894,6 +894,10 @@ while($running) {
                         $message = '{"status":false,"reason":"des not used in this system"}';
                     }
                     break;
+                case 'fail' :
+                		sendlog($uid,"SYSTEM",'A',"ER",0,$cmd['params'][0]);
+                		$message = '{"status":true}';
+                	break;
                 default:
                     logger("Command: ".$cmd['cmd']." :NOT IMPLEMENTED: Raw Message:$read");
                     $message = '{"status":false,"reason":"Command '.$cmd['cmd'].' NOT IMPLEMENTED"}';

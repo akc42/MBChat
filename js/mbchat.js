@@ -74,11 +74,13 @@ MBchat = function () {
 	
 	var ServerReq = new Class({
 		initialize: function(url,process) {
+			var that = this;
 			this.request = new Request.JSON({url:url, link:'cancel',onComplete: function(response,errorMessage) {
+				clearTimeout(that.timerID);
 				if(response) {
    					process(response);
 				} else {
-					displayErrorMessage(''+url+' failure:'+errorMessage);
+					displayErrorMessage(''+this.options.url+' failure:'+errorMessage);
 				}
 				reqRunning = false;
 				reqQueue.callChain();
@@ -90,7 +92,16 @@ MBchat = function () {
                 reqQueue.chain(arguments.callee.bind(this,reqOptions));
             } else {
                 reqRunning = true;
+				this.timerID = this.timeout.delay(10000,this);
 			    this.request.post.delay(1,this.request,reqOptions);
+			}
+		},
+		timeout: function () {
+			if(reqRunning) {
+				displayErrorMessage(''+this.request.options.url+' timeout!');
+				this.request.cancel();
+				reqRunning = false;
+				reqQueue.callChain();
 			}
 		}		
 	});
@@ -103,6 +114,7 @@ MBchat = function () {
 		var msg = '<span class="errorMessage">'+txt+'</span>';
 		var d = new Date();
 		MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,msg);  //need to convert from millisecs to secs
+		var req = new Request({url:'client/error.php',link:'cancel'}).post({uid:auth.uid,pass:auth.pass,msg:txt});
 	};
 	var chatBotMessage = function (msg) {
 		return '<span class="chatBotMessage">'+msg+'</span>';
@@ -514,8 +526,17 @@ return {
 				var fullPoll=0;   //0 = polling stopped, 1=polling requested to stop, but not yet done so, 2= polling running
 				var pollInterval;
 				var wid;
+                var readTimoutId;
+                
+                var pollTimeout = function () {
+                	displayErrorMessage("read.php Timeout!");
+                	this.cancel();
+                	readTimeoutId = pollTimeout.delay(60000,this); //And put another timeout up
+                	this.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1}); //Should chain (we are in previous still)
+                };
                 
     			var pollRequest = new Request.JSON({url:'client/read.php',link:'cancel',onComplete:function (r,t) {
+    				clearTimeout(readTimeoutId);
     			    readComplete.delay(10,this,[r,t]);
     			}}); 
 
@@ -538,6 +559,7 @@ return {
 				        fullPoll = 0;  //At this point we are getting read fails, so lets just stop the polling
 				    }
 				    if (fullPoll == 2) {
+				    	readTimeoutId = pollTimeout.delay(60000,this);
 				        pollRequest.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1}); //Should chain (we are in previous still)
 				    } else {
 				        fullPoll = 0; //If stop was pending, it has now finished
@@ -560,6 +582,7 @@ return {
 
 					start : function () {
 	        		    if (fullPoll == 0) {
+	        		    	readTimeoutId = pollTimeout.delay(60000,pollRequest);
         		            pollRequest.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1});		
 						 }
                         fullPoll= 2;
