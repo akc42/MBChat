@@ -18,10 +18,10 @@
 function MBCAuth() {
         var confirmedServer = false;
         var internalAuth = false;
-        if(Browser.Engine.trident && Browser.Engine.version == 5) {
+        if(Browser.ie7) {
             $('rsa_generator').removeClass('loading');
             $('rsa_generator').removeClass('hide');  //just in case
-            $('rsa_generator').set('html','<span class="error">Internet Explorer V7 is not supported.  Chat will work with Internet Explorer 6 and 8 as well as Firefox, Chrome, Safari and Opera.</span>');
+            $('rsa_generator').set('html','<span class="error">Internet Explorer V7 is not supported.  Chat will work with Internet Explorer 6 and v8 and later as well as Firefox, Chrome, Safari and Opera.</span>');
             return;
         }
              

@@ -63,7 +63,7 @@ MBchat = function () {
 	var chatBot;
 	var messageListSize;
 	var hyperlinkRegExp = new RegExp('(^|\\s|>)(((http)|(https)|(ftp)|(irc)):\\/\\/[^\\s<>]+)(?!<\\/a>)','gm');;
-	var emoticonSubstitution = new Hash({});
+	var emoticonSubstitution = new Object({});
 	var emoticonRegExpStr; //dynamically calculated during init
 	var logOptions = {};
 	var logged_in;
@@ -87,7 +87,7 @@ MBchat = function () {
 			}});
 		},
 		transmit: function (options) {
-		    var reqOptions = $merge(auth,options);
+		    var reqOptions = Object.merge(auth,options);
             if (reqRunning) {
                 reqQueue.chain(arguments.callee.bind(this,reqOptions));
             } else {
@@ -323,7 +323,7 @@ MBchat = function () {
 	            }});
 	            var roomReqSend = function() {
 	                if(rsaKeys && desKey) {
-	                    roomReq.post($merge(auth,{e:rsaKeys.e.toString(),n:rsaKeys.n.toString(10)})); //send keys to get back encrypted security message
+	                    roomReq.post(Object.merge(auth,{e:rsaKeys.e.toString(),n:rsaKeys.n.toString(10)})); //send keys to get back encrypted security message
 	                } else {
         		        roomReq.post(auth);
         		    }
@@ -345,7 +345,7 @@ MBchat = function () {
 return {
 	init : function(loginOptions,keys) {
         identString = loginOptions.msg;
-	    me = $extend(me,loginOptions);
+	    Object.append(me,loginOptions);
 	    me.uid = me.uid.toInt();
 	    me.cap = me.cap.toInt();
 	    if(keys.d) {
@@ -401,7 +401,7 @@ return {
 	        emoticons.each(function(icon,i) {
 		        var key = icon.get('alt').substr(1);
 		        var img = '<img src="' + icon.get('src') + '" alt="' + key + '" title="' + key + '" />' ;
-		        emoticonSubstitution.include(key,img);
+			if (emoticonSubstitution[key] == undefined) emoticonSubstitution[key] = img;
 		        if(i!=0) regExpStr += '|';
 		        regExpStr += key.replace(/\)/g,'\\)') ;  //regular expression is key except if has ) in it which we need to escape
 		        icon.addEvent('click', function(e) {
@@ -426,9 +426,9 @@ return {
 	    if(logged_in) {
 	        MBchat.updateables.poller.logout(); //Stop Poller Function completely
     		var logoutRequest = new Request.JSON({url:'client/logout.php',async:false});
-    		logoutRequest.post($merge(auth,{ident:identString}));
+    		logoutRequest.post(Object.merge(auth,{ident:identString}));
             logged_in = false;
-		    window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
+		    window.location = 'client/index.php?'+Object.toQueryString(auth) ;
         }
 	},
 	sounds: function () {
@@ -496,7 +496,7 @@ return {
 	updateables : function () {
 		var replaceEmoticons = function(text) {
 			return text.replace(emoticonRegExpStr,function(match,p1) {
-				return emoticonSubstitution.get(p1);
+				return emoticonSubstitution[p1];
 			});
 		};
 		var replaceHyperLinks = function(text) {
@@ -593,7 +593,7 @@ return {
 					},
 					logout: function() {
 					    MBchat.updateables.poller.stop();
-					    $clear(pollerId);
+					    window.clearInterval(pollerId);
 					}
 				};
 			}(),
@@ -801,7 +801,7 @@ return {
 							    if (me.uid == msg.user.uid) {
 				                    /*  It is me that has been logged off.  For this to happen it means my comms is broken.  THe best
 				                        thing for me to do is to exit */
-                        		    window.location = 'client/index.php?'+Hash.toQueryString(auth) ;
+                        		    window.location = 'client/index.php?'+Object.toQueryString(auth) ;
 							    } else {
 								    if (userDiv) {
 									    removeUser(userDiv)
@@ -1735,16 +1735,16 @@ return {
 									timeShow();
 								};
 
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
+								if(intervalCounterId) window.clearInterval(intervalCounterId);
 								intervalCounter=0;
 
 								incrementer(); //do first one
 								intervalCounterId = incrementer.periodical(logOptions.spinrate);
 							},
 							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
+								window.clearInterval(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
@@ -1758,16 +1758,16 @@ return {
 									timeShow();
 								};
 
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
+								if(intervalCounterId) window.clearInterval(intervalCounterId);
 								intervalCounter=0;
 
 								decrementer(); //do first one
 								intervalCounterId = decrementer.periodical(logOptions.spinrate);
 							},
 							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
+								window.clearInterval(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
@@ -1783,16 +1783,16 @@ return {
 									timeShow();
 								};
 
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
+								if(intervalCounterId) window.clearInterval(intervalCounterId);
 								intervalCounter=0;
 
 								decrementer(); //do first one
 								intervalCounterId = decrementer.periodical(logOptions.spinrate);
 							},
 							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
+								window.clearInterval(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});
@@ -1807,16 +1807,16 @@ return {
 									timeShow();
 								};
 								
-								$clear(fetchLogDelay);
-								if(intervalCounterId) $clear(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
+								if(intervalCounterId) $window.clearInterval(intervalCounterId);
 								intervalCounter=0;
 
 								incrementer(); //do first one
 								intervalCounterId = incrementer.periodical(logOptions.spinrate);
 							},
 							'mouseup' : function (e) {
-								$clear(intervalCounterId);
-								$clear(fetchLogDelay);
+								window.clearInterval(intervalCounterId);
+								window.clearTimeout(fetchLogDelay);
 								fetchLogDelay = fetchLog.delay(logOptions.fetchdelay);
 							}
 						});

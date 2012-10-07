@@ -36,9 +36,9 @@ $chatting = cs_query('chats');
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="css/chat-ie.css"/>
 	<![endif]-->
-    <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/mootools-core-1.4.5-full-nocompat.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-FxElementsFxScrollDragMove-1.4.0.1.js" type="text/javascript" charset="UTF-8"></script>
 <?php if($chatting['chat']['rsa'] == 'yes'){?>    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script><?php } ?>
 	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
 <?php 
@@ -72,13 +72,13 @@ if($chatting['chat']['des']) {
         var coordinator = new Coordinator(['rsa','login','dom','verify'],function(activity){
 <?php
 if($chatting['chat']['rsa'] == 'yes'){
-?>          loginRequestOptions.e = activity.get('rsa').e.toString();
-            loginRequestOptions.n = activity.get('rsa').n.toString(10);
+?>          loginRequestOptions.e = activity['rsa'].e.toString();
+            loginRequestOptions.n = activity['rsa'].n.toString(10);
 <?php
 }
-?>          loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
-            loginRequestOptions.msg += ' on:'+Browser.Platform.name;
-            MBchat.init(loginRequestOptions,activity.get('rsa'));
+?>          loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.name+Browser.version;
+            loginRequestOptions.msg += ' on:'+Browser.Platform;
+            MBchat.init(loginRequestOptions,activity['rsa']);
             window.addEvent('beforeunload', function() {
                 MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
             });
@@ -110,43 +110,45 @@ if($chatting['chat']['rsa'] == 'yes'){
 }
 ?>
         MBCAuth(); //Authenticate server and do internal authentication
-        soundManager.url = '/js/';
-        soundManager.flashVersion = 9; // optional: shiny features (default = 8)
+        soundManager.setup({
+            url : '/js/',
+            flashVersion : 9, // optional: shiny features (default = 8)
+	    debugMode:false,
+            onready : function() {
+                if (soundManager.supported()) {
 
-        soundManager.onready (function() {
-            if (soundManager.supported()) {
-
-                soundManager.createSound({
-	                id : 'whispers',
-	                url : "sounds/<?php echo $chatting['sounds']['whisper'] ?>",
-	                autoLoad : true ,
-	                autoPlay : false 
-                });
-                soundManager.createSound({
-	                id : 'move',
-	                url : "sounds/<?php echo $chatting['sounds']['move'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false 
-                });
-                soundManager.createSound({
-	                id : 'speak',
-	                url : "sounds/<?php echo $chatting['sounds']['speak'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false 
-                });
-                soundManager.createSound({
-	                id : 'creaky',
-	                url : "sounds/<?php echo $chatting['sounds']['creaky'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false
-                });
-                soundManager.createSound({
-	                id : 'music',
-	                url : "sounds/<?php echo $chatting['sounds']['music'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false
-                });
-                soundcoord.done('sound',{});
+                    soundManager.createSound({
+	                    id : 'whispers',
+	                    url : "sounds/<?php echo $chatting['sounds']['whisper'] ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false 
+                    });
+                    soundManager.createSound({
+	                    id : 'move',
+	                    url : "sounds/<?php echo $chatting['sounds']['move'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false 
+                    });
+                    soundManager.createSound({
+	                    id : 'speak',
+	                    url : "sounds/<?php echo $chatting['sounds']['speak'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false 
+                    });
+                    soundManager.createSound({
+	                    id : 'creaky',
+	                    url : "sounds/<?php echo $chatting['sounds']['creaky'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false
+                    });
+                    soundManager.createSound({
+	                    id : 'music',
+	                    url : "sounds/<?php echo $chatting['sounds']['music'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false
+                    });
+                    soundcoord.done('sound',{});
+                }
             }
         });
     </script>
