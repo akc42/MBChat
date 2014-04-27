@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 /*
- 	Copyright (c) 2009,2010 Alan Chandler
+ 	Copyright (c) 2009,2010,2014 Alan Chandler
     This file is part of MBChat.
 
     MBChat is free software: you can redistribute it and/or modify
@@ -227,7 +227,7 @@ function markActive($uid) {
     
 
 
-$logfp = fopen(LOG_FILE,'w');
+$logfp = fopen(LOG_FILE,'a');
 $running = false; 
 declare(ticks = 1);
 try {
