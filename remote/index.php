@@ -21,16 +21,26 @@
 /*  Although it doesn't look like it, this file is supposed to return some javascript.  It is
     requested by the browser as it loads the chat page - meaning that the browsers cookies for this
     will be set, enabling us to determine login details.  We will either return some javascript that
-    immediately redirects the user to the chat.html page (saying what an interesting facility chat is, 
+    immediately redirects the user to the /chat.php page (saying what an interesting facility chat is, 
     but you need to be logged on, or we will return some javascript which will ask the server to confirm who he
-    is and then co-ordinate with the rsa generation to allow logon
+    is and then co-ordinate with the other initialization processes (server verify, rsa generation (or a dummy),
+	dom ready)
+	
+	One also has to remember this is running in from a php perspective this is running on the server which is at the
+	remote login location - which must be where the forum is located.  We can't therefore use the chatter server to
+	load any parameters. But from a javascript perspective, this is running within the scope of a page that has been
+	loaded from the chat server.  The 'NO_LOGIN_URL' needs to remember that if they are not both the same server.
+	
+	This code is an example of how to do it for a particular site, you should adjust it (if you are doing external
+	authenitcation outside of chat itself) for whatever criteria you want.  Don't forget to match room numbers for
+	those restricted rooms to those defined in your database.
 */
 
 
 // Link to SMF forum as this is only for logged in members
 // Show all errors:
 error_reporting(E_ALL);
-define('NO_LOGIN_URL','http://www.melindasbackups.com/chat/chat.html');
+define('NO_LOGIN_URL','/chat.php');
 include('./public.inc');
 
 
@@ -39,48 +49,13 @@ function cs_tcheck($key,$pass) {
 }
 //ensure we had a proper request from the chat software
 if (!(isset($_GET['pass']) && cs_tcheck(REMOTE_KEY,$_GET['pass'])))  {
-    header('HTTP/1.0 403 Forbidden');
-?><html>
-    <head>
-        <style type="text/css">
-            body {
-                font-family: Arial;
-                color: #345;
-            }
-            h1 {
-                border-bottom: 3px solid #345;
-            }
-            a {
-                color: #666;
-            }
-        </style>
-    </head>
-    <body>
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-6767400-1']);
-  _gaq.push(['_trackPageview']);
-</script>        
-<h1>Forbidden</h1>
-        <p>This URL is intended to only be called by authorised applications</p>
-<!-- Google Analytics Tracking Code -->
-  <script type="text/javascript">
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
-    })();
-  </script>
-
-    </body>
-</html>
-<?php
-exit;
+	http_response_code(403);
+	exit;
 }
 
 
 
-require_once(dirname(__FILE__).'/../forum/SSI.php');
+require_once($_SERVER['DOCUMENT_ROOT'].'/forum/SSI.php');
 //If not logged in to the forum, not allowed so send back the javascript to redirect to our error page
 if($user_info['is_guest']) {
     echo "window.location = '".NO_LOGIN_URL."' ;\n";

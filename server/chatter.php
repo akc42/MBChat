@@ -18,6 +18,8 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
+define('DB_VERSION',2);  //This should be the latest version of the database
+
 error_reporting(E_ALL);
 date_default_timezone_set('Europe/London');
 
@@ -35,6 +37,8 @@ define('DATA_DIR',$datadir);  //Should be outside of web space
 
 define('DATABASE',DATA_DIR.'chat.db');
 define('INIT_FILE',DATA_DIR.'database.sql');
+define('UPDATE_PREFIX',DATA_DIR.'update_');
+define('UPDATE_SUFFIX','.sql');
 
 
 define('MAX_CMD_LENGTH',2000); 
@@ -244,9 +248,14 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
             $db->exec(file_get_contents(INIT_FILE));
         } else {
             $db = new SQLite3(DATABASE);
+            $version = $db->querySingle("SELECT value FROM parameters WHERE name = 'db_version'");
+            if($version == NULL) $version = 1;
+            $version = intval($version);
+            while ($version < DB_VERSION) {
+            	$db->exec(file_get_contents(UPDATE_PREFIX.$version.UPDATE_SUFFIX));
+            	$version++;
+            }
         }
-
-        $db = new SQLite3(DATABASE);
 
         $db->exec("PRAGMA foreign_keys = ON");
 

@@ -16,94 +16,44 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
-html {
-	overflow:hidden;
-}
 
-body {
-	padding:0px;
-	margin:0px;
-
-	overflow:hidden;
-	width:100%;
-	height:100%;
-}
-
-body
-{
-	color: #000000;
-	font-size: small;
-	font-family: tahoma, sans-serif;
-}
-
-
-#headerContainer {
-	position:absolute;
-	top:100px;
-	left:350px;
-	width:40em;
-	text-align:left;
-}
-#headerContainer h1 {
-	font-size:1.5em;
-	font-family: tahoma, sans-serif;
-	font-weight: normal;
-	color:#737373;
-	margin-left:auto;
-}
 #roomNameContainer {
-	position:absolute;
+/*	position:absolute;
 	top:80px;
 	left:350px;
-	width:16em;
+	width:16em; */
 	text-align:center;
 }
-#roomNameContainer h1 {
+/*#roomNameContainer h1 {
 	font-size:1.5em;
 	font-family: tahoma, sans-serif;
 	font-weight: normal;
 	color:#737373;
 	margin-left:auto;
-}
+}*/
 
 #rsa_generator {
     height:100px;
-    width:240px;
+    width:50%;
     margin:auto;
     background-color:white;
     color:red;
 }
 
-#content {
-	position:absolute;
-	top:140px;
-	left:0px;
-	bottom:0px; 
-	right:0px;
-	width:100%;
-	font-family:Verdana, Arial, Helvetica, sans-serif;
-	font-size:0.8em;
-	background-color:#4A7DB5;
-	background-image:none;
-	color:#000;
-}
-
-#copyright {
-	position: absolute;
-	top:5px;
-	right:5px;
-	color:#FFF781;
-}
-#copyright a {
-	color:#FFF781;
-	cursor:pointer;
-	text-decoration:none;
+.textual {
+	 margin:20px;
+	 border:3px solid black;
+	 background-color:#e0e0e0;
+	 color:black;
+	 padding:20px;
+	 font-family:Verdana, Arial, Helvetica, sans-serif;
+	 font-size:10pt;
 }
 
 #entranceHall {
 	margin-top:50px;
 	margin-left:50px;
-	width:600px;
+/*	width:600px;*/
 	text-align:center;
 	background-color: #4A7DB5;
 }
@@ -159,11 +109,16 @@ body
 .meeting {
 	background: #c17878 url(../images/meeting-room.gif) no-repeat;
 }
-
+.member {
+	background: #8eabdb url(../images/smoking-room.gif) no-repeat;
+}
+.guest {
+	background: url(../images/green-room.gif) no-repeat;
+}
 #exit {
-	position:absolute;
+/*	position:absolute;
 	top:5px;
-	left:15px;
+	left:15px; */
 	height:44px;
 	width: 50px; 
 	overflow:hidden;
@@ -185,6 +140,23 @@ body
 	display:none;
 }
 
+.left_pane, .right_pane {
+	margin:0;
+	padding:0;
+	float:left;
+}
+.left_pane {
+	width:69%;
+}
+.right_pane {
+	width:29%
+}
+.pane_container {
+	margin:0;
+	padding:0;
+	clear:both;
+	width:100%;
+}
 
 span.C {
 	font-style:italic;
@@ -258,11 +230,11 @@ div.hasQuestion {
 }
 
 #onlineListContainer {
-	position:absolute;
+/*	position:absolute;
 	right:20px;
 	top:50px;
 	width:200px;
-	bottom:125px;
+	bottom:125px; */
 	border:1px solid #ADADAD;
 	background-color:#FFF;
 } 
@@ -277,13 +249,10 @@ div.hasQuestion {
 	display:block;
 }
 #onlineList {
-    position:absolute;
-    top:29px;
-    bottom:0px;
-    left:0px;
-    width:100%;
 	overflow-X:hidden;
 	overflow-Y:auto;
+	min-height:30vh;
+	margin:5px;
 }
 div.list {
 	padding:10px 2px;
@@ -293,12 +262,11 @@ div.list {
 
 
 #userOptions {
-	position:absolute;
-	right:20px;
-	bottom:20px;
+
 	color:#FF0000;
 	text-shadow:white 1px 1px;
-	width:200px;
+	padding:5px;
+	margin:5px;
 }
 #soundDelay {
 	margin-left:50px;
@@ -307,24 +275,20 @@ div.list {
 
 
 div.chat {
-	left:20px;
-	top:50px;
-	right:230px;
-	bottom:125px;
-	position:absolute;
+	height:35vh;
+	margin:5px;
 }
 
 div.whisper {
-	height:150px;
-	margin:20px 230px 20px 20px;
+	height:10vh;
+	margin:5px 20px ;
+	background-color:white;
+	color:black;
 }
 
 div.logging {
-	left:20px;
-	top:50px;
-	right:20px;
-	bottom:50px;
-	position:absolute;
+	height:32vh;
+	margin:5px;
 }
 
 
@@ -332,8 +296,9 @@ div.logging {
 #chatList {
 	overflow-X:hidden;
 	overflow-Y:auto;
-/*	border:1px solid #ADADAD; */
+	border:1px solid #ADADAD; 
 	background-color:#FFF;
+	color:#000;
 }
 
 #chatList div {
@@ -341,12 +306,9 @@ div.logging {
 }
 
 #inputContainer {
-	position:absolute;
-	height: 25px;
-	left:20px;
-	bottom:90px;
-	right:230px;
+
 	padding:3px 0px;
+
 }
 
 #messageText {
@@ -470,21 +432,13 @@ span.whisper {
 }
 
 #authblock {
-    color:white;
     padding:50px;
-    font-size:1.2em;
-}
-#authblock a {
-    color:white;
-}
-#authblock td {
-    color:white;
 }
 
 #emoticonContainer {
-	position:absolute;
+/*	position:absolute;
 	left:20px;
-	bottom:10px;
+	bottom:10px; */
 	border:1px solid #ADADAD;
 	padding:3px;
 	background-color:#FFF;
@@ -501,15 +455,14 @@ span.whisper {
 }
 
 #logControls {
-	position:absolute;
-	top:5px;
-	left:115px;
+	margin:5px;
 	height:46px;
 }
 
 #startTimeBlock, #endTimeBlock {
 	float:left;
 	margin:0px 5px;
+	color:black;
 }
 
 #startTextLog, #endTextLog  {
@@ -587,6 +540,4 @@ div.security span {
 #security {
     color:yellow;
 }
-
-
 

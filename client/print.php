@@ -33,21 +33,31 @@ cs_validate();
 
 $print = cs_query('print',$rid,$_GET['start'],$_GET['end']);
 $hephaestus = $print['chatbot'];
-
+$nomessages = true;
 
 if ($rid == 99) {
 	$room = 'Non Standard';
 } else {
 	$room = $_GET['room'];
 }
+function page_title() {
+	echo "MB Chat Printing";
+}
+function head_content() {
+	global $print;
+?>	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
+	<style type="text/css">
+    .textual {
+	    margin:20px;
+	    border:3px solid black;
+	    background-color:#e0e0e0;
+	    color:black;
+	    padding:20px;
+	    font-family:Verdana, Arial, Helvetica, sans-serif;
+	    font-size:10pt;
+    }
+    </style>
 
-
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>MB Chat</title>
-	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
 <?php
 if($print['des']) {
     /* if we have selected a des key. then the messages we have received are encrypted and we need
@@ -58,7 +68,7 @@ if($print['des']) {
         that request completes we then descrypt it back to the proper value before passing it to a routine
         which looks at all the messages we have and takes each one and decrypts them
     */
-?>  <script src="../js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
+?> <!--  --> <script src="../js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script> -->
 	<script src="../js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
     <script src="../js/cipher.js" type="text/javascript" charset="UTF-8"></script>
     <script src="../js/des.js" type="text/javascript" charset="UTF-8"></script>
@@ -74,17 +84,18 @@ if($print['des']) {
     </script>
 <?php
 }
-?></head>
-<body>
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount','<?php echo GOOGLE_ACCOUNT; ?>']);
-  _gaq.push(['_trackPageview']);
-</script>        
-<!-- It is important that chat is called without parameters.  If external authorisation is in place it will jump back to that authentication -->
-<a id="exitPrint" href="../index.php"><img src="../images/exit-forum.gif"/></a>
-<h1>Chat History Log</h1>
-<h2><?php echo $room; ?></h2> 
+}
+function menu_items() {
+?><!-- It is important that chat is called without parameters.  If external authorisation is in place it will jump back to that authentication -->
+ <a id="exitPrint" href="../index.php"><img src="../images/exit-forum.gif"/></a><?php 
+}
+function content_title() {
+	echo "Chat History Log";
+}
+
+function main_content() {
+	global $room,$hephaestus,$print,$tzo,$nomessages;
+?><div class="textual"><h2><?php echo $room; ?></h2> 
 <h3><?php echo date("D h:i:s a",$_GET['start']-$tzo ).' to '.date("D h:i:s a",$_GET['end']-$tzo) ; ?></h3>
 
 <?php
@@ -102,7 +113,7 @@ global $row,$i,$nomessages,$tzo;
 	echo "\n";
 	$nomessages = false;
 }
-$nomessages = true;
+
 foreach($print['rows'] as $row) {
 		switch ($row['type']) {
 		case "LI" :
@@ -154,15 +165,17 @@ if($nomessages) {
 	echo '"C">'.$hephaestus.'</span><span><b>THERE ARE NO MESSAGES TO DISPLAY</b></span><br/>';
 	echo "\n";
 }
-?>
-<!-- Google Analytics Tracking Code -->
-  <script type="text/javascript">
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
-    })();
-  </script>
-</body>
+?></div>
+<?php 
+}
 
-</html>
+function foot_content() {
+ ?>
+    <div id="copyright">MB Chat <span id="version"><?php include('../inc/version.inc');?></span> &copy; 2008-2014
+        <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a>
+    </div>
+
+<?php 
+}
+
+require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc');

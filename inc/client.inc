@@ -19,13 +19,8 @@
 */
 //The following 5 keys need to be adjusted for each installation.  
 
-define('GOOGLE_ACCOUNT','UA-6767755-1');
-
 define('SERVER_DIR','/home/alan/dev/chat/server/');//Should be outside of web space
 define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
-
-define('EXTERNAL_AUTHENTICATION',false);
-define('EXTERNAL_AUTHENTICATOR','http://www.melindasbackups.com/chat/index.php'); //Only needed if EXTERNAL_AUTHENTICATION is true
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);
@@ -95,43 +90,8 @@ function cs_fetch() {
 
 
 function cs_forbidden() {
-    header('HTTP/1.0 403 Forbidden');
-?><html>
-    <head>
-        <style type="text/css">
-            body {
-                font-family: Arial;
-                color: #345;
-            }
-            h1 {
-                border-bottom: 3px solid #345;
-            }
-            a {
-                color: #666;
-            }
-        </style>
-    </head>
-    <body>
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '<?php echo GOOGLE_ACCOUNT;?>']);
-  _gaq.push(['_trackPageview']);
-</script>        
-<h1>Forbidden</h1>
-        <p>This URL is intended to only be called by authorised applications</p>
-<!-- Google Analytics Tracking Code -->
-  <script type="text/javascript">
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
-    })();
-  </script>
-
-    </body>
-</html>
-<?php
-exit;
+    http_response_code(403);
+    exit;
 }
 
 function cs_validate() {

@@ -1,3 +1,4 @@
+
 /*
  	Copyright (c) 2009,2010 Alan Chandler
     This file is part of MBChat.
@@ -21,7 +22,7 @@ MBchat = function () {
     var SECRETARY = 2;
     var ADMIN = 4;
     var MOD = 8;
-    var SPEAKER = 12
+    var SPEAKER = 12;
     var NO_WHISPER = 32;
     /* room types */
     var OPEN = 0;
@@ -134,7 +135,7 @@ MBchat = function () {
 			'lid' : MBchat.updateables.poller.getLastId(),
 			'rid' : room.rid});
 	};
-	var contentSize;
+
 	var pO;
 
 
@@ -415,10 +416,6 @@ return {
 	        regExpStr += ')';
  	        emoticonRegExpStr = new RegExp(regExpStr, 'gm');
        }
-	    contentSize = $('content').getCoordinates();
-	    window.addEvent('resize', function() {
-		    contentSize = $('content').getCoordinates();
-	    });
 	    //lets login
         loginReq.post(loginOptions);
 	},
@@ -899,10 +896,8 @@ return {
 									    }
 								    } else {
 									    if (room.rid == 0) {
-										    var messageList=$('chatList');
 										    //I'm in entrance hall so have to make it look like a room
-										    messageList.removeClass('whisper');
-										    messageList.addClass('chat');
+										    document.id('chatList').removeClass('whisper').addClass('chat').inject('first_left'); //move chat list to become a room
 										    $('inputContainer').set('styles',{ 'display':'block'});
 										    $('emoticonContainer').set('styles',{ 'display':'block'});
 										    $('entranceHall').set('styles',{'display':'none'});	
@@ -934,7 +929,6 @@ return {
 									    $('messageText').focus();
 									    MBchat.sounds.resetTimer();
 									    whisperBox.setStyle('display','none');
-									    $('content').setStyles(contentSize);
 									    MBchat.sounds.roomMove();
 								    }
 							    } else {
@@ -957,10 +951,7 @@ return {
 								    MBchat.updateables.online.show(room.rid); //reshow the online list from scratch
 								    $('messageText').focus();
 								    if (room.rid == 0) {
-									    var messageList=$('chatList');
-									    //need to restore entrance hall
-									    messageList.removeClass('chat');
-									    messageList.addClass('whisper');
+								    	document.id('chatList').removeClass('chat').addClass('whisper').inject('second_left'); //move back to hallway
 									    $('inputContainer').set('styles',{ 'display':'none'});
 									    $('emoticonContainer').set('styles',{ 'display':'none'});
 									    $('entranceHall').set('styles',{'display':'block'});
@@ -973,7 +964,6 @@ return {
 							    //need to make a whisper box with my whisperers in it (if not closed already)
 									    $('W'+privateRoom).setStyle('display','block');
 								    }
-								    $('content').setStyles(contentSize);
 								    privateRoom = 0;
 							    } else {
 								    MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
@@ -1003,26 +993,25 @@ return {
 
 			}(),
 			message : function () {
-				var messageList; 
+				var messageList;
 				var mlScroller;
 				var lastId;
 				return {
 					init: function () {
-						messageList = $('chatList');
+						messageList = document.id('chatList');
 						mlScroller = new Fx.Scroll(messageList,{'link':'cancel'});
 						lastId = null;
 					},
 					enterRoom: function(rid) {
 						lastId = null;  //prepare to fill up with old messages
-						messageList.removeClass('whisper');
-						messageList.empty();
-						messageList.addClass('chat');
+						messageList.removeClass('whisper').addClass('chat').empty();
 						$('roomNameContainer').empty();
 						$('inputContainer').removeClass('hide');
 						if(!me.is(BLIND)) {
 						    $('emoticonContainer').removeClass('hide');
 						}
 						$('entranceHall').addClass('hide');	
+						messageList.inject(document.id('first_left'));  //Move it to top row
 						var exit = $('exit');
 						exit.addClass('exit-r');
 						exit.removeClass('exit-f');
@@ -1064,7 +1053,10 @@ return {
 					},
 					leaveRoom: function () {
 						lastId = null;
+						messageList.removeClass('chat').addClass('whisper').empty();
+						messageList.inject(document.id('second_left')); //move message list down the bottom
 						var request = new ServerReq ('client/exit.php',function(response) {
+							var contents;
 							response.messages.each(function(item) {
 								item.lid = item.lid.toInt();
 								item.rid = item.rid.toInt();
@@ -1089,9 +1081,6 @@ return {
 							});
 						}
 						room.set (entranceHall);;   //Set up to be in the entrance hall 
-						messageList.removeClass('chat');
-						messageList.empty();
-						messageList.addClass('whisper');
 						$('roomNameContainer').empty();
 						var el = new Element('h1')
 							.set('text', room.name)
@@ -1102,6 +1091,7 @@ return {
 						var exit = $('exit');	
 						exit.addClass('exit-f');
 						exit.removeClass('exit-r');
+
 						MBchat.sounds.resetTimer();
 					},
 					processMessage: function (msg) {
@@ -1309,7 +1299,6 @@ return {
 					var closeBox = whisper.getElement('.closeBox');
 					var leaveWhisper = new ServerReq('client/leavewhisper.php',function(response) {
 						whisper.destroy();
-						$('content').setStyles(contentSize);
 					});
 					closeBox.addEvent('click', function(e) {
 						leaveWhisper.transmit({'wid': wid});
@@ -1371,13 +1360,11 @@ return {
 							el.getElement('.whisperInput').focus();
 						}
 					});
-					$('content').setStyles(contentSize);
 					return whisper;
 				}
 				var removeUser = function(whisperBox,uid) {
 					if (me.uid == uid) {
 						whisperBox.destroy();
-						$('content').setStyles(contentSize);
 					} else {
 						var span = $(whisperBox.get('id')+'U'+uid);
 						if (span) {
@@ -1385,7 +1372,6 @@ return {
 						}
 						if (whisperBox.getElement('.whisperList').getChildren().length == 0 ) {
 							whisperBox.destroy();
-							$('content').setStyles(contentSize);
 						}
 					}
 				}
@@ -1449,7 +1435,6 @@ return {
 						    dragMan.setStyles(startPosition);
 						    var dragDestroy = function() {
 							    dragMan.destroy();
-							    $('content').setStyles(contentSize);
 						    }
 						    el.addEvent('mouseup', dragDestroy);
 						    displayUser(user,dragMan);
@@ -1459,7 +1444,6 @@ return {
 							    transition: Fx.Transitions.Quad.easeOut,
 							    onComplete: function (dragged) {
 								    dragged.destroy();
-								    $('content').setStyles(contentSize);
 							    }
 						    });
 						    dragMan.inject(document.body);
@@ -1536,7 +1520,6 @@ return {
 						    });
 						    drag.start(event);
 						}
-						$('content').setStyles(contentSize);
 					},
 					processMessage: function (msg) {
 						var lid = msg.lid.toInt();
@@ -1613,6 +1596,8 @@ return {
 				var logControls;
 				var printLog;
 				var messageList;
+				var topPane;
+				var bottomPane;
 				var timeShowStartLog;
 				var timeShowEndLog;
 				var aSecond = 1000;
@@ -1710,9 +1695,11 @@ return {
 				};
 				return {
 					init: function() {
-						logControls = $('logControls');
-						messageList = $('chatList');
-						printLog = $('printLog');
+						logControls = document.id('logControls');
+						messageList = document.id('chatList');
+						topPane = document.id('first_right');
+						bottomPane = document.id('second_right');
+						printLog = document.id('printLog');
 						printLog.addEvent('click',function(e) {
 							printQuery += '&start='+ Math.floor(new Date(endTime.getTime()-startTimeOffset).getTime()/1000);
 							printQuery += '&end='+Math.ceil(endTime.getTime()/1000);
@@ -1808,7 +1795,7 @@ return {
 								};
 								
 								window.clearTimeout(fetchLogDelay);
-								if(intervalCounterId) $window.clearInterval(intervalCounterId);
+								if(intervalCounterId) window.clearInterval(intervalCounterId);
 								intervalCounter=0;
 
 								incrementer(); //do first one
@@ -1824,10 +1811,8 @@ return {
 					startLog: function (rid,roomName) {
 						logRid = rid;
 						MBchat.updateables.poller.stop(); //presence polls still happen
-						messageList.removeClass('whisper');
-						messageList.removeClass('chat');
-						messageList.addClass('logging');
-						messageList.empty();
+						messageList.removeClass('whisper').removeClass('chat').addClass('logging').empty();
+						messageList.inject('first_left');
 						printQuery = 'uid='+auth.uid+'&pass='+auth.pass+'&rid='+rid+'&room='+roomName ;
 						$('inputContainer').addClass('hide');
 						$('emoticonContainer').addClass('hide');
@@ -1837,6 +1822,9 @@ return {
 						exit.removeClass('exit-f');
 						exit.addClass('exit-r');
 						$('soundOptions').addClass('hide');
+						document.id('userOptions').inject(topPane); //User controls move up because on line list has gone.
+						topPane.addClass('textual');
+						bottomPane.removeClass('textual');
 						$('onlineListContainer').addClass('hide');
 						logControls.removeClass('hide');
 						endTime = new Date();
@@ -1849,6 +1837,9 @@ return {
 					returnToEntranceHall : function() {
 						logControls.addClass('hide');
 						messageList.removeClass('logging');
+						document.id('userOptions').inject(bottomPane); //Move user controls to back where they normally are
+						topPane.removeClass('textual');
+						bottomPane.addClass('textual');
 						$('header').removeClass('hide');
 						$('content').removeClass('hide');
 						$('entranceHall').removeClass('hide');	
