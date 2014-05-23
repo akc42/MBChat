@@ -51,8 +51,12 @@ to use the the external mechanism.
 
 The example of how to do external authentication against an SMF forum and provide the correct data to chat is given
 in the script remote/index.php.  Although it is a PHP script the output returned is actually a javascript source file
-which either prevents the user continuing by redirecting to a backup page, or provides all the credentials necessary
-to provide chat with the information it needs to setup the rest if the system for the user.
+which either prevents the user continuing by redirecting to a backup page (location defined at the head of this script
+file), or provides all the credentials necessary to provide chat with the information it needs to setup the rest if 
+the system for the user. 
+
+The remote/count.php file is an example of how a remote site can find out how many people in chat.  It needs telling where
+the login/count.php script is on the machine running chat.
 
 ## Using chat.
 
