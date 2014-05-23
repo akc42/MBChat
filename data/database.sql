@@ -64,6 +64,8 @@ INSERT INTO parameters (name,value,grp) VALUES
 ('music','iyl.mp3',2), -- file name in sound directory to background music
 
 -- Colours of different roles separated out for easy of use uses the colours json object - name represents the role id.
+-- You can choose as many, or as few roles as you like, although 'S','M','R' and 'C' have special meaning and should
+-- not be removed. 
 
 ('A','843B00',3), -- brown CEO (Not Used)
 ('L','036972',3), -- teal DIRECTOR (Kelley, Cherry)

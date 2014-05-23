@@ -173,14 +173,6 @@ span.errorMessage {
 	color:red;
 }
 
-span.A,span.L,span.H,span.G,span.M,span.B,span.R,span.S,span.C {
-	padding:0 2px;
-}
-
-/* circumstances when name is bold (others name will be in normal weight) */
-#chatList span.A,#chatList span.L,span.H,span.G,span.S,span.M,#chatList span.B, #chatList span.R,#chatList  span.S {
-	font-weight: bold;
-}
 
 #onlineList>div {
 	padding:2px;

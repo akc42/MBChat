@@ -45,17 +45,30 @@ function page_title() {
 }
 function head_content() {
 	global $print;
+	$chatting = cs_query('chats');
 ?>	<link rel="stylesheet" type="text/css" href="../css/chat-pr.css" title="mbstyle"/>
 	<style type="text/css">
-    .textual {
-	    margin:20px;
-	    border:3px solid black;
-	    background-color:#e0e0e0;
-	    color:black;
-	    padding:20px;
-	    font-family:Verdana, Arial, Helvetica, sans-serif;
-	    font-size:10pt;
-    }
+	    .textual {
+		    margin:20px;
+		    border:3px solid black;
+		    background-color:#e0e0e0;
+		    color:black;
+		    padding:20px;
+		    font-family:Verdana, Arial, Helvetica, sans-serif;
+		    font-size:10pt;
+	    }
+<?php
+		/*
+		 * We iterate through all the role/colours creating the css elements that are needed for each
+		 */
+		foreach($chatting['colours'] as $role => $colour) {
+?>		span.<?php echo $role; ?> {
+			padding:0 2px;
+			color:#<?php echo $colour;?>;   
+    	}
+<?php 
+		}
+?>
     </style>
 
 <?php

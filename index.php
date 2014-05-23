@@ -187,47 +187,22 @@ if($chatting['chat']['external'] == '') {
             ?>"></script>
 <?php 
 }
-?>    <style type="text/css">
-    
-        /* these are the classes related to user types */
-        /* admin */
-        span.A {
-	        color:#<?php echo $chatting['colours']['A'];?>;   
+?>  <style type="text/css">
+<?php
+		/*
+		 * We iterate through all the role/colours creating the css elements that are needed for each
+		 */
+		foreach($chatting['colours'] as $role => $colour) {
+?>		span.<?php echo $role; ?> {
+			padding:0 2px;
+			color:#<?php echo $colour;?>;   
         }
-
-        /*leadership team */
-        span.L {
-	        color:#<?php echo $chatting['colours']['L'];?>;   
+        #chatList span.<?php echo $role; ?> {
+        	font-weight: bold;
         }
-        /* head */
-        span.H {
-	        color:#<?php echo $chatting['colours']['H'];?>;
-        }
-        /* special guests */
-        span.G {
-	        color:#<?php echo $chatting['colours']['G'];?>;
-        } 
-        /* Special is ordinary members promoted */
-        span.S {
-	        color:#<?php echo $chatting['colours']['S'];?>;
-        }
-        /* moderator */
-        span.M {
-	        color:#<?php echo $chatting['colours']['M'];?>;
-        }
-        /* guests */
-        span.B {	
-	        color:#<?php echo $chatting['colours']['B'];?>;
-        }
-        /* regular members */
-        span.R {
-	        color:#<?php echo $chatting['colours']['R'];?>;
-        }
-        /* chatbot */
-        span.C {
-            color:#<?php echo $chatting['colours']['C'];?>;
-        }
-    </style>
+<?php 
+		}
+?>	</style>
 <?php 
 }
 function content_title() {
