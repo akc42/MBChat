@@ -18,29 +18,43 @@
 */
 require_once('../inc/client.inc');
 
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<link rel="stylesheet" type="text/css" href="../css/header.css" />
-    <title>MB Chat</title>
-	<link rel="stylesheet" type="text/css" href="../css/chat.css" />
-	<!--[if lt IE 7]>
-		<link rel="stylesheet" type="text/css" href="../css/chat-ie.css"/>
-	<![endif]-->
-</head>
-<body>
-<?php require('../inc/header.inc'); ?>
-<div id="roomNameContainer"><h1>Logged Off</h1></div>
-<div id="content">
-    <div id="authblock">
+function page_title() {
+	echo "Logged Off";
+}
+function head_content() {
+?>	<style type="text/css">
+	.textual {
+		margin:20px;
+		border:3px solid black;
+		background-color:#e0e0e0;
+		color:black;
+		padding:20px;
+		font-family:Verdana, Arial, Helvetica, sans-serif;
+		font-size:10pt;
+	}
+	</style>
+<?php 	
+}
+function content_title() {
+	echo "Logged Off";
+}
+
+function menu_items() {
+}
+
+function main_content() {
+?><div class="textual"><div id="authblock">
         <p>Sorry, but another person is already logged into chat with the same credentials as you and chat can only support one instance of
         each person running at the same time.</p>
         <p>If you have rectified the problem and would like to return to try again, please click <a href="../index.php">here</a></p>
     </div>
-    <div id="copyright">MB Chat <span id="version"><?php include('../inc/version.inc');?></span> &copy; 2008-2010
+    </div>
+ <?php 
+}
+
+function foot_content() {
+ ?>    <div id="copyright">MB Chat <span id="version"><?php include('../inc/version.inc');?></span> &copy; 2008-2010
         <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a></div>
-</div>
-<?php require('../inc/footer.inc'); ?>
-</body>
-</html>
+<?php
+ }
+ require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc');

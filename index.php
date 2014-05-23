@@ -26,28 +26,31 @@ require_once('./inc/client.inc');
 
 $chatting = cs_query('chats');
 
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<link rel="stylesheet" type="text/css" href="css/header.css" />
-    <title>MB Chat</title>
-	<link rel="stylesheet" type="text/css" href="css/chat.css" />
+function page_title() {
+	echo "MB Chat";
+}
+
+function head_content() {
+	global $chatting;
+?>	<link rel="stylesheet" type="text/css" href="css/chat.css" />
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="css/chat-ie.css"/>
 	<![endif]-->
-    <script src="js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-core-1.4.5-full-nocompat-yc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/mootools-1.2.4.4-more-chat.js" type="text/javascript" charset="UTF-8"></script>
-<?php if($chatting['chat']['rsa'] == 'yes'){?>    <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script><?php } ?>
-	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
+	<script src="js/mootools-FxElementsFxScrollDragMove-1.4.0.1-yc.js" type="text/javascript" charset="UTF-8"></script>
+<?php if($chatting['chat']['rsa'] == 'yes'){
+?>	<script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script>
+<?php } 
+?>	<script src="js/mbchat-min-<?php include('./inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script> 
 <?php 
-if($chatting['chat']['rsa'] == 'yes' || !(EXTERNAL_AUTHENTICATION)){
+if($chatting['chat']['rsa'] == 'yes' || $chatting['chat']['external'] == ''){
 ?>  <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script>
 <?php 
 } 
-?>  <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
+?>	<script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/soundmanager2.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/mbcauth-min-<?php include('./inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 if($chatting['chat']['des']) {
 ?>  <script src="js/des.js" type="text/javascript" charset="UTF-8"></script>
@@ -72,32 +75,42 @@ if($chatting['chat']['des']) {
         var coordinator = new Coordinator(['rsa','login','dom','verify'],function(activity){
 <?php
 if($chatting['chat']['rsa'] == 'yes'){
-?>          loginRequestOptions.e = activity.get('rsa').e.toString();
-            loginRequestOptions.n = activity.get('rsa').n.toString(10);
+?>          loginRequestOptions.e = activity['rsa'].e.toString();
+            loginRequestOptions.n = activity['rsa'].n.toString(10);
 <?php
 }
-?>          loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.Engine.name+Browser.Engine.version;
-            loginRequestOptions.msg += ' on:'+Browser.Platform.name;
-            MBchat.init(loginRequestOptions,activity.get('rsa'));
+?>          loginRequestOptions.msg = 'MBChat version:'+MBChatVersion+' using:'+Browser.name+Browser.version;
+            loginRequestOptions.msg += ' on:'+Browser.Platform;
+            MBchat.init(loginRequestOptions,activity['rsa']);
             window.addEvent('beforeunload', function() {
                 MBchat.logout(); //Will send you back from whence you came (if you are not already on the way)
             });
             soundcoord.done('chat',{});
-        });
+        }); //End coordinator complete function
 <?php
 if($chatting['chat']['rsa'] == 'yes'){
+	/*
+	 * From a php perspective, if we are doing rsa, then we contruct a javascript function to 
+	 * be called by the rsa.generateAsync function as a callback when its complete 
+	 */
 ?>      var rsa = new RSA();
-        function genResult (key,rsa) {
+        function genResult (key,rsa) { 
 <?php
 } else {
+	/*
+	 * from a php perspective if we are not doing rsa, then key as a blank is what is returned
+	 */
 ?>		var key = {};
 
 <?php
 }
+	/*
+	 *  this next line is within a function if its rsa, or inline with key={}; for the other situation 
+	 */
 ?>            coordinator.done('rsa',key);
 <?php
 if($chatting['chat']['rsa'] == 'yes'){
-?>        };
+?>        }; //end genResult
         /*
             We are kicking off a process to generate a rsa public/private key pair.  Typically this
             takes about 1.2 seconds or so to run to completion with this key length, so should be done
@@ -108,104 +121,105 @@ if($chatting['chat']['rsa'] == 'yes'){
         rsa.generateAsync(64,65537,genResult);
 <?php
 }
-?>
-        MBCAuth(); //Authenticate server and do internal authentication
-        soundManager.url = '/js/';
-        soundManager.flashVersion = 9; // optional: shiny features (default = 8)
+if($chatting['chat']['external'] == '') {
+	/*
+	 * We are doing internal authentication, so we call MBCAuth with correct parameters to say so
+	 * it then does both coordinator.done['verify'] stage and coodinator.done['login'] stage
+	 */
+?>		MBCAuth(true,<?php echo $chatting['chat']['purge_guest'];?>);
+<?php 
+} else {
+	/*
+	 * We are doing external authentication so we call MBACAuth with parameters to say not doing internal
+	 * It then does only the coordinator.done['verify'] stage, leaving the login stage to the external authentication script
+	 * which will be added below
+	 */
+?>		MBCAuth(false);
+<?php 
+}
+?>		soundManager.setup({
+            url : 'js/',
+            flashVersion : 9, // optional: shiny features (default = 8)
+	    	debugMode:false,
+            onready : function() {
+                if (soundManager.supported()) {
 
-        soundManager.onready (function() {
-            if (soundManager.supported()) {
-
-                soundManager.createSound({
-	                id : 'whispers',
-	                url : "sounds/<?php echo $chatting['sounds']['whisper'] ?>",
-	                autoLoad : true ,
-	                autoPlay : false 
-                });
-                soundManager.createSound({
-	                id : 'move',
-	                url : "sounds/<?php echo $chatting['sounds']['move'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false 
-                });
-                soundManager.createSound({
-	                id : 'speak',
-	                url : "sounds/<?php echo $chatting['sounds']['speak'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false 
-                });
-                soundManager.createSound({
-	                id : 'creaky',
-	                url : "sounds/<?php echo $chatting['sounds']['creaky'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false
-                });
-                soundManager.createSound({
-	                id : 'music',
-	                url : "sounds/<?php echo $chatting['sounds']['music'] ; ?>",
-	                autoLoad : true ,
-	                autoPlay : false
-                });
-                soundcoord.done('sound',{});
+                    soundManager.createSound({
+	                    id : 'whispers',
+	                    url : "sounds/<?php echo $chatting['sounds']['whisper'] ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false 
+                    });
+                    soundManager.createSound({
+	                    id : 'move',
+	                    url : "sounds/<?php echo $chatting['sounds']['move'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false 
+                    });
+                    soundManager.createSound({
+	                    id : 'speak',
+	                    url : "sounds/<?php echo $chatting['sounds']['speak'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false 
+                    });
+                    soundManager.createSound({
+	                    id : 'creaky',
+	                    url : "sounds/<?php echo $chatting['sounds']['creaky'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false
+                    });
+                    soundManager.createSound({
+	                    id : 'music',
+	                    url : "sounds/<?php echo $chatting['sounds']['music'] ; ?>",
+	                    autoLoad : true ,
+	                    autoPlay : false
+                    });
+                    soundcoord.done('sound',{});
+                }
             }
         });
     </script>
-<?php if(EXTERNAL_AUTHENTICATION) {
+<?php if($chatting['chat']['external'] <> '') {
+	/*
+	 * We authenticate through a php script which returns javascript as its output
+	 */
 ?>    <script type="text/javascript" src="<?php
         $data = array( 'pass' => md5(REMOTE_KEY));
-        echo  EXTERNAL_AUTHENTICATOR.'?'.http_build_query($data);       
+        echo  $chatting['chat']['external'].'?'.http_build_query($data);       
             ?>"></script>
 <?php 
 }
-?>    <style type="text/css">
-    
-        /* these are the classes related to user types */
-        /* admin */
-        span.A {
-	        color:#<?php echo $chatting['colours']['A'];?>;   
+?>  <style type="text/css">
+<?php
+		/*
+		 * We iterate through all the role/colours creating the css elements that are needed for each
+		 */
+		foreach($chatting['colours'] as $role => $colour) {
+?>		span.<?php echo $role; ?> {
+			padding:0 2px;
+			color:#<?php echo $colour;?>;   
         }
-
-        /*leadership team */
-        span.L {
-	        color:#<?php echo $chatting['colours']['L'];?>;   
+        #chatList span.<?php echo $role; ?> {
+        	font-weight: bold;
         }
-        /* head */
-        span.H {
-	        color:#<?php echo $chatting['colours']['H'];?>;
-        }
-        /* special guests */
-        span.G {
-	        color:#<?php echo $chatting['colours']['G'];?>;
-        } 
-        /* Special is ordinary members promoted */
-        span.S {
-	        color:#<?php echo $chatting['colours']['S'];?>;
-        }
-        /* moderator */
-        span.M {
-	        color:#<?php echo $chatting['colours']['M'];?>;
-        }
-        /* guests */
-        span.B {	
-	        color:#<?php echo $chatting['colours']['B'];?>;
-        }
-        /* regular members */
-        span.R {
-	        color:#<?php echo $chatting['colours']['R'];?>;
-        }
-        /* chatbot */
-        span.C {
-            color:#<?php echo $chatting['colours']['C'];?>;
-        }
-    </style>
-
-</head>
-<body>
-<?php require('./inc/header.inc'); ?>
-<div id="roomNameContainer"></div>
-<div id="content">
+<?php 
+		}
+?>	</style>
+<?php 
+}
+function content_title() {
+?>	<div id="roomNameContainer"></div>
+<?php 
+}
+function menu_items() {
+?><div id="exit" class="exit-f"></div> 
+<?php 
+}
+function main_content() {
+	global $chatting;
+?>
   <div id="rsa_generator" class="loading"></div> 
-    <div id="authblock" class="hide">
+    <div id="authblock" class="hide textual">
 <?php
 if($chatting['chat']['guests_allowed'] == 'yes') {
 ?>
@@ -234,40 +248,49 @@ if($chatting['chat']['guests_allowed'] == 'yes') {
     </div>
 
     <div id="chatblock" class="hide">
-        <div id="exit" class="exit-f"></div>
-        <div id="logControls" class="hide">
-	        <div id="startTimeBlock">
-		        <div id="startTextLog">Log Start Time</div>
-		        <div id="minusStartLog"></div><div id="timeShowStartLog"></div><div id="plusStartLog"></div>
-	        </div>
-	        <div id="endTimeBlock">
-		        <div id="endTextLog">Log End Time</div>
-		        <div id="minusEndLog"></div><div id="timeShowEndLog"></div><div id="plusEndLog"></div>
-         	</div>
-	        <div id="printLog"></div>
-        </div>
-        <div id="entranceHall"></div>
-        <div id="onlineListContainer">
-	        <h4>Users Online</h4>
-	        <div id="onlineList" class="loading"></div>
-        </div>
-        <div id="chatList" class="whisper"></div>	
+    	<div class="pane_container">
+    		<div id="first_left" class="left_pane">
+				       
+		        <div id="logControls" class="hide">
+			        <div id="startTimeBlock">
+				        <div id="startTextLog">Log Start Time</div>
+				        <div id="minusStartLog"></div><div id="timeShowStartLog" class="timeBlock"></div><div id="plusStartLog"></div>
+			        </div>
+			        <div id="endTimeBlock">
+				        <div id="endTextLog">Log End Time</div>
+				        <div id="minusEndLog"></div><div id="timeShowEndLog" class="timeBlock"></div><div id="plusEndLog"></div>
+		         	</div>
+			        <div id="printLog"></div>
+		        </div>
+		        <div id="entranceHall"></div>
+		    </div>
+		    <div id="first_right" class="right_pane">
+		        <div id="onlineListContainer">
+			        <h4>Users Online</h4>
+			        <div id="onlineList" class="loading"></div>
+		        </div>
+		    </div>
+		    <div style="clear:both;"></div>
+	    </div>
+	    <div class="pain_container">
+	    	<div id="second_left" class="left_pane">
 
-        <div id="inputContainer" class="hide">
-	        <form id="messageForm" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		        <input id="messageText" type="text" name="text" />
-		        <input type="submit" name="submit" value="Send"/>
-            </form>
-        </div>
-        <div id="whisperBoxTemplate">
-	        <div class="private"></div><div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
-	        <div class="whisperList"></div>
-	        <form action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
-		        <input type="text" name="text" class="whisperInput" />
-		        <input type="submit" name="submit" value="Send" class="whisperSend"/>
-	        </form>
-        </div>
-        <div id="emoticonContainer" class="hide">
+	
+		        <div id="inputContainer" class="hide">
+			        <form id="messageForm" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+				        <input id="messageText" type="text" name="text" />
+				        <input type="submit" name="submit" value="Send"/>
+		            </form>
+		        </div>
+		        <div id="whisperBoxTemplate">
+			        <div class="private"></div><div class="dragHandle">Whisper Box</div><div class="closeBox"></div>
+			        <div class="whisperList"></div>
+			        <form action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
+				        <input type="text" name="text" class="whisperInput" />
+				        <input type="submit" name="submit" value="Send" class="whisperSend"/>
+			        </form>
+		        </div>
+		        <div id="emoticonContainer" class="hide">
 <?php
 $dir = $chatting['chat']['emoticon_dir'];
 $urlbase = $chatting['chat']['emoticon_url'];
@@ -287,27 +310,38 @@ foreach ($fns as $filename) {
 		 }
 	}
 }
-?>      </div>
-        <div id="userOptions">
-            <form>
-	            <input id="autoScroll" type="checkbox" checked="checked" />
-	            <label for="autoScroll">Autoscroll</label>
-	            <span id="soundOptions">
-		            <input id="musicEnabled" type="checkbox" />
-		            <label for="musicEnabled">Enable Music</label><br/>
-		            <input id="soundEnabled" type="checkbox" checked="checked"/>
-		            <label for="soundEnabled">Enable Sound</label><br/>
-		            <input id="soundDelay" type="text" size="1" value="5" />
-		            <label for="soundDelay">Minutes 'till sound</label>
-	            </span>
-            </form>
+?>		    	</div>
+				<div id="chatList" class="whisper"></div>
+		    </div>
+		    <div id="second_right" class="right_pane textual">
+				<div id="userOptions">
+		            <form>
+			            <input id="autoScroll" type="checkbox" checked="checked" />
+			            <label for="autoScroll">Autoscroll</label>
+			            <span id="soundOptions">
+				            <input id="musicEnabled" type="checkbox" />
+				            <label for="musicEnabled">Enable Music</label><br/>
+				            <input id="soundEnabled" type="checkbox" checked="checked"/>
+				            <label for="soundEnabled">Enable Sound</label><br/>
+				            <input id="soundDelay" type="text" size="1" value="5" />
+				            <label for="soundDelay">Minutes 'till sound</label>
+			            </span>
+		            </form>
+				</div>
+			</div>
+			<div style="clear:both;"></div>
         </div>
     </div>
-    <div id="copyright">MB Chat <span id="version"><?php include('./inc/version.inc');?></span> &copy; 2008-2010
+
+ <?php 
+ }
+ function foot_content() {
+ ?>
+    <div id="copyright">MB Chat <span id="version"><?php include('./inc/version.inc');?></span> &copy; 2008-2014
         <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a>
     </div>
-</div>
-<?php require('./inc/footer.inc'); ?>
-</body>
-</html>
 
+<?php 
+}
+
+require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc');

@@ -29,7 +29,7 @@ if($user_info['is_guest']) {
 
 include('./public.inc');
 
-define('SERVER_LOCATION','http://chat.melindasbackups.com/login/count.php');   //Where the chat server 
+define('SERVER_LOCATION','/chat/login/count.php');   //Where the chat server 
 
 
 $data = array('pass' => md5(REMOTE_KEY));
