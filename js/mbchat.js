@@ -664,8 +664,7 @@ return {
 												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
 												qtext = replaceEmoticons(qtext); //Then replace emoticons.
 												question.set('html',
-													'<h4>Click to Release Question</h4>',
-													'<p>',qtext,'</p>'); 
+													'<h4>Click to Release Question</h4><p>'+qtext+'</p>'); 
 												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
 												question.inject(document.body);
 											}
@@ -702,7 +701,7 @@ return {
 													    {'id' :  'Q'+div.get('id').substr(1),'class':'question'});
 													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
 													qtext = replaceEmoticons(qtext); //Then replace emoticons.
-													question.set('html','<p>',qtext,'</p>'); 
+													question.set('html','<p>'+qtext+'</p>'); 
 													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
 													div.addClass('hasQuestion');
 													question.inject(document.body);
