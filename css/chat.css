@@ -176,11 +176,11 @@ span.errorMessage {
 	position:relative;
 }
 
-#onlineList span.whisperer {
+#onlineList div.whisperer {
 	cursor: pointer;
 }
 
-#onlineList span {
+#onlineList div {
 	cursor:default;
 }
 
@@ -207,7 +207,7 @@ span.errorMessage {
 .question {
 	position:absolute;
 	width:150px;
-	z-index:10;
+	z-index:520;
 	border:1px dotted green;
 	padding:2px 5px;
 	font-size:x-small;
@@ -322,7 +322,7 @@ div.logging {
 	width:300px;
 	height:81px;
 	border:1px solid red;
-	z-index:2;
+	z-index:550;
 }
 
 .private {
@@ -349,7 +349,7 @@ div.logging {
 }
 
 div.wBactive {
-	z-index:10;
+	z-index:600;
 }
 
 .dragHandle {
@@ -415,6 +415,7 @@ span.whisper {
 	border:2px solid blue;
 	background:transparent;
 	cursor:move;
+	width:20vw;
 }
 .dragOver {
 	border:3px solid black;

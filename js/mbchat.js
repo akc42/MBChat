@@ -780,15 +780,15 @@ return {
 					        if (user.uid != me.uid && !me.is(NO_WHISPER) 
 					                      && (crossWhisper || (me.role != 'B' && user.role != 'B') || ( me.role == 'B' && user.role === 'B' ))) {
 					            var ww = function(e) { 
-							        MBchat.updateables.whispers.whisperWith(user,span,e);
+							        MBchat.updateables.whispers.whisperWith(user,div,e);
 						        };
                                 if(me.is(BLIND)) {
                                     div.addEvent('click',ww);
                                     div.addClass('whisperer');
                                 } else { 
-						            span.addEvent('mousedown',ww);
-						            span.addEvent('touchstart',ww); //Support touch screens as well
-						            div.getFirst().addClass('whisperer');
+						            div.addEvent('mousedown',ww);
+						            div.addEvent('touchstart',ww); //Support touch screens as well
+						            div.addClass('whisperer');
 						        }
 					        }
 						} 
