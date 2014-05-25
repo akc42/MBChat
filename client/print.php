@@ -81,26 +81,40 @@ if($print['des']) {
         that request completes we then descrypt it back to the proper value before passing it to a routine
         which looks at all the messages we have and takes each one and decrypts them
     */
-?> <!--  --> <script src="../js/mootools-1.2.4-core.js" type="text/javascript" charset="UTF-8"></script> -->
-	<script src="../js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
+	if(defined('DEBUG')) {
+?>  <script src="../js/mootools-core-1.5.0-full-nocompat.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	} else {
+?>  <script src="../js/mootools-core-1.5.0-full-nocompat-yc.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	}
+?>	<script src="../js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
     <script src="../js/cipher.js" type="text/javascript" charset="UTF-8"></script>
     <script src="../js/des.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="../js/mbcprint.js" type="text/javascript" charset="UTF-8"></script>
-    <script type="text/javascript">
+<?php 
+	if(defined('DEBUG')) {
+?>  <script src="../js/mbcprint.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	} else {
+?>  <script src="../js/mbcprint-min-<?php include('../inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	}
+?>    <script type="text/javascript">
+    <!--
         var uid = <?php echo $_GET['uid']; ?>;
         var pass = "<?php echo md5("U".$_GET['uid']."P".sprintf("%010u",ceil(time()/100)*100)); ?>";
         var coord = MBCprint(uid,pass);
         window.addEvent('domready', function() {
             coord.done('dom',{});
         });
-        
-    </script>
+    //-->    
+    </script><noscript>This application requires that Javascript is enabled in your browser!</noscript>
 <?php
 }
 }
 function menu_items() {
 ?><!-- It is important that chat is called without parameters.  If external authorisation is in place it will jump back to that authentication -->
- <a id="exitPrint" href="../index.php"><img src="../images/exit-forum.gif"/></a><?php 
+ <a id="exitPrint" href="../index.php"><img src="../img/exit-forum.gif"/></a><?php 
 }
 function content_title() {
 	echo "Chat History Log";

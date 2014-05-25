@@ -39,7 +39,7 @@ define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web spac
  * defined in this include file, and as such it gets included in each php script that needs to talk to the server
  */
 
-
+define('DEBUG','yes');  //Comment out to get compressed versions of javascript
 
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);

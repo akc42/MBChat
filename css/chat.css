@@ -95,45 +95,42 @@
 
 /* rooms in entrance hall */
 #R1 {
-	background: #78ba91 url(../images/forum.gif) no-repeat;
+	background: #78ba91 url(../img/forum.gif) no-repeat;
 }
 #R2 {
-	background: #7389ae url(../images/operations.gif) no-repeat;
+	background: #7389ae url(../img/operations.gif) no-repeat;
 }
 #R3 {
-	background: #c17878 url(../images/dungeon-club.gif) no-repeat;
+	background: #c17878 url(../img/dungeon-club.gif) no-repeat;
 }
 #R4 {
-	background: #a87aad url(../images/auditorium.gif) no-repeat;
+	background: #a87aad url(../img/auditorium.gif) no-repeat;
 }
 .meeting {
-	background: #c17878 url(../images/meeting-room.gif) no-repeat;
+	background: #c17878 url(../img/meeting-room.gif) no-repeat;
 }
 .member {
-	background: #8eabdb url(../images/smoking-room.gif) no-repeat;
+	background: #8eabdb url(../img/smoking-room.gif) no-repeat;
 }
 .guest {
-	background: url(../images/green-room.gif) no-repeat;
+	background: url(../img/green-room.gif) no-repeat;
 }
 #exit {
-/*	position:absolute;
-	top:5px;
-	left:15px; */
 	height:44px;
 	width: 50px; 
 	overflow:hidden;
 }
 
 .exit-f {	
-	background: #a87aad url(../images/exit-forum.gif) no-repeat; 
+	background: #a87aad url(../img/exit-forum.gif) no-repeat; 
 }
 
 .exit-r {	
-	background: #a87aad url(../images/exit-room.gif) no-repeat; 
+	background: #a87aad url(../img/exit-room.gif) no-repeat; 
 }
 
 .loading {
-	background: white url(../images/spinner.gif) no-repeat center;
+	background: white url(../img/spinner.gif) no-repeat center;
 }
 
 .hide {
@@ -329,7 +326,7 @@ div.logging {
 }
 
 .private {
-	background: green url(../images/private.gif) no-repeat;
+	background: green url(../img/private.gif) no-repeat;
 	position:absolute;
 	top:0px;
 	left:0px;
@@ -369,7 +366,7 @@ div.wBactive {
 }
 
 .closeBox {
-	background:#0066ff url(../images/closebox.gif) no-repeat;
+	background:#0066ff url(../img/closebox.gif) no-repeat;
 	height:21px;
 	width:21px;
 	position:absolute;
@@ -471,7 +468,7 @@ span.whisper {
 	float:left;
 	height:20px;
 	width:21px;
-	background: url(../images/timeminus.gif) no-repeat center;
+	background: url(../img/timeminus.gif) no-repeat center;
 	margin-left:10px;
 }
 
@@ -490,7 +487,7 @@ span.whisper {
 	float:left;
 	height:20px;
 	width:21px;
-	background: url(../images/timeplus.gif) no-repeat center;
+	background: url(../img/timeplus.gif) no-repeat center;
 	margin-left:10px;
 }
 
@@ -498,7 +495,7 @@ span.whisper {
 	float:left;
 	height:44px;
 	width: 50px; 
-	background: #a87aad url(../images/printer.jpg) no-repeat; 
+	background: #a87aad url(../img/printer.jpg) no-repeat; 
 	margin-left:40px;
 	cursor:pointer;
 }
