@@ -36,29 +36,53 @@ function head_content() {
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="css/chat-ie.css"/>
 	<![endif]-->
-	<script src="js/mootools-core-1.4.5-full-nocompat-yc.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-	<script src="js/mootools-FxElementsFxScrollDragMove-1.4.0.1-yc.js" type="text/javascript" charset="UTF-8"></script>
-<?php if($chatting['chat']['rsa'] == 'yes'){
-?>	<script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script>
-<?php } 
-?>	<script src="js/mbchat-min-<?php include('./inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script> 
 <?php 
-if($chatting['chat']['rsa'] == 'yes' || $chatting['chat']['external'] == ''){
+/*
+ * See README.md for details of which components to include in mootools-more
+ */
+	if(defined('DEBUG')) {
+?> 	<script src="js/mootools-core-1.5.0-full-nocompat.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-more-1.5.0.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/soundmanager2.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	} else {
+?> 	<script src="js/mootools-core-1.5.0-full-nocompat-yc.js" type="text/javascript" charset="UTF-8"></script>
+	<script src="js/mootools-more-1.5.0-yc.js" type="text/javascript" charset="UTF-8"></script>
+    <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	}
+?>	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	if($chatting['chat']['rsa'] == 'yes'){
+?>  <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	}
+	if (defined('DEBUG')) { 
+?>	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
+<?php 
+	} else {
+?>	<script src="js/mbchat-min-<?php include('../inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
+<?php 
+	} 
+	if($chatting['chat']['rsa'] == 'yes' || $chatting['chat']['external'] == ''){
 ?>  <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script>
 <?php 
-} 
-?>	<script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/soundmanager2.js" type="text/javascript" charset="UTF-8"></script>
-    <script src="js/mbcauth-min-<?php include('./inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
+	}
+	if (defined('DEBUG')) { 
+?>	<script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
-if($chatting['chat']['des']) {
+	} else {
+?>	<script src="js/mbcauth-min-<?php include('../inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
+<?php
+	}
+	if($chatting['chat']['des']) {
 ?>  <script src="js/des.js" type="text/javascript" charset="UTF-8"></script>
 <?php
-}
+	}
 
 
 ?>  <script type="text/javascript">
+<!--
         var MBChatVersion = "<?php include('./inc/version.inc');?>";
         var remoteError = "<?php echo $chatting['chat']['remote_error'];?>";
         var guestsAllowed = <?php echo (($chatting['chat']['guests_allowed'] == 'yes')?'true':'false'); ?>;
@@ -178,7 +202,8 @@ if($chatting['chat']['external'] == '') {
                 }
             }
         });
-    </script>
+//-->
+    </script><noscript>This application requires that Javascript is enabled in your browser!</noscript> 
 <?php if($chatting['chat']['external'] <> '') {
 	/*
 	 * We authenticate through a php script which returns javascript as its output

@@ -49,8 +49,8 @@ CREATE TABLE parameters (
 INSERT INTO parameters (name,value,grp) VALUES 
 ('remote_error','/chat.php',1), --for redirecting users who have failed remote authentication
 ('guests_allowed','no',1), -- if we are allowing guests?  yes if we are, anything else means no.
-('emoticon_dir','./emoticons',1), -- emoticon directory (either absolute or relative to the application)
-('emoticon_url','emoticons/',1), -- emoticon url 
+('emoticon_dir','./img/emoticons',1), -- emoticon directory (either absolute or relative to the application)
+('emoticon_url','img/emoticons/',1), -- emoticon url 
 ('rsa','no',1), -- Are we using an RSA encryption to return session key, yes if we are anything else means no
 ('purge_guest','5',1), --Only used when doing own authentication, days before purging guests.
 ('external','/chat/remote/index.php',1), --url to authenticate if doing external - must be null string to do internal

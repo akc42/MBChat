@@ -58,6 +58,7 @@ the system for the user.
 The remote/count.php file is an example of how a remote site can find out how many people in chat.  It needs telling where
 the login/count.php script is on the machine running chat.
 
+
 ## Using chat.
 
 For the majority of users it is assumed that they will be sitting at a desktop PC with a mouse.  At this point in time
@@ -107,8 +108,20 @@ it is instead stored in the on-line list against your name.  This change the bac
 you have asked a question. If a Moderator moves his mouse over your name he sees your question.  By clicking on it he can release it to the normal 
 message pane, thus allowing everyone else to see it.
 
+## Mootools More
+
+This version of MB Chat uses Mootools as its base framework.  Prior to version 3.4 (using Mootools 1.4.5 and below), the Mootools-More component was
+named with the components it included (FxElementsFxScrollDragMove).  With version 3.4 we are adding ClassRefactor, so that we can refactor the Drag class
+to support touch screens.  This makes the name long.  So we are reverting to mootools-more-1.5.0 (and up) and will document here, which elements to choose
+in the mootools more builder.
+
+The elements are :-
+* Class.Refactor
+* Fx.Elements
+* Fx.Scroll
+* Drag.Move
  
- 
+The builder automatically selects a couple of other items (More, Drag), but the list of those will not be specifically maintained.
 
 ## A Security Option
 

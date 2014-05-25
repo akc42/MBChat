@@ -40,6 +40,8 @@ define('DATA_DIR','/home/alan/dev/mb.com/chat/data/');  //Should be outside of w
  */
 
 
+//define('DEBUG','yes');  //Comment out to get compressed versions of javascript
+
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('MAX_CMD_LENGTH',2000);
 

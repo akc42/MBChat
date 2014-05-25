@@ -46,6 +46,8 @@ MBchat = function () {
         } 
         return pd + n; 
     }
+
+    
 	var Room = new Class({
 		initialize: function(rid,name,type) {
 			this.rid = rid || 0;
@@ -502,6 +504,63 @@ return {
 					+ '" onclick="window.open(this.href); return false;">' + p2 + '</a>';
 			});
 		};
+	    // how to handle touch events from http://stackoverflow.com/questions/7588576/drag-with-mootools-on-mobile
+	    Class.refactor(Drag, {
+	        attach: function(){
+	            this.handles.addEvent('touchstart', this.bound.start);
+	            return this.previous.apply(this, arguments);
+	        },
+
+	        detach: function(){
+	            this.handles.removeEvent('touchstart', this.bound.start);
+	            return this.previous.apply(this, arguments);
+	        },
+
+	        start: function(event){
+	            document.body.addEvents({
+	                touchmove: this.bound.check,
+	                touchend: this.bound.cancel
+	            });
+	            this.previous.apply(this, arguments);
+	        },
+
+	        check: function(event){
+	            if (this.options.preventDefault) event.preventDefault();
+	            var distance = Math.round(Math.sqrt(Math.pow(event.page.x - this.mouse.start.x, 2) + Math.pow(event.page.y - this.mouse.start.y, 2)));
+	            if (distance > this.options.snap){
+	                this.cancel();
+	                this.document.addEvents({
+	                    mousemove: this.bound.drag,
+	                    mouseup: this.bound.stop
+	                });
+	                document.body.addEvents({
+	                    touchmove: this.bound.drag,
+	                    touchend: this.bound.stop
+	                });
+	                this.fireEvent('start', [this.element, event]).fireEvent('snap', this.element);
+	            }
+	        },
+
+	        cancel: function(event){
+	            document.body.removeEvents({
+	                touchmove: this.bound.check,
+	                touchend: this.bound.cancel
+	            });
+	            return this.previous.apply(this, arguments);
+	        },
+
+	        stop: function(event){
+	            document.body.removeEvents({
+	                touchmove: this.bound.drag,
+	                touchend: this.bound.stop
+	            });
+	            return this.previous.apply(this, arguments);
+	        }
+	    });
+	  //whilst we are using a touch move we prevent the screen from scrolling
+	    var preventScroll = function(e){
+	    	e.preventDefault(); 
+	    };
 		return {
 			init : function () {
 				//only initialise parts of this - the rest needs to wait until we get response from login.
@@ -721,14 +780,15 @@ return {
 					        if (user.uid != me.uid && !me.is(NO_WHISPER) 
 					                      && (crossWhisper || (me.role != 'B' && user.role != 'B') || ( me.role == 'B' && user.role === 'B' ))) {
 					            var ww = function(e) { 
-							        MBchat.updateables.whispers.whisperWith(user,span,e);
+							        MBchat.updateables.whispers.whisperWith(user,div,e);
 						        };
                                 if(me.is(BLIND)) {
                                     div.addEvent('click',ww);
                                     div.addClass('whisperer');
                                 } else { 
-						            span.addEvent('mousedown',ww);
-						            div.getFirst().addClass('whisperer');
+						            div.addEvent('mousedown',ww);
+						            div.addEvent('touchstart',ww); //Support touch screens as well
+						            div.addClass('whisperer');
 						        }
 					        }
 						} 
@@ -1354,9 +1414,14 @@ return {
 							}
 							activeWb = el;
 							el.addClass('wBactive');
+							document.body.addEvent('touchmove',preventScroll);
 						},
 						onComplete: function(el) {
+							document.body.removeEvent('touchmove',preventScroll);
 							el.getElement('.whisperInput').focus();
+						},
+						onCancel: function() {
+							document.body.removeEvent('touchmove',preventScroll);
 						}
 					});
 					return whisper;
@@ -1434,8 +1499,11 @@ return {
 						    dragMan.setStyles(startPosition);
 						    var dragDestroy = function() {
 							    dragMan.destroy();
+							    document.body.removeEvent('touchmove',preventScroll); //Remove the routine that prevents scrolling
 						    }
 						    el.addEvent('mouseup', dragDestroy);
+						    el.addEvent('touchend', dragDestroy);
+						    document.body.addEvent('touchmove',preventScroll);
 						    displayUser(user,dragMan);
 						    var dragReturn = new Fx.Morph(dragMan, {
 							    link: 'cancel',
@@ -1447,12 +1515,14 @@ return {
 						    });
 						    dragMan.inject(document.body);
 						    dragMan.addEvent('mouseup',dragDestroy);
+						    dragMan.addEvent('touchend',dragDestroy);
 						    dropZones.include(dropNew);
 						    var drag = new Drag.Move(dragMan,{
 							    droppables:dropZones,
 							    onSnap: function(element) {
 								    element.removeEvent('mouseup',dragDestroy);
-							    },
+								    element.removeEvent('touchend',dragDestroy);
+								    document.body.addEvent('touchmove',preventScroll);							    },
 							    onDrop: function(element, droppable){
 								    dropZones.removeClass('dragOver');
 								    if(droppable) {
@@ -1509,6 +1579,7 @@ return {
 								    } else {
 									    dragReturn.start(startPosition);  // should make dragman return on online list
 								    }
+								    document.body.removeEvent('touchmove',preventScroll); //Remove the routine that prevents scrolling
 							    },
        							onEnter: function(element, droppable){
 								    droppable.addClass('dragOver');

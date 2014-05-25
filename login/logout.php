@@ -16,7 +16,6 @@
     You should have received a copy of the GNU General Public License
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
-require_once('../inc/client.inc');
 
 function page_title() {
 	echo "Logged Off";
