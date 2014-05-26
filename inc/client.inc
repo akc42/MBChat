@@ -32,7 +32,7 @@
  * 
  */
 define('CHATTER','/home/alan/dev/chat/server/chatter.php');
-define('DATA_DIR','/home/alan/dev/chat/data/');  //Should be outside of web space
+define('DATA_DIR','/home/alan/dev/test-db/chat-dev/');  //Should be outside of web space
 
 /*
  * This file defines the client interface to the chatter server.  All calls to it come through the functions

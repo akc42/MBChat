@@ -18,7 +18,6 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-define('DB_VERSION',2);  //This should be the latest version of the database
 
 error_reporting(E_ALL);
 date_default_timezone_set('Europe/London');
@@ -244,19 +243,16 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         logger("STARTING");
 
         if(!file_exists(DATABASE) ) {
-            $db = new SQLite3(DATABASE);
-            $db->exec(file_get_contents(INIT_FILE));
-        } else {
-            $db = new SQLite3(DATABASE);
-            $version = $db->querySingle("SELECT value FROM parameters WHERE name = 'db_version'");
-            if($version == NULL) $version = 1;
-            $version = intval($version);
-            while ($version < DB_VERSION) {
-            	$db->exec(file_get_contents(UPDATE_PREFIX.$version.UPDATE_SUFFIX));
-            	$version++;
-            }
+		    logger("No Database Shutting Down");
+		    pcntl_alarm(0); //Alarm off
+		    socket_shutdown($socket,2);  //stop ALL action
+		    socket_close($socket); 
+		    unlink(SERVER_SOCKET);
+		    unlink(SERVER_RUNNING);           
+			fclose($logfp); //close log file
+			exit();
         }
-
+        $db = new SQLite3(DATABASE);
         $db->exec("PRAGMA foreign_keys = ON");
 
 //Sets up the digest parameters so they can be returned rapidly whatever routine is called

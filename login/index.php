@@ -21,7 +21,7 @@
 error_reporting(E_ALL);
 
 require_once('../inc/client.inc');
-require_once(DATA_DIR.'private.inc');
+require_once('../inc/private.inc');
 
 
 if(!isset($_POST['user'])) {
@@ -45,7 +45,7 @@ if ($username == '$$$') {
 	
     if(!file_exists(DATA_DIR.'users.db') ) {
         $db = new SQLite3(DATA_DIR.'users.db');
-        $db->exec(file_get_contents(DATA_DIR.'users.sql'));
+        $db->exec(file_get_contents(dirname(__FILE__).'../inc/users.sql'));
     }
 
     $return = Array();
