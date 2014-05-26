@@ -18,7 +18,6 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 
 */
-define('DB_VERSION',2);  //This should be the latest version of the database
 
 error_reporting(E_ALL);
 date_default_timezone_set('Europe/London');
@@ -35,17 +34,12 @@ if(strpos($datadir,'/',strlen($datadir)-1) === false) {
 
 define('DATA_DIR',$datadir);  //Should be outside of web space
 
-define('DATABASE',DATA_DIR.'chat.db');
-define('INIT_FILE',DATA_DIR.'database.sql');
-define('UPDATE_PREFIX',DATA_DIR.'update_');
-define('UPDATE_SUFFIX','.sql');
-
-
 define('MAX_CMD_LENGTH',2000); 
 define('LOG_FILE',DATA_DIR.'server.log');
 define('SERVER_LOCK',DATA_DIR.'server.lock');
 define('SERVER_RUNNING',DATA_DIR.'server.run');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
+define('DATABASE',DATA_DIR.'chat.db');
 
 
 $handle = fopen(SERVER_LOCK,'w+');
@@ -244,19 +238,16 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         logger("STARTING");
 
         if(!file_exists(DATABASE) ) {
-            $db = new SQLite3(DATABASE);
-            $db->exec(file_get_contents(INIT_FILE));
-        } else {
-            $db = new SQLite3(DATABASE);
-            $version = $db->querySingle("SELECT value FROM parameters WHERE name = 'db_version'");
-            if($version == NULL) $version = 1;
-            $version = intval($version);
-            while ($version < DB_VERSION) {
-            	$db->exec(file_get_contents(UPDATE_PREFIX.$version.UPDATE_SUFFIX));
-            	$version++;
-            }
+		    logger("No Database Shutting Down");
+		    pcntl_alarm(0); //Alarm off
+		    socket_shutdown($socket,2);  //stop ALL action
+		    socket_close($socket); 
+		    unlink(SERVER_SOCKET);
+		    unlink(SERVER_RUNNING);           
+			fclose($logfp); //close log file
+			exit();
         }
-
+        $db = new SQLite3(DATABASE);
         $db->exec("PRAGMA foreign_keys = ON");
 
 //Sets up the digest parameters so they can be returned rapidly whatever routine is called
@@ -495,7 +486,7 @@ while($running) {
                     $o->bindValue(':rid',$cmd['params'][0],SQLITE3_INTEGER);
                     $result = $o->execute();
                     $df = false;
-                    $message = '{ "lastid":'.$maxlid.', "online":[' ;
+                    $message = '{"lastid":'.$maxlid.', "online":[' ;
                     while($row = $result->fetchArray(SQLITE3_ASSOC)) {
                         if($df) {
                             $message .= ",";

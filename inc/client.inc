@@ -32,7 +32,8 @@
  * 
  */
 define('CHATTER','/home/alan/dev/chat/server/chatter.php');
-define('DATA_DIR','/home/alan/dev/mb.com/chat/data/');  //Should be outside of web space
+
+define('DATA_DIR','/home/alan/dev/mb.com/db/');  //Should be outside of web space
 
 /*
  * This file defines the client interface to the chatter server.  All calls to it come through the functions
@@ -56,7 +57,7 @@ function cs_is_server_running() {
 $socket = false; 
 function cs_server($args) {
     global $socket,$uid;
-    if(!file_exists(SERVER_SOCKET)) exec(CHATTER.' '.DATA_DIR); //start server if its not running
+	if(!file_exists(SERVER_SOCKET)) echo exec(CHATTER.' '.DATA_DIR); //start server if its not running
     if(!$socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         echo "Failed to get a socket, Error =".socket_strerror(socket_last_error());
         exit;
@@ -99,12 +100,15 @@ function cs_fetch() {
         echo "Cannot read reply without having sent a command";
         exit;
     }
+    header('Content-Type: application/json');
     while($read = socket_read($socket,1024)) {
         echo $read;
     }
     if($read === false) {
         echo "Socket Read Failed having read:$message";
     }
+    ob_flush();
+    flush(); //ensure what we have just echoed gets sent
     socket_close($socket);
 }
 
@@ -134,4 +138,5 @@ function cs_validate() {
 function cs_tcheck($key,$pass) {
     return ($pass == md5($key));
 }
+
 

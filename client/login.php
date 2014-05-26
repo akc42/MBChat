@@ -21,7 +21,7 @@ error_reporting(E_ALL);
 
 
 require_once('../inc/client.inc');
-require_once(DATA_DIR.'private.inc');
+require_once('../inc/private.inc');
 
 
 if(!isset($_POST['uid'])) cs_forbidden();
