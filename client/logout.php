@@ -20,6 +20,5 @@
 require_once('../inc/client.inc');
 
 cs_validate();
-
 cs_fetch('logout',$_POST['ident']);
 

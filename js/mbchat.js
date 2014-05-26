@@ -87,6 +87,8 @@ MBchat = function () {
 				}
 				reqRunning = false;
 				reqQueue.callChain();
+			}, onError: function(text,errorMessage){
+				displayErrorMessage(''+this.options.url+' error:'+errorMessage);
 			}});
 		},
 		transmit: function (options) {

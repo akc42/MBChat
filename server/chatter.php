@@ -34,17 +34,12 @@ if(strpos($datadir,'/',strlen($datadir)-1) === false) {
 
 define('DATA_DIR',$datadir);  //Should be outside of web space
 
-define('DATABASE',DATA_DIR.'chat.db');
-define('INIT_FILE',DATA_DIR.'database.sql');
-define('UPDATE_PREFIX',DATA_DIR.'update_');
-define('UPDATE_SUFFIX','.sql');
-
-
 define('MAX_CMD_LENGTH',2000); 
 define('LOG_FILE',DATA_DIR.'server.log');
 define('SERVER_LOCK',DATA_DIR.'server.lock');
 define('SERVER_RUNNING',DATA_DIR.'server.run');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
+define('DATABASE',DATA_DIR.'chat.db');
 
 
 $handle = fopen(SERVER_LOCK,'w+');
@@ -491,7 +486,7 @@ while($running) {
                     $o->bindValue(':rid',$cmd['params'][0],SQLITE3_INTEGER);
                     $result = $o->execute();
                     $df = false;
-                    $message = '{ "lastid":'.$maxlid.', "online":[' ;
+                    $message = '{"lastid":'.$maxlid.', "online":[' ;
                     while($row = $result->fetchArray(SQLITE3_ASSOC)) {
                         if($df) {
                             $message .= ",";

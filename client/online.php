@@ -18,7 +18,11 @@
 */
 include_once('../inc/client.inc');
 
+
+
 cs_validate();
 
 cs_fetch('online',$_POST['rid']);
+
+
 

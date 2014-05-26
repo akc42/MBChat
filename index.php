@@ -44,7 +44,7 @@ if(!file_exists(DATABASE) ) {
 		$version++;
 	}
 }
-
+unset($db);
 $chatting = cs_query('chats');
 
 function page_title() {

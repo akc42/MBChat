@@ -45,7 +45,7 @@ if ($username == '$$$') {
 	
     if(!file_exists(DATA_DIR.'users.db') ) {
         $db = new SQLite3(DATA_DIR.'users.db');
-        $db->exec(file_get_contents(dirname(__FILE__).'../inc/users.sql'));
+        $db->exec(file_get_contents(dirname(__FILE__).'/../inc/users.sql'));
     }
 
     $return = Array();
