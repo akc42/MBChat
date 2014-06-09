@@ -22,14 +22,14 @@
 require_once(dirname(__FILE__).'/../forum/SSI.php');
 //If not logged in to the forum, not allowed to do this
 if($user_info['is_guest']) {
-    header("Location : chat.html");
+    header("Location : /chat.php");
     exit;
 }
 */
 
 include('./public.inc');
 
-define('SERVER_LOCATION','http://chat.melindasbackups.com/login/count.php');   //Where the chat server 
+define('SERVER_LOCATION','http://chat.melindasbackups.com/login/count.php');   //Where the chat server
 
 
 $data = array('pass' => md5(REMOTE_KEY));
