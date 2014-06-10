@@ -344,7 +344,7 @@ div.logging {
 	height:21px;
 }
 
-#roomNameContainer h1.privateRoom {
+#roomNameContainer span.privateRoom {
 	color:red;
 }
 
