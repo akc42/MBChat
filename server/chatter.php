@@ -22,8 +22,9 @@
 error_reporting(E_ALL);
 date_default_timezone_set('Europe/London');
 
-if($argc != 2) die("Chat Server usage wrong\n");
+if($argc != 3 and $argc != 2)  die("Chat Server usage wrong\n");
 $datadir = $argv[1];
+if($argc == 3) $dbversion = $argv[2];
 if(!is_dir($datadir)) die("Data Directory is missing\n");
 if(!is_writable($datadir)) die("Data Directory is not writeable\n");
 
@@ -34,12 +35,14 @@ if(strpos($datadir,'/',strlen($datadir)-1) === false) {
 
 define('DATA_DIR',$datadir);  //Should be outside of web space
 
-define('MAX_CMD_LENGTH',2000); 
+define('MAX_CMD_LENGTH',2000);
 define('LOG_FILE',DATA_DIR.'server.log');
 define('SERVER_LOCK',DATA_DIR.'server.lock');
 define('SERVER_RUNNING',DATA_DIR.'server.run');
 define('SERVER_SOCKET',DATA_DIR.'message.sock');
 define('DATABASE',DATA_DIR.'chat.db');
+define('UPDATE_PREFIX',DATA_DIR.'chatup_');
+define('UPDATE_SUFFIX','.sql');
 
 
 $handle = fopen(SERVER_LOCK,'w+');
@@ -124,7 +127,7 @@ function timeout ($signal) {
             flock($handle,LOCK_EX);
 
             if($db->querySingle("SELECT count(*) FROM users ") == 0
-            // It could be that a request to start the server occurred just before we decided to shut down.  
+            // It could be that a request to start the server occurred just before we decided to shut down.
             //If a request occurred in the last two seconds then don't, as a new command will come shortly (if it hasn't already)
                                         && file_get_contents(SERVER_RUNNING) < (time() -2)) {
 
@@ -135,14 +138,14 @@ function timeout ($signal) {
                 $running = false;
                 pcntl_alarm(0);  //No more alarms
                 socket_shutdown($socket,1);  //stop any writing to the socket
-                socket_close($socket); //this will block until reading has finished  
-                unlink(SERVER_SOCKET);           
+                socket_close($socket); //this will block until reading has finished
+                unlink(SERVER_SOCKET);
             } else {
                 flock($handle, LOCK_UN);
                 fclose($handle);
             }
             if($blocking) $db->exec("COMMIT");
-        } 
+        }
 /*
 		If there are pending reads outstanding for over 45 seconds and we are currently blocked (ie we won't release them shortly)
 		then send them a zero messages reply to cause them to refresh themselves
@@ -180,7 +183,7 @@ function sendLog ($uid,$name,$role,$type,$rid,$text) {
     $l->bindValue(':text',$text,SQLITE3_TEXT);
     $l->execute();
     $lid = $db->lastInsertRowID();
-    $l->reset();        
+    $l->reset();
 
     $maxlid = max($maxlid,$lid);
     return $lid;
@@ -190,13 +193,13 @@ function getLog($lid) {
     global $statements,$message,$maxlid;
     $message = '{"status":true,"messages":[';
     $lastlid = 0;
-    
+
     $statements['read_log']->bindValue(':lid',$lid,SQLITE3_INTEGER);
     $result = $statements['read_log']->execute();
     while($row = $result->fetchArray(SQLITE3_ASSOC)) {
         if($lastlid !=0) $message .= ",";
         $lastlid=$row['lid'];
-        
+
         $message .= '{"lid":'.$row['lid'].',"user" :{"uid":'.$row['uid'].',"name":"'.$row['name'].'","role":"';
         $message .= $row['role'].'"},"type":"'.$row['type'].'","rid":'.$row['rid'].',"message":"'.$row['text'];
         $message .= '","time":'.$row['time'].'}';
@@ -209,8 +212,8 @@ function getLog($lid) {
     if($lastlid !=0) {
         $message .= ',"lastlid":'.$lastlid;
     }
-    $message .= '}';   
-    return ($lastlid !=0); 
+    $message .= '}';
+    return ($lastlid !=0);
 }
 
 function markActive($uid) {
@@ -222,11 +225,11 @@ function markActive($uid) {
     $s->reset();
 }
 
-    
+
 
 
 $logfp = fopen(LOG_FILE,'a');
-$running = false; 
+$running = false;
 declare(ticks = 1);
 try {
 
@@ -238,16 +241,34 @@ if($socket = socket_create(AF_UNIX,SOCK_STREAM,0)) {
         logger("STARTING");
 
         if(!file_exists(DATABASE) ) {
-		    logger("No Database Shutting Down");
-		    pcntl_alarm(0); //Alarm off
-		    socket_shutdown($socket,2);  //stop ALL action
-		    socket_close($socket); 
-		    unlink(SERVER_SOCKET);
-		    unlink(SERVER_RUNNING);           
-			fclose($logfp); //close log file
-			exit();
+            //No Database so now we need to see if we can create one
+            if(!file_exists(DATA_DIR.'chat.sql')) {
+                //No Database and no way of making one we have to stop
+                logger("No Database Shutting Down");
+                pcntl_alarm(0); //Alarm off
+                socket_shutdown($socket,2);  //stop ALL action
+                socket_close($socket);
+                unlink(SERVER_SOCKET);
+                unlink(SERVER_RUNNING);
+                fclose($logfp); //close log file
+                exit();
+            }
+            $db = new SQLite3(DATABASE);
+            $db->exec(file_get_contents(DATA_DIR.'chat.sql'));
+
+        } else {
+            $db = new SQLite3(DATABASE);
+            if (isset($dbversion)) { //only newer versions of chat will have this
+                $version = $db->querySingle("SELECT value FROM parameters WHERE name = 'db_version'");
+                if($version == NULL) $version = 1;
+                $version = intval($version);
+                while ($version < $dbversion) {
+                    $db->exec(file_get_contents(UPDATE_PREFIX.$version.UPDATE_SUFFIX));
+                    $version++;
+                }
+            }
         }
-        $db = new SQLite3(DATABASE);
+
         $db->exec("PRAGMA foreign_keys = ON");
 
 //Sets up the digest parameters so they can be returned rapidly whatever routine is called
@@ -297,25 +318,25 @@ $statements['logger'] = $db->prepare("INSERT INTO log (uid,name,role,type,rid,te
 $statements['active'] = $db->prepare("UPDATE users SET time = :time WHERE uid = :uid ");
 
 //Online
-$statements['online'] = $db->prepare("SELECT uid, name, role, question,private AS wid 
+$statements['online'] = $db->prepare("SELECT uid, name, role, question,private AS wid
                                         FROM users WHERE rid = :rid  ORDER BY time ASC");
 
 //Room Entry
-$statements['room_msg_start'] = $db->prepare("SELECT lid  FROM log LEFT JOIN participant ON participant.wid = rid 
-                                                WHERE ( (participant.uid = :uid AND type = 'WH' ) OR rid = :rid) AND 
+$statements['room_msg_start'] = $db->prepare("SELECT lid  FROM log LEFT JOIN participant ON participant.wid = rid
+                                                WHERE ( (participant.uid = :uid AND type = 'WH' ) OR rid = :rid) AND
                                                 log.time > :time ORDER BY lid DESC LIMIT :max ");
 
-$statements['room_msgs'] = $db->prepare("SELECT lid, time, type, rid, log.uid AS uid , name, role, text  
+$statements['room_msgs'] = $db->prepare("SELECT lid, time, type, rid, log.uid AS uid , name, role, text
                                             FROM log LEFT JOIN participant ON participant.wid = rid
-                                            WHERE ( (participant.uid = :uid  AND type = 'WH' ) OR rid = :rid ) 
+                                            WHERE ( (participant.uid = :uid  AND type = 'WH' ) OR rid = :rid )
                                             AND lid >= :lid ORDER BY lid ASC");
 $statements['enter'] = $db->prepare("UPDATE users SET rid = :rid , time = :time, role = :role, mod = :mod WHERE uid = :uid ");
 //Room Exit
-$statements['room_whi_start'] = $db->prepare("SELECT lid  FROM log  JOIN participant ON participant.wid = rid 
-                                            WHERE participant.uid = :uid AND type = 'WH' AND log.time > :time 
+$statements['room_whi_start'] = $db->prepare("SELECT lid  FROM log  JOIN participant ON participant.wid = rid
+                                            WHERE participant.uid = :uid AND type = 'WH' AND log.time > :time
                                             ORDER BY lid DESC LIMIT :max ");
-$statements['room_whis'] = $db->prepare("SELECT lid, time, type, rid, log.uid AS uid , name, role, text  
-                                        FROM log JOIN participant ON participant.wid = rid WHERE participant.uid = :uid 
+$statements['room_whis'] = $db->prepare("SELECT lid, time, type, rid, log.uid AS uid , name, role, text
+                                        FROM log JOIN participant ON participant.wid = rid WHERE participant.uid = :uid
                                         AND type = 'WH' AND lid >= :lid ");
 $statements['exit'] = $db->prepare("UPDATE users SET rid = 0, time = :time, role = :role , mod = :mod WHERE uid = :uid ");
 
@@ -340,10 +361,10 @@ $statements['getlog'] = $db->prepare("SELECT lid, time AS utime, type, rid, uid 
         $minlid = $maxlid+1;
 
     } else {
-        throw new Exception("Failed to bind to socket" ); 
+        throw new Exception("Failed to bind to socket" );
     }
 } else {
-    throw new Exception("Failed to get socket"); 
+    throw new Exception("Failed to get socket");
 }
 
 $stats = Array();
@@ -438,13 +459,13 @@ while($running) {
                     $u->bindValue(':name',htmlentities($cmd['params'][0],ENT_QUOTES,'UTF-8',false),SQLITE3_TEXT);
                     $u->bindValue(':role',$cmd['params'][1],SQLITE3_TEXT);
                     $mod = $cmd['params'][2] & 24;  //looks for mod = 8 and speaker =16 total = 24
-                    if(($cmd['params'][2] & 24) ==0) 
+                    if(($cmd['params'][2] & 24) ==0)
                         $mod = 'N';
                     else if(($cmd['params'][2] & 8) != 0)
                         $mod = 'M';
                     else
                         $mod = 'S';
-                    
+
                     $u->bindValue(':mod',$mod,SQLITE3_TEXT);
                     $u->bindValue(':cap',($cmd['params'][2]),SQLITE3_INTEGER);
                     $u->bindValue(':rooms',$cmd['params'][3],SQLITE3_TEXT);
@@ -472,7 +493,7 @@ while($running) {
                         $u->execute();
                         $u->reset();
                         sendLog($row['uid'], $row['name'],$row['role'],"LO",$row['rid'],$cmd['params'][0]);
-                        $message = '{"status":true}'; 
+                        $message = '{"status":true}';
                     } else {
                         $message = '{"status":false,"reason":"Logout non-existent user"}';
                     }
@@ -528,7 +549,7 @@ while($running) {
 
 
 
-	                    
+
                     } else {
                         $message = '{"status:false,"reason":"Invalid Room on Entry"}';
                         break;
@@ -547,7 +568,7 @@ while($running) {
                     }
                     $result->finalize();
                     $u->reset();
-                   
+
                     //now we know where to start, actually collect the messages to display
                     $u = $statements['room_msgs'];
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
@@ -589,7 +610,7 @@ while($running) {
                     $rid = $cmd['params'][0];
                     $room = $db->querySingle("SELECT rid, name, type FROM rooms where rid = $rid ",true);
                     $user = $db->querySingle("SELECT uid, name, role, mod FROM users WHERE uid = $uid ",true);
-                    if(isset($room['rid']) && isset($user['uid'])) { //we got both 
+                    if(isset($room['rid']) && isset($user['uid'])) { //we got both
                         if ($room['type'] == 3  && $user['mod'] != 'N') {
                         //This is a moderated room, and this person is not normal - so swap them out of moderated room role
                             $role = $user['mod'];
@@ -608,12 +629,12 @@ while($running) {
                         $u->execute();
                         $u->reset();
                         sendLog($uid, $name,$role,"RX",$rid,'');
-                        
+
                     } else {
                         $message = '{"status":false,"reason":"Invalid Room or User on Exit"}';
                         break;
                     }
-                    
+
                     $message = '{"status":true,"messages" : [';
                     $u = $statements['room_whi_start'];
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
@@ -627,7 +648,7 @@ while($running) {
                     }
                     $result->finalize();
                     $u->reset();
-                   
+
                     //now we know where to start, actually collect the messages to display
                     $u = $statements['room_whis'];
                     $u->bindValue(':uid',$uid,SQLITE3_INTEGER);
@@ -698,7 +719,7 @@ while($running) {
 	                        sendLog($uid, $row['name'],$role,$mtype,$rid,$text);
                         }
                     }
-                    $message = '{"status":true}'; 
+                    $message = '{"status":true}';
                     break;
                 case 'release':
                     markActive($uid);
@@ -707,23 +728,23 @@ while($running) {
                         $statements['release']->bindValue(':uid',$quid,SQLITE3_INTEGER);
                         $statements['release']->execute();
                         $statements['release']->reset();
-                        sendLog($quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);	
-                        $message = '{"status":true}';      
+                        sendLog($quid, $user['name'],$user['role'],"ME",$user['rid'],$user['question']);
+                        $message = '{"status":true}';
                     } else {
                         $message = '{"status":false}';
                     }
-                    break; 
+                    break;
                 case 'get':
                     $message = '{"status":true,"whisperers":[';
                     $df = false;
-                    $result = $db->query("SELECT users.uid,name,role FROM participant 
+                    $result = $db->query("SELECT users.uid,name,role FROM participant
                                             JOIN users ON users.uid = participant.uid WHERE wid = ".$cmd['params'][0]);
                     while($row = $result->fetchArray(SQLITE3_ASSOC)) {
                         if($df) {
                             $message .= ",";
                         }
                         $df = true;
-                    
+
 	                    $message .= json_encode($row);
                     }
                     $result->finalize();
@@ -750,7 +771,7 @@ while($running) {
                         sendLog($wuid, $wuser['name'],$wuser['role'],"WJ",$wid,'');
                         sendLog($uid, $user['name'],$user['role'],"WJ",$wid,'');
                         $message = '{ "status":true, "wid" :'.$wid.', "user" :'.json_encode($wuser).'}';
-                    }  else { 
+                    }  else {
                         $message = '{ "status":false,"reason":"wuid or uid not correct"}';
                     }
                     break;
@@ -767,15 +788,15 @@ while($running) {
                         $u->bindValue(':uid',$wuid,SQLITE3_INTEGER);
                         $u->execute();
                         $u->reset();
-                        sendLog($wuid, $row['name'],$row['role'],"WJ",$wid,'');	
-                        $message = '{"status":true}';      
+                        sendLog($wuid, $row['name'],$row['role'],"WJ",$wid,'');
+                        $message = '{"status":true}';
                     } else {
                         $message = '{"status":false."reason":"Join:User has left"}';
                     }
                     break;
                 case 'leave':
                     $wid = $cmd['params'][0];
-                    $row = $db->querySingle("SELECT users.uid, name, role FROM users JOIN participant ON users.uid = participant.uid 
+                    $row = $db->querySingle("SELECT users.uid, name, role FROM users JOIN participant ON users.uid = participant.uid
                                                     WHERE users.uid = $uid AND wid = $wid ",true);
                     if(isset($row['uid'])){
                         markActive($uid);
@@ -784,8 +805,8 @@ while($running) {
                         $u->bindValue(':uid',$wuid,SQLITE3_INTEGER);
                         $u->execute();
                         $u->reset();
-                        sendLog($uid, $row['name'],$row['role'],"WL",$wid,'');	
-                        $message = '{"status":true}';      
+                        sendLog($uid, $row['name'],$row['role'],"WL",$wid,'');
+                        $message = '{"status":true}';
                     } else {
                         $message = '{"status":false,"reason":"Leave:User has left"}';
                     }
@@ -796,10 +817,10 @@ while($running) {
                     $p = $statements['priv_room'];
 			        $p->bindValue(':time',time(),SQLITE3_INTEGER);
                     if ($wid != 0 ) {
-                        $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
+                        $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant
 				                        JOIN users ON users.uid = participant.uid WHERE participant.uid =  $uid AND wid = $wid ",true);
 			            $p->bindValue(':wid',$wid,SQLITE3_INTEGER);
-			            sendLog($uid, $row['name'],$row['role'],"PE",$wid,'');	
+			            sendLog($uid, $row['name'],$row['role'],"PE",$wid,'');
                     } else {
                         $row = $db->querySingle("SELECT uid, name, role FROM users WHERE uid = $uid ",true);
 			            $p->bindValue(':wid',0,SQLITE3_INTEGER);
@@ -807,21 +828,21 @@ while($running) {
 		            }
 		            $p->execute();
 		            $p->reset();
-                    $message = '{"status":true}';  
+                    $message = '{"status":true}';
                     break;
                 case 'whisper':
                     $wid = $cmd['params'][0];
 //                    $text = htmlentities(stripslashes($cmd['params'][1]),ENT_QUOTES,false);
                     $text= $cmd['params'][1];
-                    $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant 
+                    $row = $db->querySingle("SELECT participant.uid, users.name, role, wid  FROM participant
                                                 LEFT JOIN users ON users.uid = participant.uid WHERE
                                                     participant.uid = $uid AND wid = $wid ",true);
                     if(isset($row['uid'])) {
                         markActive($uid);
-                        
-                        if($text != '') sendLog($uid, $row['name'],$row['role'],"WH",$wid,$text);	
-                        
-                        $message = '{"status":true}';      
+
+                        if($text != '') sendLog($uid, $row['name'],$row['role'],"WH",$wid,$text);
+
+                        $message = '{"status":true}';
                     } else {
                         $message = '{"status":false}';
                     }
@@ -839,7 +860,7 @@ while($running) {
                     $result = $l->execute();
 
                     $df = false;
-                    $message = '{"status":true,"messages":[';	
+                    $message = '{"status":true,"messages":[';
                     while( $row = $result->fetchArray(SQLITE3_ASSOC)) {
                         if($df) {
                             $message .= ",";
@@ -861,7 +882,7 @@ while($running) {
                     $result->finalize();
                     $l->reset();
                     $message .= ']}';
-                    break; 
+                    break;
                 case 'print':
                     markActive($uid);
                     $rid = $cmd['params'][0];
@@ -886,7 +907,7 @@ while($running) {
                     }
                     $message .= ']}';
                     $result->finalize();
-                    break;         
+                    break;
                 case 'getdes':
                     if ($des_key !=0) {
                         $message = '{"status":true,"des":"'.$des_key.'"}';
@@ -907,9 +928,9 @@ while($running) {
                 @socket_close($new_socket);  //close link
             }
         }
-       
+
     } else {
-        if(!$blocking) {  
+        if(!$blocking) {
             //Nothing left to do, so finish up by ...
             //a) Send all read requests any new messages (if there are any)
 
@@ -920,7 +941,7 @@ while($running) {
                 }
                 $pending_reads = array();
                 $last_read_satisfy = time();
-            }        
+            }
             $minlid = $maxlid+1;
 
             //b) commit the current transaction and go back to blocking mode
@@ -935,9 +956,9 @@ while($running) {
     logger("EXCEPTION:".$e->getMessage());
     pcntl_alarm(0); //Alarm off
     socket_shutdown($socket,2);  //stop ALL action
-    socket_close($socket); 
+    socket_close($socket);
     unlink(SERVER_SOCKET);
-    unlink(SERVER_RUNNING);           
+    unlink(SERVER_RUNNING);
     $db->exec("ROLLBACK");
 }
 

@@ -17,34 +17,11 @@
     along with MBChat (file COPYING.txt).  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* check we are called with all the right parameters.  If not, we need to call our initialisation routine */
-define('DB_VERSION',2);  //This should be the latest version of the database
 
 
 require_once('./inc/public.inc');
 require_once('./inc/client.inc');
-/*
- * We need to check that the database is created and up to date with the correct version
- * This is the only time we ever check the database directly
- */
-define('DATABASE',DATA_DIR.'chat.db');
-define('SQL_DIR',realpath(dirname(__FILE__)).'/inc/');
-define('UPDATE_PREFIX',SQL_DIR.'update_');
-define('UPDATE_SUFFIX','.sql');
-if(!file_exists(DATABASE) ) {
-	$db = new SQLite3(DATABASE);
-	$db->exec(file_get_contents(SQL_DIR.'database.sql'));
-} else {
-	$db = new SQLite3(DATABASE);
-	$version = $db->querySingle("SELECT value FROM parameters WHERE name = 'db_version'");
-	if($version == NULL) $version = 1;
-	$version = intval($version);
-	while ($version < DB_VERSION) {
-		$db->exec(file_get_contents(UPDATE_PREFIX.$version.UPDATE_SUFFIX));
-		$version++;
-	}
-}
-unset($db);
+
 $chatting = cs_query('chats');
 
 function page_title() {
@@ -254,7 +231,7 @@ if($chatting['chat']['external'] == '') {
 <?php
 }
 function content_title() {
-?>	<div id="roomNameContainer"></div>
+?>	<span id="roomNameContainer">Entrance Hall</span>
 <?php
 }
 function menu_items() {
