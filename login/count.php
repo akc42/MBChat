@@ -22,7 +22,7 @@
 error_reporting(E_ALL);
 
 require_once('../inc/client.inc');
-require_once(DATA_DIR.'private.inc');
+require_once('../inc/private.inc');
 
 if (!cs_tcheck(REMOTE_KEY,$_POST['pass']) ) cs_forbidden();
 //we can assume we have a valid user
@@ -30,7 +30,7 @@ if(cs_is_server_running()) {  //we don't want to start the server just to find o
     $count = cs_query('count');
     echo $count['count'];
 } else {
-    echo 0;  
+    echo 0;
 }
 
 

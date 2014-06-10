@@ -92,41 +92,41 @@
 	font-weight:bold;
 	overflow:hidden;
 }
-
 /* rooms in entrance hall */
-#R1 {
+.forum {
 	background: #78ba91 url(../img/forum.gif) no-repeat;
-}
-#R2 {
-	background: #7389ae url(../img/operations.gif) no-repeat;
-}
-#R3 {
-	background: #c17878 url(../img/dungeon-club.gif) no-repeat;
-}
-#R4 {
-	background: #a87aad url(../img/auditorium.gif) no-repeat;
 }
 .meeting {
 	background: #c17878 url(../img/meeting-room.gif) no-repeat;
 }
+.gallery {
+	background: #7389ae url(../img/operations.gif) no-repeat;
+}
+.auditorium {
+	background: #a87aad url(../img/auditorium.gif) no-repeat;
+}
 .member {
-	background: #8eabdb url(../img/smoking-room.gif) no-repeat;
+	background: #7389ae url(../img/smoking-room.gif) no-repeat;
 }
 .guest {
-	background: url(../img/green-room.gif) no-repeat;
+	background: #c17878 url(../img/green-room.gif) no-repeat;
 }
+.dungeon {
+	background: #c17878 url(../img/dungeon-club.gif) no-repeat;
+}
+
 #exit {
 	height:44px;
-	width: 50px; 
+	width: 50px;
 	overflow:hidden;
 }
 
-.exit-f {	
-	background: #a87aad url(../img/exit-forum.gif) no-repeat; 
+.exit-f {
+	background: #a87aad url(../img/exit-forum.gif) no-repeat;
 }
 
-.exit-r {	
-	background: #a87aad url(../img/exit-room.gif) no-repeat; 
+.exit-r {
+	background: #a87aad url(../img/exit-room.gif) no-repeat;
 }
 
 .loading {
@@ -226,7 +226,7 @@ div.hasQuestion {
 	bottom:125px; */
 	border:1px solid #ADADAD;
 	background-color:#FFF;
-} 
+}
 #onlineListContainer h4 {
 	height:25px;
 	padding:2px;
@@ -285,7 +285,7 @@ div.logging {
 #chatList {
 	overflow-X:hidden;
 	overflow-Y:auto;
-	border:1px solid #ADADAD; 
+	border:1px solid #ADADAD;
 	background-color:#FFF;
 	color:#000;
 }
@@ -407,7 +407,7 @@ div.wBactive {
 span.whisper {
 	font-style:italic;
 }
-		
+
 
 .dragBox {
 	position:absolute;
@@ -495,8 +495,8 @@ span.whisper {
 #printLog {
 	float:left;
 	height:44px;
-	width: 50px; 
-	background: #a87aad url(../img/printer.jpg) no-repeat; 
+	width: 50px;
+	background: #a87aad url(../img/printer.jpg) no-repeat;
 	margin-left:40px;
 	cursor:pointer;
 }
