@@ -33,7 +33,7 @@ define('UPDATE_PREFIX',SQL_DIR.'update_');
 define('UPDATE_SUFFIX','.sql');
 if(!file_exists(DATABASE) ) {
 	$db = new SQLite3(DATABASE);
-	$db->exec(file_get_contents(SQL_DIR.'database.sql'));	
+	$db->exec(file_get_contents(SQL_DIR.'database.sql'));
 } else {
 	$db = new SQLite3(DATABASE);
 	$version = $db->querySingle("SELECT value FROM parameters WHERE name = 'db_version'");
@@ -57,7 +57,7 @@ function head_content() {
 	<!--[if lt IE 7]>
 		<link rel="stylesheet" type="text/css" href="css/chat-ie.css"/>
 	<![endif]-->
-<?php 
+<?php
 /*
  * See README.md for details of which components to include in mootools-more
  */
@@ -65,31 +65,31 @@ function head_content() {
 ?> 	<script src="js/mootools-core-1.5.0-full-nocompat.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-more-1.5.0.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/soundmanager2.js" type="text/javascript" charset="UTF-8"></script>
-<?php 
+<?php
 	} else {
 ?> 	<script src="js/mootools-core-1.5.0-full-nocompat-yc.js" type="text/javascript" charset="UTF-8"></script>
 	<script src="js/mootools-more-1.5.0-yc.js" type="text/javascript" charset="UTF-8"></script>
     <script src="js/soundmanager2-nodebug-jsmin.js" type="text/javascript" charset="UTF-8"></script>
-<?php 
+<?php
 	}
 ?>	<script src="js/coordinator.js" type="text/javascript" charset="UTF-8"></script>
-<?php 
+<?php
 	if($chatting['chat']['rsa'] == 'yes'){
 ?>  <script src="js/cipher.js" type="text/javascript" charset="UTF-8"></script>
-<?php 
+<?php
 	}
-	if (defined('DEBUG')) { 
-?>	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script> 
-<?php 
+	if (defined('DEBUG')) {
+?>	<script src="js/mbchat.js" type="text/javascript" charset="UTF-8"></script>
+<?php
 	} else {
 ?>	<script src="js/mbchat-min-<?php include('../inc/version.inc');?>.js" type="text/javascript" charset="UTF-8"></script>
-<?php 
-	} 
+<?php
+	}
 	if($chatting['chat']['rsa'] == 'yes' || $chatting['chat']['external'] == ''){
 ?>  <script src="js/md5.js" type="text/javascript" charset="UTF-8"></script>
-<?php 
+<?php
 	}
-	if (defined('DEBUG')) { 
+	if (defined('DEBUG')) {
 ?>	<script src="js/mbcauth.js" type="text/javascript" charset="UTF-8"></script>
 <?php
 	} else {
@@ -111,7 +111,7 @@ function head_content() {
         var rsaModulus="<?php echo RSA_MODULUS;?>";
         var remoteKey="<?php echo md5(REMOTE_KEY); ?>";
         var checkNo = <?php $checkkey = rand(1,9000); echo $checkkey; ?> ;
-       	var encCheckNo = "<?php echo bcpowmod($checkkey,RSA_EXPONENT,RSA_MODULUS); ?>" ;
+       	var encCheckNo = "<?php echo bcpowmod($checkkey,RSA_EXPONENT,RSA_MODULUS,0); ?>" ;
 
         var soundcoord = new Coordinator(['sound','chat'],function(activity) {
 		    MBchat.sounds.init();		//start sound system
@@ -135,11 +135,11 @@ if($chatting['chat']['rsa'] == 'yes'){
 <?php
 if($chatting['chat']['rsa'] == 'yes'){
 	/*
-	 * From a php perspective, if we are doing rsa, then we contruct a javascript function to 
-	 * be called by the rsa.generateAsync function as a callback when its complete 
+	 * From a php perspective, if we are doing rsa, then we contruct a javascript function to
+	 * be called by the rsa.generateAsync function as a callback when its complete
 	 */
 ?>      var rsa = new RSA();
-        function genResult (key,rsa) { 
+        function genResult (key,rsa) {
 <?php
 } else {
 	/*
@@ -150,7 +150,7 @@ if($chatting['chat']['rsa'] == 'yes'){
 <?php
 }
 	/*
-	 *  this next line is within a function if its rsa, or inline with key={}; for the other situation 
+	 *  this next line is within a function if its rsa, or inline with key={}; for the other situation
 	 */
 ?>            coordinator.done('rsa',key);
 <?php
@@ -160,7 +160,7 @@ if($chatting['chat']['rsa'] == 'yes'){
             We are kicking off a process to generate a rsa public/private key pair.  Typically this
             takes about 1.2 seconds or so to run to completion with this key length, so should be done
             before the user has completed his input - which is when we will need the result.  The genResult
-            function will be called when complete.  
+            function will be called when complete.
         */
 
         rsa.generateAsync(64,65537,genResult);
@@ -172,7 +172,7 @@ if($chatting['chat']['external'] == '') {
 	 * it then does both coordinator.done['verify'] stage and coodinator.done['login'] stage
 	 */
 ?>		MBCAuth(true,<?php echo $chatting['chat']['purge_guest'];?>);
-<?php 
+<?php
 } else {
 	/*
 	 * We are doing external authentication so we call MBACAuth with parameters to say not doing internal
@@ -180,7 +180,7 @@ if($chatting['chat']['external'] == '') {
 	 * which will be added below
 	 */
 ?>		MBCAuth(false);
-<?php 
+<?php
 }
 ?>		soundManager.setup({
             url : 'js/',
@@ -193,19 +193,19 @@ if($chatting['chat']['external'] == '') {
 	                    id : 'whispers',
 	                    url : "sounds/<?php echo $chatting['sounds']['whisper'] ?>",
 	                    autoLoad : true ,
-	                    autoPlay : false 
+	                    autoPlay : false
                     });
                     soundManager.createSound({
 	                    id : 'move',
 	                    url : "sounds/<?php echo $chatting['sounds']['move'] ; ?>",
 	                    autoLoad : true ,
-	                    autoPlay : false 
+	                    autoPlay : false
                     });
                     soundManager.createSound({
 	                    id : 'speak',
 	                    url : "sounds/<?php echo $chatting['sounds']['speak'] ; ?>",
 	                    autoLoad : true ,
-	                    autoPlay : false 
+	                    autoPlay : false
                     });
                     soundManager.createSound({
 	                    id : 'creaky',
@@ -224,16 +224,16 @@ if($chatting['chat']['external'] == '') {
             }
         });
 //-->
-    </script><noscript>This application requires that Javascript is enabled in your browser!</noscript> 
+    </script><noscript>This application requires that Javascript is enabled in your browser!</noscript>
 <?php if($chatting['chat']['external'] <> '') {
 	/*
 	 * We authenticate through a php script which returns javascript as its output
 	 */
 ?>    <script type="text/javascript" src="<?php
         $data = array( 'pass' => md5(REMOTE_KEY));
-        echo  $chatting['chat']['external'].'?'.http_build_query($data);       
+        echo  $chatting['chat']['external'].'?'.http_build_query($data);
             ?>"></script>
-<?php 
+<?php
 }
 ?>  <style type="text/css">
 <?php
@@ -243,34 +243,34 @@ if($chatting['chat']['external'] == '') {
 		foreach($chatting['colours'] as $role => $colour) {
 ?>		span.<?php echo $role; ?> {
 			padding:0 2px;
-			color:#<?php echo $colour;?>;   
+			color:#<?php echo $colour;?>;
         }
         #chatList span.<?php echo $role; ?> {
         	font-weight: bold;
         }
-<?php 
+<?php
 		}
 ?>	</style>
-<?php 
+<?php
 }
 function content_title() {
 ?>	<div id="roomNameContainer"></div>
-<?php 
+<?php
 }
 function menu_items() {
-?><div id="exit" class="exit-f"></div> 
-<?php 
+?><div id="exit" class="exit-f"></div>
+<?php
 }
 function main_content() {
 	global $chatting;
 ?>
-  <div id="rsa_generator" class="loading"></div> 
+  <div id="rsa_generator" class="loading"></div>
     <div id="authblock" class="hide textual">
 <?php
 if($chatting['chat']['guests_allowed'] == 'yes') {
 ?>
         <p>Enter a username that you want to be known of in chat. You only need to enter a  password <strong>if you are already
-        registered as a user</strong> and wish to use that in chat. <strong>Note</strong>, for regular registered users, if you are already logged 
+        registered as a user</strong> and wish to use that in chat. <strong>Note</strong>, for regular registered users, if you are already logged
         in your connection will be <strong>refused</strong>.</p>
 
         <p>Please <strong>note</strong> that $ characters will <strong>not</strong> be allowed in user
@@ -278,7 +278,7 @@ if($chatting['chat']['guests_allowed'] == 'yes') {
 <?php
 } else {
 ?>
-        <p>Please Enter your username and password, but note, if you are already logged in 
+        <p>Please Enter your username and password, but note, if you are already logged in
         in another window your connection will be <strong>refused</strong>.</p>
 <?php
 }
@@ -296,7 +296,7 @@ if($chatting['chat']['guests_allowed'] == 'yes') {
     <div id="chatblock" class="hide">
     	<div class="pane_container">
     		<div id="first_left" class="left_pane">
-				       
+
 		        <div id="logControls" class="hide">
 			        <div id="startTimeBlock">
 				        <div id="startTextLog">Log Start Time</div>
@@ -321,7 +321,7 @@ if($chatting['chat']['guests_allowed'] == 'yes') {
 	    <div class="pain_container">
 	    	<div id="second_left" class="left_pane">
 
-	
+
 		        <div id="inputContainer" class="hide">
 			        <form id="messageForm" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off" >
 				        <input id="messageText" type="text" name="text" />
@@ -344,7 +344,7 @@ $fns = scandir($dir);
 foreach ($fns as $filename) {
 
 	if(filetype($dir.'/'.$filename) == 'file') {
-	
+
 	    $pos = strrpos($filename, '.');
 	    if (!($pos === false)) { // dot is found in the filename
 		    $basename = substr($filename, 0, $pos);
@@ -379,7 +379,7 @@ foreach ($fns as $filename) {
         </div>
     </div>
 
- <?php 
+ <?php
  }
  function foot_content() {
  ?>
@@ -387,7 +387,7 @@ foreach ($fns as $filename) {
         <a href="http://www.chandlerfamily.org.uk">Alan Chandler</a>
     </div>
 
-<?php 
+<?php
 }
 
 require_once($_SERVER['DOCUMENT_ROOT'].'/inc/template.inc');

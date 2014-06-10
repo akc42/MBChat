@@ -28,21 +28,21 @@ if(!isset($_POST['uid'])) cs_forbidden();
 $uid = $_POST['uid'];
 if(!cs_tcheck('U'.$uid."P".REMOTE_KEY,$_POST['pass']))  cs_forbidden();
 
-if(!isset($_POST['rooms'])) 
+if(!isset($_POST['rooms']))
     $rooms = null;
 else
     $rooms = $_POST['rooms'];
-    
+
 $q = cs_query('login',$_POST['name'],$_POST['role'],$_POST['cap'],$rooms,$_POST['msg']); //log on!.
 if($q['status']) {
 	if(isset($_POST['e'])) {
-    	$q['key'] = bcpowmod($q['key'],$_POST['e'],$_POST['n']);
-    	    if(isset($q['des'])) $q['des'] = bcpowmod($q['des'],$_POST['e'],$_POST['n']);
+    	$q['key'] = bcpowmod($q['key'],$_POST['e'],$_POST['n'],0);
+    	    if(isset($q['des'])) $q['des'] = bcpowmod($q['des'],$_POST['e'],$_POST['n'],0);
 
 	} else {
 		$q['key'] = md5('U'.$uid."P".$q['key']);
-	} 
+	}
 }
-echo json_encode($q);    
+echo json_encode($q);
 
-    
+

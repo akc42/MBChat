@@ -35,14 +35,14 @@ if ($username == '$$$') {
         if (!cs_tcheck(REMOTE_KEY,$_POST['pass'])) cs_forbidden();
 
         if(isset($_POST['trial'])) {
-            echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS).'"}';
+            echo '{"status":true,"trial":"'.bcpowmod($_POST['trial'],RSA_PRIVATE_KEY,RSA_MODULUS,0).'"}';
         }
 }else {
 	/*
-	 * We have already confirmed who we are - internal authentication must be happening and so 
+	 * We have already confirmed who we are - internal authentication must be happening and so
 	 */
 	if(!isset($_POST['purge'])) cs_forbidden();
-	
+
     if(!file_exists(DATA_DIR.'users.db') ) {
         $db = new SQLite3(DATA_DIR.'users.db');
         $db->exec(file_get_contents(dirname(__FILE__).'/../inc/users.sql'));
@@ -64,7 +64,7 @@ if ($username == '$$$') {
             $return['login']['rooms'] = '';
             $return['status'] = true;
             $return['login']['pass'] = md5('U'.$return['login']['uid']."P".REMOTE_KEY);
-        } else 
+        } else
 	        cs_forbidden();
     } else {
         //Normal user
@@ -89,7 +89,7 @@ if ($username == '$$$') {
         }
         $result->closeCursor();
     }
-    echo json_encode($return);    
+    echo json_encode($return);
 }
 
 

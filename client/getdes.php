@@ -27,6 +27,6 @@ $uid = $_POST['uid'];
 if(!cs_tcheck('U'.$uid."P",$_POST['pass']))  cs_forbidden();
 
 $des_key = cs_query('getdes');
-if(isset($des_key['des'])) $des_key['des'] = bcpowmod($des_key['des'],$_POST['e'],$_POST['n']);
-echo json_encode($des_key);    
+if(isset($des_key['des'])) $des_key['des'] = bcpowmod($des_key['des'],$_POST['e'],$_POST['n'],0);
+echo json_encode($des_key);
 

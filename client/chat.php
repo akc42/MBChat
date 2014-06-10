@@ -56,10 +56,10 @@ function getRoomClass ($type) {
     }
     return $class;
 }
-    
+
 if(isset($rooms['security']) && isset($_POST['e'])) {
-    /* We are concerned about security so in this instance we take the security message and encrypt it with the 
-        public key and send it to him.  He will decrypt and correct the display - allowing a visual check that its the 
+    /* We are concerned about security so in this instance we take the security message and encrypt it with the
+        public key and send it to him.  He will decrypt and correct the display - allowing a visual check that its the
         security message set by the admin of this server.  This prevents another server taking over our servers role and
         capturing all the messages
     */
@@ -74,7 +74,7 @@ if(isset($rooms['security']) && isset($_POST['e'])) {
         for($i = 7; $i >= 0; $i--) {
             $digits = bcadd(bcmul($digits,'128'),ord($chunk[$i]));
         }
-        $cipher = bcpowmod($digits,$_POST['e'],$_POST['n']); //encrypt using public key
+        $cipher = bcpowmod($digits,$_POST['e'],$_POST['n'],0); //encrypt using public key
 ?><span class="sc"><?php echo $cipher; ?></span>
 <?php
     } while($message = substr($message,8));
@@ -86,18 +86,18 @@ if(isset($rooms['security']) && isset($_POST['e'])) {
 <?php
 $i=0;
 
-   
+
 foreach($rooms['rooms'] as $row) {
     $rid = $row['rid'];
-    if( ($row['type'] != 1 || in_array($rid,$groups)) 
+    if( ($row['type'] != 1 || in_array($rid,$groups))
             && (!(($row['type'] == 4 && $rooms['role'] == 'B') || ($row['type'] == 5 && $rooms['role'] != 'B'))) ) {
         if($i > 0 && $i%4 == 0) {
-?><div class="rooms"> 
+?><div class="rooms">
     	<h3>Meeting Rooms</h3>
 <?php   }
         if($rooms['blind']) {
-?>    	<input id="R<?php echo $row['rid']; ?>" 
-                type="button" onclick="MBchat.updateables.message.enterRoom(<?php echo $row['rid']; ?>)" 
+?>    	<input id="R<?php echo $row['rid']; ?>"
+                type="button" onclick="MBchat.updateables.message.enterRoom(<?php echo $row['rid']; ?>)"
                 class="<?php echo getRoomClass($row['type']);?>"
                 value="<?php echo $row['name']; ?>" />
 <?php   }else {
@@ -107,14 +107,14 @@ foreach($rooms['rooms'] as $row) {
 	    if( ($i % 4) == 0 ) {
 ?>  	<div style="clear:both"></div>
 	</div>
-<?php 
+<?php
         }
-    }    
+    }
 }
 
 //If ended loop and hadn't just comleted div we will have to do it here
-if( ($i % 4) != 0 ) { 
+if( ($i % 4) != 0 ) {
 ?>      <div style="clear:both"></div>
     </div><?php
-} 
+}
 
