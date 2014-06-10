@@ -37,17 +37,17 @@ MBchat = function () {
         return ((me.cap & cap) != 0);
     };
 
-    function padDigits(n, totalDigits) {  
-        var pd = ''; 
-        if (totalDigits > n.length) { 
-            for (i=0; i < (totalDigits-n.length); i++) { 
-                pd += '0'; 
-            } 
-        } 
-        return pd + n; 
+    function padDigits(n, totalDigits) {
+        var pd = '';
+        if (totalDigits > n.length) {
+            for (i=0; i < (totalDigits-n.length); i++) {
+                pd += '0';
+            }
+        }
+        return pd + n;
     }
 
-    
+
 	var Room = new Class({
 		initialize: function(rid,name,type) {
 			this.rid = rid || 0;
@@ -58,7 +58,7 @@ MBchat = function () {
 			this.rid = room.rid;
 			this.name = room.name;
 			this.type = room.type;
-		} 
+		}
 	});
 	var room;
 	var entranceHall;
@@ -74,7 +74,7 @@ MBchat = function () {
 
 	var reqQueue = new Chain();
     var reqRunning = false;
-	
+
 	var ServerReq = new Class({
 		initialize: function(url,process) {
 			var that = this;
@@ -108,11 +108,11 @@ MBchat = function () {
 				reqRunning = false;
 				reqQueue.callChain();
 			}
-		}		
+		}
 	});
 	var displayUser = function(user,container) {
 		var el = new Element('span',{'class' : user.role, 'text' : user.name });
-        el.inject(container); 
+        el.inject(container);
 		return el;
 	};
 	var displayErrorMessage = function(txt) {
@@ -127,7 +127,7 @@ MBchat = function () {
 	var messageReq = new ServerReq('client/message.php',function (r) {
         if(!r.status) {
 		    var d = new Date();
-		    MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,r.reason); 
+		    MBchat.updateables.message.displayMessage(0,d.getTime()/1000,chatBot,r.reason);
         }
 	});
 	var releaseReq = new ServerReq('client/release.php',function (r) {});
@@ -211,7 +211,7 @@ MBchat = function () {
 						                MBchat.updateables.online.show(e.key.toInt());  //get entrance hall list
 					                }
 				                }
-			                } else {				
+			                } else {
 				                if (e.key == '0' || e.key == 'x') {
 					                if (privateRoom != 0) {
 						                privateReq.transmit({
@@ -264,7 +264,7 @@ MBchat = function () {
 						                    }
 					                    });
                        					fx.start(obj);
-					                    // Set up online list for this room 
+					                    // Set up online list for this room
                        					MBchat.updateables.online.show(door.get('id').substr(1).toInt());
                  					} else {
 					                    displayErrorMessage('Debug - MouseEnter in Room');
@@ -282,8 +282,8 @@ MBchat = function () {
 			                    });
 			                    door.addEvent('click', function(e) {
 				                    e.stop();			//browser should not follow link
-                    				if((e.control || e.shift) && 
-                    				        ((me.is(ADMIN) && !door.hasClass('meeting')) || 
+                    				if((e.control || e.shift) &&
+                    				        ((me.is(ADMIN) && !door.hasClass('meeting')) ||
                     				            (me.is(SECRETARY) && door.hasClass('meeting')))) {
                     					MBchat.updateables.logger.startLog(door.get('id').substr(1).toInt(),door.get('text'));
 				                    } else {
@@ -297,9 +297,9 @@ MBchat = function () {
 	                    e.stop();
 	                    if (privateRoom != 0) {
 		                    privateReq.transmit({
-			                    'wid':  0, 
+			                    'wid':  0,
 			                    'lid' : MBchat.updateables.poller.getLastId(),
-			                    'rid' : room.rid }); 
+			                    'rid' : room.rid });
 	                    } else {
 		                    if (room.rid == 0 ) {
 			                    if (this.hasClass('exit-r')) {
@@ -343,7 +343,7 @@ MBchat = function () {
                 window.location = 'login/logout.php';
             }
         }
-	           
+
     });
     var messageSubmit;
     var identString;
@@ -410,7 +410,7 @@ return {
 		        if(i!=0) regExpStr += '|';
 		        regExpStr += key.replace(/\)/g,'\\)') ;  //regular expression is key except if has ) in it which we need to escape
 		        icon.addEvent('click', function(e) {
-			        e.stop();		
+			        e.stop();
 			        var msgText = $('messageText');
 			        msgText.value += ':'+ key ;
 			        msgText.focus();
@@ -459,11 +459,11 @@ return {
 				}
 			}
 		}
-		
+
 		return {
 			init: function () {
 				//deal with sound delay
-				countDown.periodical(10000,Timer); //countdown in 10 sec chunks				
+				countDown.periodical(10000,Timer); //countdown in 10 sec chunks
 				//music
 				musicEnabled = $('musicEnabled');
 				musicEnabled.addEvent('click', function(e) {
@@ -472,7 +472,7 @@ return {
 						playAgain = true;
 					}
 				});
-				soundEnabled = $('soundEnabled');		
+				soundEnabled = $('soundEnabled');
 			},
 			resetTimer: function() {
 				Timer.counter = Timer.start * $('soundDelay').value.toInt();
@@ -502,7 +502,7 @@ return {
 		};
 		var replaceHyperLinks = function(text) {
 			return text.replace(hyperlinkRegExp,function(str, p1, p2) {
-				return p1 + '<a href="' + p2 
+				return p1 + '<a href="' + p2
 					+ '" onclick="window.open(this.href); return false;">' + p2 + '</a>';
 			});
 		};
@@ -561,7 +561,7 @@ return {
 	    });
 	  //whilst we are using a touch move we prevent the screen from scrolling
 	    var preventScroll = function(e){
-	    	e.preventDefault(); 
+	    	e.preventDefault();
 	    };
 		return {
 			init : function () {
@@ -585,18 +585,18 @@ return {
 				var pollInterval;
 				var wid;
                 var readTimoutId;
-                
+
                 var pollTimeout = function () {
                 	displayErrorMessage("read.php Timeout!");
                 	this.cancel();
                 	readTimeoutId = pollTimeout.delay(60000,this); //And put another timeout up
                 	this.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1}); //Should chain (we are in previous still)
                 };
-                
+
     			var pollRequest = new Request.JSON({url:'client/read.php',link:'cancel',onComplete:function (r,t) {
     				clearTimeout(readTimeoutId);
     			    readComplete.delay(10,this,[r,t]);
-    			}}); 
+    			}});
 
 				var readComplete = function(response,errorMessage) {
 				    if(response) {
@@ -609,7 +609,7 @@ return {
 				            }
 				        } else {
 				            if(response.reason) displayErrorMessage("read.php failure:"+response.reason);
-				        } 
+				        }
 				    } else {
 				        if(errorMessage) {
 				            displayErrorMessage("read.php failure:"+errorMessage); //Final Logout is a null message
@@ -631,7 +631,7 @@ return {
 					init : function (lid,presenceInterval) {
 					    lastId = lid;
 						pollInterval = presenceInterval*1000; //presenceInterval is in seconds - convert to milliseconds
-						pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);	
+						pollerId = pollPresence.periodical(pollInterval,MBchat.updateables);
 		                MBchat.updateables.poller.start();
 					},
 					getLastId: function() {
@@ -641,7 +641,7 @@ return {
 					start : function () {
 	        		    if (fullPoll == 0) {
 	        		    	readTimeoutId = pollTimeout.delay(60000,pollRequest);
-        		            pollRequest.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1});		
+        		            pollRequest.post({uid:auth.uid,pass:auth.pass,'lid':lastId+1});
 						 }
                         fullPoll= 2;
 					},
@@ -664,7 +664,7 @@ return {
 					var node = onlineList.getFirst();
 					if (node) {
 						var i = 0;
-						do {	
+						do {
 							node.removeClass('rowEven');
 							node.removeClass('rowOdd');
 							if( i%2 == 0) {
@@ -674,27 +674,27 @@ return {
 							}
 							i++;
 						} while (node = node.getNext());
-					} 
+					}
 				};
 				var addUser = function (user) {
 				    var span;
 					var div =$('U'+user.uid);  // Does this already exist?
 					if(div) div.destroy();  //So remove him, because we need to recreate from scratch
-    				div = new Element('div', {'id': 'U'+user.uid}); 
+    				div = new Element('div', {'id': 'U'+user.uid});
 					if(me.is(BLIND)) {
 					    span = new Element('input',{type:'button','class':user.role,value:user.name});
 					    span.inject(div);
 					} else {
 					    span = displayUser(user,div);
                     }
-					if (user.wid && user.wid.toInt() != 0  ) { 
+					if (user.wid && user.wid.toInt() != 0  ) {
 						//This user is in a private room so maybe we don't display him
 						if (user.uid != me.uid) {
 							//Not me, but I might be in a whisper with them
 
 							var whisperBox = $('W'+user.wid);
 							if (!whisperBox) {
-								return null; //not in any whisper box, so don't display 
+								return null; //not in any whisper box, so don't display
 							}
 						}
 						span.addClass('priv');  //makes them Italic to show its private
@@ -716,16 +716,16 @@ return {
 									},
 									'mouseenter' : function(e) {
 										var span = div.getFirst();
-										if ((room.type == MODERATED && 
+										if ((room.type == MODERATED &&
 										        !(span.hasClass('M') || span.hasClass('S'))) ||
-										        (room.type == OPS && span.hasClass('B'))) { 											
+										        (room.type == OPS && span.hasClass('B'))) {
 											var qtext = div.retrieve('question');
 											if (qtext) {
 											    var question = new Element('div', {'id' : 'Q'+user.uid,'class':'question'});
 												qtext = replaceHyperLinks (qtext);  //replace Hperlinks
 												qtext = replaceEmoticons(qtext); //Then replace emoticons.
 												question.set('html',
-													'<h4>Click to Release Question</h4><p>'+qtext+'</p>'); 
+													'<h4>Click to Release Question</h4><p>'+qtext+'</p>');
 												question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
 												question.inject(document.body);
 											}
@@ -754,15 +754,15 @@ return {
 									div.addEvents({
 										'mouseenter' : function(e) {
 											var span = div.getElement('span');
-											if ((room.type == MODERATED && !(span.hasClass('M') || span.hasClass('S'))) 
+											if ((room.type == MODERATED && !(span.hasClass('M') || span.hasClass('S')))
 												|| (room.type == OPS & span.hasClass('B'))) {
 												var qtext = div.retrieve('question');
 												if (qtext) {
-												    var question = new Element('div', 
+												    var question = new Element('div',
 													    {'id' :  'Q'+div.get('id').substr(1),'class':'question'});
 													qtext = replaceHyperLinks (qtext);  //replace Hperlinks
 													qtext = replaceEmoticons(qtext); //Then replace emoticons.
-													question.set('html','<p>'+qtext+'</p>'); 
+													question.set('html','<p>'+qtext+'</p>');
 													question.setStyles({'top': e.client.y, 'left':e.client.x - 200});
 													div.addClass('hasQuestion');
 													question.inject(document.body);
@@ -776,30 +776,30 @@ return {
 											}
 										}
 									});
-								} 
+								}
 							}
 					        // Figure out if we can whisper together
-					        if (user.uid != me.uid && !me.is(NO_WHISPER) 
+					        if (user.uid != me.uid && !me.is(NO_WHISPER)
 					                      && (crossWhisper || (me.role != 'B' && user.role != 'B') || ( me.role == 'B' && user.role === 'B' ))) {
-					            var ww = function(e) { 
+					            var ww = function(e) {
 							        MBchat.updateables.whispers.whisperWith(user,div,e);
 						        };
                                 if(me.is(BLIND)) {
                                     div.addEvent('click',ww);
                                     div.addClass('whisperer');
-                                } else { 
+                                } else {
 						            div.addEvent('mousedown',ww);
 						            div.addEvent('touchstart',ww); //Support touch screens as well
 						            div.addClass('whisperer');
 						        }
 					        }
-						} 
+						}
 					}
 					var qtext = div.retrieve('question');
 					if (qtext) {
 						div.inject(onlineList,'top')
 					} else {
-    					div.inject(onlineList,'bottom'); 
+    					div.inject(onlineList,'bottom');
                     }
 					labelList();
 					return div;
@@ -815,7 +815,7 @@ return {
 				};
 				onlineReq = new ServerReq('client/online.php',function(response) {
 					onlineList.removeClass('loading');
-					onlineList.addClass(room.type);
+					onlineList.addClass('R'+room.type); //Set up so we can style (if we wish to) on room type
 					currentRid = loadingRid;
 					loadingRid = -1;
 					onlineList.empty();
@@ -825,7 +825,7 @@ return {
 							user.uid = user.uid.toInt();
 							addUser(user);
 						});
-					} 
+					}
 					lastId = response.lastid;
 				});
 				return {
@@ -854,7 +854,7 @@ return {
 
 						    var whisperer;
 						    switch (msg.type) {
-						    case 'LO' : 
+						    case 'LO' :
 						    case 'LT' :
 							    if (me.uid == msg.user.uid) {
 				                    /*  It is me that has been logged off.  For this to happen it means my comms is broken.  THe best
@@ -882,20 +882,20 @@ return {
 								    }
 							    } else {
 								    if (userDiv) {
-									    if (privateRoom == 0 ) {  
+									    if (privateRoom == 0 ) {
 										    removeUser(userDiv);
 									    } else  {
 										    if (!userDiv.hasClass('priv')) {
 											    removeUser(userDiv);  //Only remove if not in the private room with this person
 										    }
 									    }
-								    } 
-							    }			 
+								    }
+							    }
 							    break;
-						    case 'LI' : 
+						    case 'LI' :
 							    if (!userDiv && msg.rid == currentRid) {
 								    addUser(msg.user); //Can't be in a whisper so don't look
-							    }	
+							    }
 							    break;
 						    case 'RE' :
 							    if (currentRid != 0) {
@@ -910,14 +910,14 @@ return {
 								    }
 							    } else {
 								    if (userDiv) {
-									    if (privateRoom == 0 ) {  
+									    if (privateRoom == 0 ) {
 										    removeUser(userDiv);
 									    } else  {
 										    if (!userDiv.hasClass('priv')) {
 											    removeUser(userDiv);  //Only remove if not in the private room with this person
 										    }
 									    }
-								    } 
+								    }
 							    }
 							    break;
 						    case 'MQ' : // User asks a question
@@ -961,13 +961,13 @@ return {
 										    document.id('chatList').removeClass('whisper').addClass('chat').inject('first_left'); //move chat list to become a room
 										    $('inputContainer').set('styles',{ 'display':'block'});
 										    $('emoticonContainer').set('styles',{ 'display':'block'});
-										    $('entranceHall').set('styles',{'display':'none'});	
+										    $('entranceHall').set('styles',{'display':'none'});
 										    var exit = $('exit');
 										    exit.addClass('exit-r');
 										    exit.removeClass('exit-f');
 									    }
 									    $('roomNameContainer').empty();
-									    var el = new Element('h1',{'class':'privateRoom'})
+									    var el = new Element('span',{'class':'privateRoom'})
 										    .set('text', 'Private Room')
 										    .inject('roomNameContainer');
 									    //remove P markers from all whisper boxes
@@ -975,12 +975,12 @@ return {
 									    privateMarkers.addClass('nonprivate');
 									    privateMarkers.removeClass('private');
 									    privateRoom = msg.rid.toInt();
-									    var fellowWhisperers = 	
+									    var fellowWhisperers =
 										    whisperBox.getElement('.whisperList').getChildren();
 									    var users = $('onlineList').getChildren();
 									    users.each( function(user) {
 										    if (fellowWhisperers.some(function(item){
-											    return this.get('id').substr(1) 
+											    return this.get('id').substr(1)
 											    == item.get('id').substr(whisperBox.get('id').length+1);
 										    },user)) {
 											    user.addClass('priv');
@@ -1002,7 +1002,7 @@ return {
 						    case 'PX' :
 							    if (msg.user.uid == me.uid) {
 								    $('roomNameContainer').empty();
-								    var el = new Element('h1')
+								    var el = new Element('span')
 									    .set('text', room.name)
 									    .inject('roomNameContainer');
 								    //Put private markers back on all whisper boxes
@@ -1016,7 +1016,7 @@ return {
 									    $('inputContainer').set('styles',{ 'display':'none'});
 									    $('emoticonContainer').set('styles',{ 'display':'none'});
 									    $('entranceHall').set('styles',{'display':'block'});
-									    var exit = $('exit');	
+									    var exit = $('exit');
 									    exit.addClass('exit-f');
 									    exit.removeClass('exit-r');
 								    }
@@ -1030,7 +1030,7 @@ return {
 								    MBchat.updateables.message.displayMessage(lastId,msg.time,chatBot,chatBotMessage(msg.user.name+' Enters the Room'));
 								    addUser(msg.user);
 							    }
-							    MBchat.sounds.roomMove();	
+							    MBchat.sounds.roomMove();
 							    break;
 						    case 'WJ' :
 							    if(privateRoom == msg.rid) { //only interested in people joining my private room
@@ -1071,7 +1071,7 @@ return {
 						if(!me.is(BLIND)) {
 						    $('emoticonContainer').removeClass('hide');
 						}
-						$('entranceHall').addClass('hide');	
+						$('entranceHall').addClass('hide');
 						messageList.inject(document.id('first_left'));  //Move it to top row
 						var exit = $('exit');
 						exit.addClass('exit-r');
@@ -1093,10 +1093,10 @@ return {
 							$('soundEnabled').checked = soundEnabled; //turn it on again
 							if(response.listid)lastId = response.lastid.toInt();
 						//Display room name at head of page
-							var el = new Element('h1')
+							var el = new Element('span')
 								.set('text', room.name )
 								.inject('roomNameContainer');
-							if (room.type == MODERATED && 
+							if (room.type == MODERATED &&
 								(me.is(MOD) || me.is(SPEAKER) )) { //Can't go to private room here
 								var whisperBoxes = $$('.whisperBox');
 								whisperBoxes.each ( function (whisperBox) {
@@ -1106,9 +1106,9 @@ return {
 									privateBox.removeEvent('click',goPrivate);
 								});
 							}
-								
-							MBchat.updateables.online.show(room.rid);	//Show online list for room	
-							$('messageText').focus();							
+
+							MBchat.updateables.online.show(room.rid);	//Show online list for room
+							$('messageText').focus();
 						}).transmit({'rid' : rid});
 						MBchat.sounds.resetTimer();
 					},
@@ -1129,8 +1129,8 @@ return {
 							MBchat.updateables.online.show(0);	//Show online list for entrance hall
 						}).transmit({'rid' : room.rid});
 						//we might have been in a room that stopped me going to private room
-						if (room.type == MODERATED && 
-							(me.is(MOD) || me.is(SPEAKER) )) { //Can't go to private room here	
+						if (room.type == MODERATED &&
+							(me.is(MOD) || me.is(SPEAKER) )) { //Can't go to private room here
 							var whisperBoxes = $$('.whisperBox');
 							whisperBoxes.each ( function (whisperBox) {
 								var privateBox = whisperBox.getElement('.nonprivate');
@@ -1141,15 +1141,15 @@ return {
 								}
 							});
 						}
-						room.set (entranceHall);;   //Set up to be in the entrance hall 
+						room.set (entranceHall);;   //Set up to be in the entrance hall
 						$('roomNameContainer').empty();
-						var el = new Element('h1')
+						var el = new Element('span')
 							.set('text', room.name)
 							.inject('roomNameContainer');
 						$('inputContainer').addClass('hide');
 						$('emoticonContainer').addClass('hide');
 						$('entranceHall').removeClass('hide');
-						var exit = $('exit');	
+						var exit = $('exit');
 						exit.addClass('exit-f');
 						exit.removeClass('exit-r');
 
@@ -1207,7 +1207,7 @@ return {
 													whisper.appendText(' ');
 													othersAdded = true;
 												}
-												var newWhisperer = whisperer.clone(); //Make a clone to remove Id 
+												var newWhisperer = whisperer.clone(); //Make a clone to remove Id
 												newWhisperer.inject(whisper);
 											};
 										});
@@ -1280,7 +1280,7 @@ return {
 							}
 						}
 						var timeEl = new Element('span',{
-							'class':'time', 
+							'class':'time',
 							'text':	addLeadingZeros(hour) + ':' + addLeadingZeros(date.getMinutes()) + ':'
 								+ addLeadingZeros(date.getSeconds()) + suffix });
 						timeEl.inject(div);
@@ -1293,7 +1293,7 @@ return {
 							while (messageList.getChildren().length >= messageListSize) {
 								messageList.getFirst().destroy();
 							}
-						}	
+						}
 						if((!messageList.getLast()) || (messageList.getLast().get('class') == 'rowOdd') ) {
 							div.addClass('rowEven');
 						} else {
@@ -1465,15 +1465,15 @@ return {
 										    return false;
 									    }
 								    }
-								    return true;		 
-							    })){ 
-					    //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
+								    return true;
+							    })){
+					    //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper
 								    var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
 									    if(response.wid != 0) {
 										    var user = response.user
 										    user.uid = user.uid.toInt();
 										    var whisper = createWhisperBox(response.wid.toInt(),user);
-									    } 
+									    }
 								    });
 								    getNewWhisperReq.transmit({'wuid':user.uid});
 							    }
@@ -1546,9 +1546,9 @@ return {
 													    return false;
 												    }
 											    }
-											    return true;		 
-										    }, dragReturn)){ 
-								    //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper					
+											    return true;
+										    }, dragReturn)){
+								    //If we get here we have not found that we already in a one on one whisper with this person, so now we have to create a new Whisper
 											    var getNewWhisperReq = new ServerReq('client/newwhisper.php',function(response) {
 												    if(response.wid != 0) {
 													    var user = response.user
@@ -1558,7 +1558,7 @@ return {
 												    } else {
 												    //logged out before we started whisper
 													    dragReturn.start($('onlineList').getCoordinates());
-												    } 
+												    }
 											    });
 											    getNewWhisperReq.transmit({'wuid':user.uid});
 										    }
@@ -1588,7 +1588,7 @@ return {
 							    },
      							onLeave: function(element, droppable){
 								    droppable.removeClass('dragOver');
-							    }							
+							    }
 						    });
 						    drag.start(event);
 						}
@@ -1615,7 +1615,7 @@ return {
 										createWhisperBox(msg.rid.toInt());  //but without (yet) any other user
 										MBchat.sounds.newWhisper();
 									}
-									// Throw others away 
+									// Throw others away
 								}
 								break;
 							case 'LT':
@@ -1777,7 +1777,7 @@ return {
 							printQuery += '&end='+Math.ceil(endTime.getTime()/1000);
 							printQuery += '&tzo='+endTime.getTimezoneOffset();
 							MBchat.logout();
-							window.location = 'client/print.php?' + printQuery ; 
+							window.location = 'client/print.php?' + printQuery ;
 						});
 						timeShowStartLog = $('timeShowStartLog');
 						timeShowEndLog = $('timeShowEndLog');
@@ -1865,7 +1865,7 @@ return {
 									endTime = new Date(endTime.getTime() - oSTO + startTimeOffset);
 									timeShow();
 								};
-								
+
 								window.clearTimeout(fetchLogDelay);
 								if(intervalCounterId) window.clearInterval(intervalCounterId);
 								intervalCounter=0;
@@ -1890,7 +1890,7 @@ return {
 						$('emoticonContainer').addClass('hide');
 						$('roomNameContainer').empty();
 						$('entranceHall').addClass('hide');
-						var exit = $('exit');	
+						var exit = $('exit');
 						exit.removeClass('exit-f');
 						exit.addClass('exit-r');
 						$('soundOptions').addClass('hide');
@@ -1914,7 +1914,7 @@ return {
 						bottomPane.addClass('textual');
 						$('header').removeClass('hide');
 						$('content').removeClass('hide');
-						$('entranceHall').removeClass('hide');	
+						$('entranceHall').removeClass('hide');
 						$('soundOptions').removeClass('hide');
 						$('onlineListContainer').removeClass('hide');
 						MBchat.updateables.poller.start();
@@ -1924,7 +1924,7 @@ return {
 			}()
 		};
 	}()
-  }; 
+  };
 
 
 }();
